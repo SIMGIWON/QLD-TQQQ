@@ -136,13 +136,14 @@ body.mobile-mode .top-toolbar { gap:10px; padding:8px 10px; }
 }
 .main { flex:1; padding: 18px 20px; min-width:0; }
 h2 { font-size:14px; font-weight:700; margin:0 0 12px 0; }
-.tabbar { display:grid; grid-template-columns: repeat(2, 1fr); background:var(--panel2); border-radius:8px; padding:3px; margin-bottom:16px; gap:4px; }
+.tabbar { display:grid; grid-template-columns: repeat(3, 1fr); background:var(--panel2); border-radius:8px; padding:3px; margin-bottom:16px; gap:4px; }
 .tabbar button {
   border:none; background:none; padding:9px 4px; font-size:11px; font-weight:600; line-height:1.3;
   color:var(--sub); border-radius:6px; cursor:pointer; font-family:var(--sans); white-space:normal; word-break:keep-all;
 }
 .tabbar button.active { background:var(--panel); color:var(--text); box-shadow:0 1px 2px rgba(0,0,0,.08); }
-.tabbar button:last-child:nth-child(odd) { grid-column: span 2; }
+.tabbar button .tab-title { display:block; font-size:11px; font-weight:700; }
+.tabbar button .tab-sub { display:block; font-size:9.5px; font-weight:500; opacity:0.7; margin-top:2px; }
 .section { margin-bottom: 18px; }
 .section-title { font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; }
 .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
@@ -311,6 +312,18 @@ body.dark-mode #rollingStaleBanner { color:#facc15; }
 .mini-btn:hover { border-color:var(--blue); color:var(--blue); }
 .log-toggle { display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--sub); cursor:pointer; white-space:nowrap; }
 canvas { width:100%; display:block; }
+.chart-wrap { position:relative; }
+.chart-tooltip {
+  position:absolute; display:none; pointer-events:none; z-index:20;
+  background:rgba(17,24,39,0.95); color:#f5f7fb; border:1px solid rgba(255,255,255,0.12);
+  border-radius:8px; padding:9px 12px; font-size:11.5px; line-height:1.65; font-family:var(--sans);
+  box-shadow:0 4px 14px rgba(0,0,0,0.35); white-space:nowrap; max-width:260px;
+}
+.chart-tooltip .ct-date { font-size:10.5px; font-weight:700; color:#93a1bd; margin-bottom:5px; font-family:'JetBrains Mono',monospace; }
+.chart-tooltip .ct-row { display:flex; align-items:center; gap:6px; }
+.chart-tooltip .ct-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.chart-tooltip .ct-name { flex:1; opacity:0.85; }
+.chart-tooltip .ct-val { font-weight:700; font-family:'JetBrains Mono',monospace; margin-left:8px; }
 table { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; }
 th { text-align:right; color:var(--sub); font-weight:600; font-size:10.5px; text-transform:uppercase;
      padding:8px 10px; border-bottom:2px solid var(--border); }
@@ -372,9 +385,9 @@ tr:last-child td { border-bottom:none; }
   <div class="sidebar">
     <h2>투자 조건 설정</h2>
     <div class="tabbar">
-      <button id="tabV2" class="active">리밸런싱비교(QLD/TQQQ_7종)</button>
-      <button id="tabDca">적립식(QQQ,QLD,TQQQ)</button>
-      <button id="tabLump">거치식(QQQ,QLD,TQQQ)</button>
+      <button id="tabV2" class="active"><span class="tab-title">리밸런싱 비교_7종</span><span class="tab-sub">QLD/TQQQ 외 7종</span></button>
+      <button id="tabDca"><span class="tab-title">적립식 비교_3종</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
+      <button id="tabLump"><span class="tab-title">거치식 비교_3종</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
     </div>
 
     <div class="section" id="levSection" style="display:none;">
@@ -641,7 +654,10 @@ tr:last-child td { border-bottom:none; }
         </div>
       </div>
       <div class="period-note" id="periodNote"></div>
-      <canvas id="chart" width="1760" height="420"></canvas>
+      <div class="chart-wrap" style="position:relative;">
+        <canvas id="chart" width="1760" height="420"></canvas>
+        <div id="chartTooltip" class="chart-tooltip"></div>
+      </div>
     </div>
 
     <div class="card" id="resultsCard">
@@ -715,7 +731,11 @@ tr:last-child td { border-bottom:none; }
         값을 바꾸면 아래 예시 금액이 실시간으로 바뀌니 참고해서 나만의 전략을 만들어보세요.
       </div>
 
-      <div class="section-title">구간 경계값 (%) — 100%는 200일선 자체라 고정</div>
+      <div class="section-title" style="margin-top:14px;">참고: 기간 내 실제 이격도 흐름 (현재 설정한 경계값 표시)</div>
+      <div class="rolling-explain" style="margin-bottom:8px;">메인 화면의 시작일~종료일 구간 동안 QQQ 이격도가 실제로 어떻게 움직였는지 보여줍니다. 점선은 지금 입력한 경계값이에요 — 이 선을 얼마나 자주 넘나드는지 보면서 경계값을 잡아보세요.</div>
+      <canvas id="zoneRefChart" width="900" height="180" style="width:100%;display:block;border-radius:8px;"></canvas>
+
+      <div class="section-title" style="margin-top:16px;">구간 경계값 (%) — 100%는 200일선 자체라 고정</div>
       <div class="boundary-chip-row" id="boundaryChipRow"></div>
 
       <div class="section-title" style="margin-top:16px;">거치매수 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
@@ -1517,7 +1537,9 @@ function render() {
   }
 }
 
-function drawChart(results, dates) {
+let __lastEquityChart = null; // { results, dates } — 마우스 툴팁용으로 마지막 렌더 정보 저장
+function drawChart(results, dates, hoverIdx) {
+  __lastEquityChart = { results, dates };
   const canvas = $('chart'); const ctx = canvas.getContext('2d');
   const W=canvas.width, H=canvas.height;
   ctx.clearRect(0,0,W,H);
@@ -1572,7 +1594,89 @@ function drawChart(results, dates) {
     ctx.fillStyle=strongText; ctx.font='12px sans-serif'; ctx.fillText(r.meta.name, lx+14, padT+15);
     lx += ctx.measureText(r.meta.name).width+40;
   });
+
+  // 마우스 호버 크로스헤어 (있을 때만)
+  if (hoverIdx != null) {
+    const n = dates.length;
+    const x = xToPix(hoverIdx, n);
+    ctx.save();
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(17,24,39,0.35)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT+plotH); ctx.stroke();
+    ctx.setLineDash([]);
+    results.forEach(r=>{
+      const v = r.equity[hoverIdx];
+      if (v==null || isNaN(v)) return;
+      const y = yToPix(v);
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2);
+      ctx.fillStyle = r.meta.color; ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = isDark ? '#0f172a' : '#ffffff'; ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  return { padL, padR, padT, plotW, plotH };
 }
+
+function fmtWonShort(v) {
+  if (v==null || isNaN(v)) return '-';
+  const sign = v<0 ? '-' : '';
+  const av = Math.abs(v);
+  if (av>=100000000) return sign+(av/100000000).toFixed(2)+'억원';
+  if (av>=10000) return sign+(av/10000).toFixed(0)+'만원';
+  return sign+av.toFixed(0)+'원';
+}
+
+(function setupChartTooltip(){
+  const canvas = $('chart');
+  const tooltip = $('chartTooltip');
+  const wrap = canvas.parentElement;
+  const padL=90, padR=20;
+
+  function indexFromClientX(clientX) {
+    const rect = canvas.getBoundingClientRect();
+    const relX = clientX - rect.left; // CSS 픽셀 기준
+    const scale = canvas.width / rect.width; // canvas 내부 해상도 대 실제 표시 크기 비율
+    const canvasX = relX * scale;
+    const plotW = canvas.width - padL - padR;
+    const frac = (canvasX - padL) / plotW;
+    return frac;
+  }
+
+  canvas.addEventListener('mousemove', (e)=>{
+    if (!__lastEquityChart || showDevChart) return; // 이격도 차트일 땐 이 툴팁 로직 미적용
+    const { results, dates } = __lastEquityChart;
+    const n = dates.length;
+    const frac = indexFromClientX(e.clientX);
+    if (frac < -0.02 || frac > 1.02) { tooltip.style.display='none'; drawChart(results, dates); return; }
+    const idx = Math.max(0, Math.min(n-1, Math.round(frac*(n-1))));
+
+    drawChart(results, dates, idx);
+
+    let html = `<div class="ct-date">${dates[idx]}</div>`;
+    results.forEach(r=>{
+      const v = r.equity[idx];
+      html += `<div class="ct-row"><span class="ct-dot" style="background:${r.meta.color}"></span><span class="ct-name">${r.meta.name}</span><span class="ct-val">${fmtWonShort(v)}</span></div>`;
+    });
+    tooltip.innerHTML = html;
+    tooltip.style.display = 'block';
+
+    const wrapRect = wrap.getBoundingClientRect();
+    let left = e.clientX - wrapRect.left + 14;
+    let top = e.clientY - wrapRect.top + 14;
+    // 툴팁이 오른쪽/아래로 넘치면 반대쪽에 표시
+    if (left + 240 > wrapRect.width) left = e.clientX - wrapRect.left - 250;
+    if (top + 140 > wrapRect.height) top = e.clientY - wrapRect.top - 150;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  });
+
+  canvas.addEventListener('mouseleave', ()=>{
+    tooltip.style.display = 'none';
+    if (__lastEquityChart && !showDevChart) drawChart(__lastEquityChart.results, __lastEquityChart.dates);
+  });
+})();
 
 // ---------- UI wiring ----------
 document.querySelectorAll('#levButtons .opt-btn').forEach(btn=>{
@@ -1668,6 +1772,7 @@ function onBoundaryValueChange(e) {
   EDIT_BOUNDARIES = sorted;
   renderRebalTable();  // 라벨(구간 범위 표시) 갱신
   updateExampleBox();
+  drawZoneRefChart();
   render();
 }
 
@@ -1688,6 +1793,7 @@ function addBoundary() {
   renderBoundaryChips();
   renderRebalTable();
   updateExampleBox();
+  drawZoneRefChart();
   render();
 }
 
@@ -1703,6 +1809,7 @@ function removeBoundaryAt(idx) {
   renderBoundaryChips();
   renderRebalTable();
   updateExampleBox();
+  drawZoneRefChart();
   render();
 }
 
@@ -1756,6 +1863,7 @@ function renderRebalTable() {
       }
 
       updateExampleBox();
+      drawZoneRefChart();
       render();
     });
   });
@@ -1786,6 +1894,7 @@ function removeZoneRow(zoneIdx) {
   renderBoundaryChips();
   renderRebalTable();
   updateExampleBox();
+  drawZoneRefChart();
   render();
 }
 
@@ -1798,6 +1907,7 @@ function resetToDefault() {
   renderBoundaryChips();
   renderRebalTable();
   updateExampleBox();
+  drawZoneRefChart();
   render();
 }
 
@@ -1826,6 +1936,82 @@ function updateExampleBox() {
   $('rebalExampleBox').innerHTML = items.map(t=>`<div class="example-item">${t}</div>`).join('');
 }
 
+function drawZoneRefChart() {
+  const canvas = $('zoneRefChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const isDark = document.body.classList.contains('dark-mode');
+  const gridColor = isDark ? '#2d3548' : '#e5e7eb';
+  const textColor = isDark ? '#94a3b8' : '#6b7280';
+  const lineColor = isDark ? '#60a5fa' : '#2563eb';
+  const padL=52, padR=14, padT=14, padB=26;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+
+  const startVal = $('startDate').value, endVal = $('endDate').value;
+  const iStart = bsearchGte(PRICE.dates, startVal);
+  const iEnd = bsearchLte(PRICE.dates, endVal);
+  if (iEnd <= iStart) return;
+
+  const ma = getMA200();
+  const p1 = PRICE.p1;
+  const n = iEnd - iStart + 1;
+  const dev = new Array(n);
+  for (let i=0;i<n;i++){
+    const gi = iStart+i;
+    dev[i] = (ma[gi] && !isNaN(ma[gi])) ? (p1[gi]/ma[gi]*100) : NaN;
+  }
+  const validDev = dev.filter(v=>!isNaN(v));
+  if (!validDev.length) return;
+
+  const boundaries = EDIT_BOUNDARIES && EDIT_BOUNDARIES.length ? EDIT_BOUNDARIES : [100];
+  let minV = Math.min(...validDev, ...boundaries);
+  let maxV = Math.max(...validDev, ...boundaries);
+  const pad = (maxV-minV)*0.08 || 5;
+  minV -= pad; maxV += pad;
+
+  function yToPix(v){ return padT+plotH-(v-minV)/(maxV-minV)*plotH; }
+  function xToPix(i){ return padL+i/(n-1)*plotW; }
+
+  // 격자 + y축 라벨
+  ctx.strokeStyle=gridColor; ctx.lineWidth=1; ctx.font='10px monospace'; ctx.fillStyle=textColor;
+  for (let t=0;t<=4;t++){
+    const frac=t/4;
+    const v=minV+frac*(maxV-minV);
+    const y=padT+plotH-frac*plotH;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    ctx.fillText(v.toFixed(0)+'%', 4, y+3);
+  }
+  ctx.fillText(PRICE.dates[iStart], padL, H-8);
+  ctx.textAlign='right'; ctx.fillText(PRICE.dates[iEnd], W-padR, H-8); ctx.textAlign='left';
+
+  // 경계값 점선 (현재 입력값 기준)
+  boundaries.forEach(b=>{
+    const y = yToPix(b);
+    ctx.save();
+    ctx.strokeStyle = b===100 ? (isDark?'#9ca3af':'#6b7280') : '#f59e0b';
+    ctx.lineWidth = 1.3;
+    ctx.setLineDash([5,3]);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W-padR, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.font = '10px monospace';
+    ctx.fillText(b+'%', W-padR-30, y-3);
+    ctx.restore();
+  });
+
+  // 이격도 라인
+  ctx.strokeStyle = lineColor; ctx.lineWidth = 1.6; ctx.beginPath();
+  const step = Math.max(1, Math.floor(n/1200));
+  let started = false;
+  for (let i=0;i<n;i+=step){
+    if (isNaN(dev[i])) continue;
+    const x=xToPix(i), y=yToPix(dev[i]);
+    if (!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
 function openRebalModalFor(target) {
   modalTarget = target;
   const st = getRebalState(target);
@@ -1834,6 +2020,7 @@ function openRebalModalFor(target) {
   renderBoundaryChips();
   renderRebalTable();
   updateExampleBox();
+  drawZoneRefChart();
   const targetLabel = target==='tqqq' ? 'TQQQ' : target==='hybrid' ? '하이브리드(QLD+TQQQ)' : 'QLD';
   $('rebalModalTitle').textContent = `③ ${targetLabel} — QQQ 200일 이격도 기준 리밸런싱 세부설정`;
   $('rebalModalOverlay').style.display='flex';
