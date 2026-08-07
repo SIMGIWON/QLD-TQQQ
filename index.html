@@ -372,8 +372,7 @@ tr:last-child td { border-bottom:none; }
   <div class="sidebar">
     <h2>투자 조건 설정</h2>
     <div class="tabbar">
-      <button id="tabRebal" class="active">리밸런싱비교(QLD_3종)</button>
-      <button id="tabV2">리밸런싱비교(QLD/TQQQ_7종)</button>
+      <button id="tabV2" class="active">리밸런싱비교(QLD/TQQQ_7종)</button>
       <button id="tabDca">적립식(QQQ,QLD,TQQQ)</button>
       <button id="tabLump">거치식(QQQ,QLD,TQQQ)</button>
     </div>
@@ -419,7 +418,7 @@ tr:last-child td { border-bottom:none; }
       </div>
     </div>
 
-    <div class="section" id="rebalFields">
+    <div class="section" id="rebalFields" style="display:none;">
       <div class="field">
         <label>① QLD 거치식 (시작일에 총액 한 번에 매수)</label>
         <div class="readonly-box" id="lumpDisplay">₩10,000,000</div>
@@ -440,7 +439,7 @@ tr:last-child td { border-bottom:none; }
       </div>
     </div>
 
-    <div class="section" id="v2Fields" style="display:none;">
+    <div class="section" id="v2Fields">
       <div class="section-title" style="color:var(--blue);">QLD (2배)</div>
       <div class="field">
         <label>① QLD 거치식</label>
@@ -781,7 +780,7 @@ tr:last-child td { border-bottom:none; }
 
 const N = PRICE.dates.length;
 
-let mode = 'rebal'; // 'lump' | 'dca' | 'rebal'
+let mode = 'v2'; // 'lump' | 'dca' | 'rebal' | 'v2' — QLD_3종 탭 제거로 기본값을 v2로 변경
 let selectedLev = 'all';
 let selectedFreq = 'monthly';
 let logScale = false;
@@ -1592,7 +1591,7 @@ document.querySelectorAll('#freqButtons .opt-btn').forEach(btn=>{
     render();
   });
 });
-const ALL_TABS = ['tabRebal','tabV2','tabDca','tabLump'];
+const ALL_TABS = ['tabV2','tabDca','tabLump'];
 const ALL_SECTIONS = { levSection:'none', dcaFields:'none', rebalFields:'none', v2Fields:'none' };
 
 function activateTab(activeId, activeMode, sectionsShown) {
@@ -1611,7 +1610,6 @@ function activateTab(activeId, activeMode, sectionsShown) {
 }
 $('tabLump').addEventListener('click', ()=> activateTab('tabLump', 'lump', ['levSection']));
 $('tabDca').addEventListener('click', ()=> activateTab('tabDca', 'dca', ['levSection','dcaFields']));
-$('tabRebal').addEventListener('click', ()=> activateTab('tabRebal', 'rebal', ['rebalFields']));
 $('tabV2').addEventListener('click', ()=> activateTab('tabV2', 'v2', ['v2Fields']));
 
 // ---------- ③ 세부설정 팝업 (동적 구간 추가/삭제) ----------
@@ -2782,7 +2780,7 @@ function renderWfResults(result) {
   const foldCount = Math.max(...strategyNames.map(nm=>perStrategyResults[nm].length));
   let html = `<div class="rank-period">${strategyNames.length}개 전략(리밸런싱/적립식/거치식 전부) × ${foldCount}개 구간(fold), 각 훈련${trainYears}년→검증${testYears}년, 1년씩 이동</div>`;
   html += buildWfSummaryHtml(perStrategyResults, strategyNames);
-  html += buildWfTableHtml(perStrategyResults, strategyNames);
+  // 구간별 상세(전략별 20개 fold 전부) 표는 너무 길어서 화면에는 생략 — 요약만 표시
   $('wfResultsBody').innerHTML = html;
 }
 $('wfTrainYears').addEventListener('change', ()=>{ updateWfFoldPreview(); markWfStale(); });
@@ -3064,15 +3062,71 @@ function getComboRankings() {
 }
 function buildComboRankTableHtml(rk) {
   const sorted = Object.entries(rk.overallAvgRank).sort((a, b) => a[1] - b[1]);
+  const ord = v => `${Math.round(v)}위`;
   let html = `<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr>
-    <th>순위</th><th>전략</th><th class="best-col">종합 평균순위</th><th>CAGR 평균순위</th><th>MDD 평균순위</th><th>Calmar 평균순위</th>
+    <th>순위</th><th>전략</th><th class="best-col">종합 순위</th><th>CAGR 순위</th><th>MDD 순위</th><th>Calmar 순위</th>
   </tr></thead><tbody>`;
   sorted.forEach(([nm, v], i) => {
-    html += `<tr><td>${i + 1}${i === 0 ? ' 🏆' : ''}</td><td>${nm}</td><td class="best-col">${v.toFixed(2)}</td>` +
-      `<td>${rk.avgRankByMetric.CAGR[nm].toFixed(2)}</td><td>${rk.avgRankByMetric.MDD[nm].toFixed(2)}</td><td>${rk.avgRankByMetric.Calmar[nm].toFixed(2)}</td></tr>`;
+    html += `<tr><td>${i + 1}${i === 0 ? ' 🏆' : ''}</td><td>${nm}</td><td class="best-col">${ord(v)}</td>` +
+      `<td>${ord(rk.avgRankByMetric.CAGR[nm])}</td><td>${ord(rk.avgRankByMetric.MDD[nm])}</td><td>${ord(rk.avgRankByMetric.Calmar[nm])}</td></tr>`;
   });
   html += '</tbody></table></div>';
   return { html, sorted };
+}
+const MBTI_PERSONA = {
+  '수익위주': {
+    ENTJ: '타고난 전략가 기질 — 큰 그림을 보고 과감하게 베팅하는 걸 즐겨요.',
+    ENTP: '새로운 기회에 즉각 반응 — 변화와 리스크를 오히려 재미로 느끼는 편.',
+    ESTP: '행동파, 눈앞의 기회를 놓치지 않아요 — 변동성도 게임처럼 즐기는 타입.',
+    ESTJ: '체계적이면서도 결단력 있게 밀어붙이는 스타일 — 공격적 목표 설정에 강함.',
+    ENFP: '직감과 열정으로 움직이는 타입 — 성장 스토리에 꽂히면 과감하게 들어감.',
+  },
+  '안전위주': {
+    ISFJ: '안정과 신뢰가 최우선 — 원금 지키는 게 가장 중요한 가치.',
+    ISTJ: '원칙과 계획을 중시 — 검증된 방식, 낮은 변동성을 선호.',
+    ISFP: '조용히 내실을 다지는 타입 — 큰 변동성엔 스트레스 받는 편.',
+    INFJ: '장기적 관점에서 신중하게 — 안전판을 먼저 확보하고 움직임.',
+    ISTP: '위기 대응은 냉정하지만, 평소엔 리스크를 최소화하는 쪽을 선호.',
+  },
+  '밸런스위주': {
+    INTJ: '치밀하게 설계하고 균형점을 찾는 전략가 — 수익과 리스크를 동시에 계산.',
+    INTP: '논리와 데이터로 최적점을 탐구 — 극단보다 효율적인 균형을 추구.',
+    ESFJ: '주변과의 조화를 중시하듯 포트폴리오도 조화롭게 — 한쪽에 치우치지 않음.',
+    ENFJ: '장기적 성장과 안정을 함께 고려하는 타입 — 균형 잡힌 선택을 선호.',
+    INFP: '가치관과 현실 사이에서 균형을 찾는 타입 — 이상과 실리를 다 고려함.',
+    ESFP: '즐기면서도 무리하지 않는 스타일 — 재미와 안정을 둘 다 챙기는 균형형.',
+  },
+};
+function buildComboPersonaSection(rk) {
+  const cagrLeader = Object.entries(rk.avgRankByMetric.CAGR).sort((a,b)=>a[1]-b[1])[0][0];
+  const mddLeader = Object.entries(rk.avgRankByMetric.MDD).sort((a,b)=>a[1]-b[1])[0][0];
+  const calLeader = Object.entries(rk.avgRankByMetric.Calmar).sort((a,b)=>a[1]-b[1])[0][0];
+
+  const personas = [
+    { key:'수익위주', emoji:'🚀', color:'#f43f5e', title:'수익 추구형', strat: cagrLeader,
+      comment: `CAGR 평균순위 1위는 <b>${cagrLeader}</b>입니다. 변동성을 감내하고서라도 최대 수익을 노린다면 이 전략이 세 검증 전부에서 가장 화끈한 성적을 냈어요. 단, MDD도 함께 확인하고 감당 가능한 낙폭인지 꼭 점검하세요.` },
+    { key:'안전위주', emoji:'🛡️', color:'#3b82f6', title:'안정 추구형', strat: mddLeader,
+      comment: `MDD 평균순위 1위는 <b>${mddLeader}</b>입니다. 변동성을 최대한 줄이고 싶다면 이 전략이 세 검증 모두에서 가장 덜 흔들렸어요. 대신 수익률은 다소 낮아질 수 있다는 점을 감안하세요.` },
+    { key:'밸런스위주', emoji:'⚖️', color:'#eab308', title:'균형 추구형', strat: calLeader,
+      comment: `칼마비율(수익÷안전) 평균순위 1위는 <b>${calLeader}</b>입니다. 수익과 안전 어느 한쪽에 치우치지 않고 위험 대비 효율이 가장 좋았던 전략이에요. 극단적인 걸 원하지 않는다면 이쪽이 무난합니다.` },
+  ];
+
+  let html = '<div class="summary-grid">';
+  personas.forEach(p => {
+    html += `<div class="summary-card" style="border-color:${p.color};"><div class="sc-label">${p.emoji} ${p.title}</div><div class="sc-name">${p.strat}</div><div class="sc-sub" style="line-height:1.6;margin-top:4px;">${p.comment}</div></div>`;
+  });
+  html += '</div>';
+
+  html += `<div class="section-title" style="margin-top:22px;">🔮 MBTI로 보는 내 투자 성향은?</div>`;
+  html += `<div class="rolling-table-desc" style="margin:0 0 14px;">재미로 보는 코너입니다 — 과학적 근거보다는 성향 참고용! 내 MBTI가 속한 그룹의 추천 전략을 확인해보세요.</div>`;
+  html += '<div class="summary-grid">';
+  personas.forEach(p => {
+    const types = MBTI_PERSONA[p.key];
+    let rows = Object.entries(types).map(([t, desc]) => `<div style="margin-bottom:8px;"><b style="color:#f5f7fb;">${t}</b> — ${desc}</div>`).join('');
+    html += `<div class="summary-card" style="border-color:${p.color};"><div class="sc-label">${p.emoji} ${p.title} → <b>${p.strat}</b></div><div class="sc-sub" style="margin-top:8px;line-height:1.7;">${rows}</div></div>`;
+  });
+  html += '</div>';
+  return html;
 }
 function buildComboDetailTableHtml(rk, metric, unit, title) {
   const names = rk.allNames.slice().sort((a, b) => rk.avgRankByMetric[metric][a] - rk.avgRankByMetric[metric][b]);
@@ -3110,6 +3164,8 @@ function downloadComboPdf() {
   bodyHtml += `<div class="section-title">1. 종합 순위</div>`;
   bodyHtml += rankTableHtml;
   bodyHtml += recoHtml;
+  bodyHtml += `<div class="section-title" style="margin-top:28px;">투자 성향별 추천</div>`;
+  bodyHtml += buildComboPersonaSection(rk);
   bodyHtml += `<div class="section-title" style="margin-top:28px;">2. 검증별 상세 수치 (중위값)</div>`;
   bodyHtml += buildComboDetailTableHtml(rk, 'CAGR', '%', '📈 CAGR (연평균 복리 수익률, 높을수록 좋음)');
   bodyHtml += buildComboDetailTableHtml(rk, 'MDD', '%', '🛡 MDD (최대 낙폭, 0에 가까울수록 안전)');
