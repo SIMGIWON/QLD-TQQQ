@@ -552,8 +552,7 @@ tr:last-child td { border-bottom:none; }
       <div id="rollingResults" style="display:none;margin-top:12px;">
         <div id="rollingStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
         <div id="rollingResultsBody"></div>
-        <button class="run-btn" id="rollingPdfBtn" style="background:#1f2937;margin-top:10px;">⬇ 결과 리포트 다운로드 (다크)</button>
-        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">파일 다운로드 후 열면, 그 안에서 PDF로 저장할 수 있어요</div>
+        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">개별 리포트 대신, 3개 검증을 모두 실행하면 아래 블록부트스트랩 섹션 맨 밑에서 종합 리포트를 받을 수 있어요</div>
       </div>
     </div>
 
@@ -577,8 +576,7 @@ tr:last-child td { border-bottom:none; }
       <div id="wfResults" style="display:none;margin-top:12px;">
         <div id="wfStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
         <div id="wfResultsBody"></div>
-        <button class="run-btn" id="wfPdfBtn" style="background:#1f2937;margin-top:10px;">⬇ 결과 리포트 다운로드 (다크)</button>
-        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">파일 다운로드 후 열면, 그 안에서 PDF로 저장할 수 있어요</div>
+        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">개별 리포트 대신, 3개 검증을 모두 실행하면 아래 블록부트스트랩 섹션 맨 밑에서 종합 리포트를 받을 수 있어요</div>
       </div>
     </div>
 
@@ -607,9 +605,14 @@ tr:last-child td { border-bottom:none; }
       <div id="bbResults" style="display:none;margin-top:12px;">
         <div id="bbStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
         <div id="bbResultsBody"></div>
-        <button class="run-btn" id="bbPdfBtn" style="background:#1f2937;margin-top:10px;">⬇ 결과 리포트 다운로드 (다크)</button>
-        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">파일 다운로드 후 열면, 그 안에서 PDF로 저장할 수 있어요</div>
       </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="section-title">🌟 종합 리포트</div>
+      <div class="rolling-explain">롤링 백테스트 · Walk-Forward · 블록 부트스트랩, 3가지를 모두 실행하면 세 결과를 종합한 순위와 전략 제안이 담긴 리포트를 받을 수 있어요.</div>
+      <div id="comboStatus" style="font-size:11.5px;color:var(--text-faint);margin-bottom:10px;line-height:1.6;">아직 준비 안 됨</div>
+      <button class="run-btn" id="comboPdfBtn" disabled style="background:#374151;cursor:not-allowed;">🌟 종합 리포트 다운로드 (다크)</button>
+      <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">파일 다운로드 후 열면, 그 안에서 PDF로 저장할 수 있어요</div>
     </div>
   </div>
 
@@ -2225,6 +2228,7 @@ function markRollingStale() {
   if ($('rollingResults').style.display === 'none') return; // 결과 화면이 접혀있으면 굳이 표시 안 함
   $('rollingStaleBanner').style.display = 'block';
   $('rollingResultsBody').classList.add('is-stale');
+  updateComboButtonState();
 }
 $('rollingStartDate').addEventListener('change', ()=>{ updateRollingHorizonPreview(); markRollingStale(); });
 $('rollingStartDate').min = PRICE.dates[0];
@@ -2289,6 +2293,7 @@ async function runRollingBacktest() {
 
   $('rollingProgressFill').style.width = '100%';
   window.__rollingResult = { perHorizon, initAmount, mode, computedAt: new Date().toISOString() };
+  updateComboButtonState();
   renderRollingResults(window.__rollingResult);
 
   btn.disabled = false; btn.style.opacity = '1';
@@ -2553,7 +2558,7 @@ h1{ font-size:22px; font-weight:900; margin:0 0 8px; color:#f5f7fb !important; l
 }
 
 $('rollingRunBtn').addEventListener('click', runRollingBacktest);
-$('rollingPdfBtn').addEventListener('click', downloadRollingPdf);
+// (개별 리포트 버튼 대신 종합 리포트로 통합됨 — updateComboButtonState()는 아래 결과 저장 시점에서 호출)
 
 // ============================================================
 // Walk-Forward 검증 — 훈련구간에서 재최적화 → 검증구간(못 본 데이터)에 적용
@@ -2615,6 +2620,7 @@ function markWfStale() {
   if ($('wfResults').style.display === 'none') return;
   $('wfStaleBanner').style.display = 'block';
   $('wfResultsBody').classList.add('is-stale');
+  updateComboButtonState();
 }
 async function runWalkForward() {
   if (mode !== 'rebal' && mode !== 'v2') {
@@ -2716,6 +2722,7 @@ async function runWalkForward() {
 
   $('wfProgressFill').style.width='100%';
   window.__wfResult = { perStrategyResults, strategyNames, trainYears, testYears, initAmount, computedAt: new Date().toISOString(), modeLabel: rollingModeLabel() };
+  updateComboButtonState();
   renderWfResults(window.__wfResult);
   btn.disabled=false; btn.style.opacity='1';
   $('wfProgress').style.display='none';
@@ -2798,7 +2805,7 @@ function downloadWfPdf() {
   });
   downloadReportBlob(html, `WalkForward_${modeLabel.replace(/[()\/,]/g,'')}`);
 }
-$('wfPdfBtn').addEventListener('click', downloadWfPdf);
+// (개별 리포트 버튼 대신 종합 리포트로 통합됨)
 
 // ============================================================
 // 블록 부트스트랩 검증 — 실제 일별수익률을 블록으로 잘라 무작위 재배열
@@ -2827,6 +2834,7 @@ function markBbStale() {
   if ($('bbResults').style.display === 'none') return;
   $('bbStaleBanner').style.display = 'block';
   $('bbResultsBody').classList.add('is-stale');
+  updateComboButtonState();
 }
 async function bbSimulateOne(dailyReturns, blockDays, targetDays, initAmount, holdYears) {
   const numBlocks = Math.ceil(dailyReturns.length / blockDays);
@@ -2894,6 +2902,7 @@ async function runBlockBootstrap() {
 
   $('bbProgressFill').style.width='100%';
   window.__bbResult = { perStrategy, strategyNames, blockDays, holdYears, iterations, initAmount, computedAt: new Date().toISOString(), modeLabel: rollingModeLabel() };
+  updateComboButtonState();
   renderBbResults(window.__bbResult);
   btn.disabled=false; btn.style.opacity='1';
   $('bbProgress').style.display='none';
@@ -2963,7 +2972,159 @@ function downloadBbPdf() {
   });
   downloadReportBlob(html, `블록부트스트랩_${modeLabel.replace(/[()\/,]/g,'')}`);
 }
-$('bbPdfBtn').addEventListener('click', downloadBbPdf);
+// ============================================================
+// 종합 리포트 — 롤링/Walk-Forward/블록부트스트랩 3개 검증을 합쳐서 하나로
+// ============================================================
+function comboReadiness() {
+  const r = window.__rollingResult, w = window.__wfResult, b = window.__bbResult;
+  const rollStale = !!(r && $('rollingStaleBanner') && $('rollingStaleBanner').style.display === 'block');
+  const wfStale = !!(w && $('wfStaleBanner') && $('wfStaleBanner').style.display === 'block');
+  const bbStale = !!(b && $('bbStaleBanner') && $('bbStaleBanner').style.display === 'block');
+  const missing = [];
+  if (!r) missing.push('롤링 백테스트'); else if (rollStale) missing.push('롤링 백테스트(재실행 필요)');
+  if (!w) missing.push('Walk-Forward'); else if (wfStale) missing.push('Walk-Forward(재실행 필요)');
+  if (!b) missing.push('블록 부트스트랩'); else if (bbStale) missing.push('블록 부트스트랩(재실행 필요)');
+  return { ready: missing.length === 0, missing };
+}
+function updateComboButtonState() {
+  const btn = $('comboPdfBtn'), status = $('comboStatus');
+  if (!btn || !status) return;
+  const { ready, missing } = comboReadiness();
+  if (ready) {
+    btn.disabled = false;
+    btn.style.background = '#7c3aed';
+    btn.style.cursor = 'pointer';
+    status.innerHTML = '✅ 3개 검증 모두 완료 — 종합 리포트를 만들 수 있어요';
+  } else {
+    btn.disabled = true;
+    btn.style.background = '#374151';
+    btn.style.cursor = 'not-allowed';
+    status.innerHTML = `⏳ 아직 준비 안 됨 — <b style="color:#eab308;">${missing.join(', ')}</b>을(를) 먼저 실행하세요`;
+  }
+}
+function canonicalStratName(nm) {
+  let s = nm.replace(/\s*이격도\s*/g, ' ');           // "QLD이격도 리밸런싱" / "QLD 이격도 리밸런싱" → "QLD 리밸런싱"
+  s = s.replace(/\(일\s*[\d.]+%\)/, '');                // "QLD 적립식(일 0.4%)" → "QLD 적립식" (퍼센트는 검증마다 다를 수 있어 매칭용으로 제거)
+  s = s.replace(/\s+/g, ' ').trim();
+  return s;
+}
+function getComboRankings() {
+  const rollR = window.__rollingResult, wfR = window.__wfResult, bbR = window.__bbResult;
+  if (!rollR || !wfR || !bbR) return null;
+
+  function rankListToMap(list) { const m = {}; list.forEach((x, i) => { m[x.nm] = i + 1; }); return m; }
+  function canon(list) { return list.map(x => ({ nm: canonicalStratName(x.nm), med: x.med })); }
+
+  const rollRet = canon(getRankedRows(rollR.perHorizon, 'ret'));
+  const rollMdd = canon(getRankedRows(rollR.perHorizon, 'mdd'));
+  const rollCal = canon(getRankedRows(rollR.perHorizon, 'calmar'));
+
+  function wfRankList(metricKey) {
+    return wfR.strategyNames.map(nm => {
+      const results = wfR.perStrategyResults[nm];
+      const med = results.length ? median(results.map(r => r.oos[metricKey])) : NaN;
+      return { nm: canonicalStratName(nm), med };
+    }).filter(x => !isNaN(x.med)).sort((a, b) => b.med - a.med);
+  }
+  const wfRet = wfRankList('cagr'), wfMdd = wfRankList('mdd'), wfCal = wfRankList('calmar');
+
+  const bbStats = {};
+  bbR.strategyNames.forEach(nm => { bbStats[nm] = bbStratStats(bbR.perStrategy[nm]); });
+  function bbRankList(key) {
+    return bbR.strategyNames.map(nm => ({ nm: canonicalStratName(nm), med: bbStats[nm][key] })).sort((a, b) => b.med - a.med);
+  }
+  const bbRet = bbRankList('cagrMed'), bbMdd = bbRankList('mddMed'), bbCal = bbRankList('calMed');
+
+  const allNames = Array.from(new Set([...rollRet, ...wfRet, ...bbRet].map(x => x.nm)));
+
+  const rankMaps = {
+    CAGR: [rollRet, wfRet, bbRet].map(rankListToMap),
+    MDD: [rollMdd, wfMdd, bbMdd].map(rankListToMap),
+    Calmar: [rollCal, wfCal, bbCal].map(rankListToMap),
+  };
+  const avgRankByMetric = { CAGR: {}, MDD: {}, Calmar: {} };
+  allNames.forEach(nm => {
+    ['CAGR', 'MDD', 'Calmar'].forEach(metric => {
+      const vals = rankMaps[metric].map(m => m[nm]).filter(v => v !== undefined);
+      avgRankByMetric[metric][nm] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : NaN;
+    });
+  });
+  const overallAvgRank = {};
+  allNames.forEach(nm => {
+    const vs = ['CAGR', 'MDD', 'Calmar'].map(m => avgRankByMetric[m][nm]).filter(v => !isNaN(v));
+    overallAvgRank[nm] = vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : NaN;
+  });
+
+  const raw = {
+    '롤링백테스트': { CAGR: rollRet, MDD: rollMdd, Calmar: rollCal },
+    'Walk-Forward': { CAGR: wfRet, MDD: wfMdd, Calmar: wfCal },
+    '블록부트스트랩': { CAGR: bbRet, MDD: bbMdd, Calmar: bbCal },
+  };
+  return { allNames, avgRankByMetric, overallAvgRank, raw };
+}
+function buildComboRankTableHtml(rk) {
+  const sorted = Object.entries(rk.overallAvgRank).sort((a, b) => a[1] - b[1]);
+  let html = `<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr>
+    <th>순위</th><th>전략</th><th class="best-col">종합 평균순위</th><th>CAGR 평균순위</th><th>MDD 평균순위</th><th>Calmar 평균순위</th>
+  </tr></thead><tbody>`;
+  sorted.forEach(([nm, v], i) => {
+    html += `<tr><td>${i + 1}${i === 0 ? ' 🏆' : ''}</td><td>${nm}</td><td class="best-col">${v.toFixed(2)}</td>` +
+      `<td>${rk.avgRankByMetric.CAGR[nm].toFixed(2)}</td><td>${rk.avgRankByMetric.MDD[nm].toFixed(2)}</td><td>${rk.avgRankByMetric.Calmar[nm].toFixed(2)}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  return { html, sorted };
+}
+function buildComboDetailTableHtml(rk, metric, unit, title) {
+  const names = rk.allNames.slice().sort((a, b) => rk.avgRankByMetric[metric][a] - rk.avgRankByMetric[metric][b]);
+  const findVal = (list, nm) => { const f = list.find(x => x.nm === nm); return f ? f.med : null; };
+  let html = `<div class="rolling-table-title">${title}</div>`;
+  html += `<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr><th>전략</th><th>롤링백테스트</th><th>Walk-Forward</th><th>블록부트스트랩</th></tr></thead><tbody>`;
+  names.forEach(nm => {
+    const r = findVal(rk.raw['롤링백테스트'][metric], nm);
+    const w = findVal(rk.raw['Walk-Forward'][metric], nm);
+    const b = findVal(rk.raw['블록부트스트랩'][metric], nm);
+    const fmt = v => v === null ? '—' : (unit === '' ? v.toFixed(2) : v.toFixed(1) + unit);
+    html += `<tr><td>${nm}</td><td>${fmt(r)}</td><td>${fmt(w)}</td><td>${fmt(b)}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  return html;
+}
+function downloadComboPdf() {
+  const { ready } = comboReadiness();
+  if (!ready) return;
+  const rk = getComboRankings();
+  if (!rk) return;
+
+  const rollR = window.__rollingResult, wfR = window.__wfResult, bbR = window.__bbResult;
+  const dateStr = new Date().toLocaleString('ko-KR');
+  const { html: rankTableHtml, sorted } = buildComboRankTableHtml(rk);
+  const top1 = sorted[0], top2 = sorted[1];
+
+  let recoHtml = `<div class="rank-comment">🏆 <b>종합 1위: ${top1[0]}</b> (평균순위 ${top1[1].toFixed(2)}) — CAGR·MDD·Calmar 3개 지표를 세 검증에서 골고루 잘 받은 전략입니다. `;
+  if (top2) recoHtml += `근소한 차이의 2위는 <b>${top2[0]}</b>(평균순위 ${top2[1].toFixed(2)})입니다. `;
+  recoHtml += `표에서 CAGR 평균순위가 낮은(=좋은) 전략일수록 수익 추구형, MDD 평균순위가 낮은 전략일수록 안정 추구형에 가깝습니다.</div>`;
+
+  const explainCombo = `롤링 백테스트(${rollR.perHorizon ? Object.keys(rollR.perHorizon).length : ''}개 보유기간) · Walk-Forward(훈련${wfR.trainYears}년/검증${wfR.testYears}년) · 블록부트스트랩(${bbR.iterations.toLocaleString()}회)에서 <b>CAGR·MDD·Calmar 3개 지표 순위를 전부 평균</b>낸 결과입니다. 세 검증은 같은 전략을 다른 방식으로 스트레스 테스트한 것이라 아래 상세 수치표의 절대값은 검증마다 다르게 나오지만(예: Walk-Forward는 검증구간이 짧아 MDD가 작게, 블록부트스트랩은 장기추세가 깨져 CAGR이 낮게 나옴), <b>순위 자체는 대체로 일관됩니다.</b> 이 리포트는 과거 데이터 기반 백테스트 결과 요약이며 투자 자문이 아닙니다.`;
+
+  let bodyHtml = '';
+  bodyHtml += `<div class="section-title">1. 종합 순위</div>`;
+  bodyHtml += rankTableHtml;
+  bodyHtml += recoHtml;
+  bodyHtml += `<div class="section-title" style="margin-top:28px;">2. 검증별 상세 수치 (중위값)</div>`;
+  bodyHtml += buildComboDetailTableHtml(rk, 'CAGR', '%', '📈 CAGR (연평균 복리 수익률, 높을수록 좋음)');
+  bodyHtml += buildComboDetailTableHtml(rk, 'MDD', '%', '🛡 MDD (최대 낙폭, 0에 가까울수록 안전)');
+  bodyHtml += buildComboDetailTableHtml(rk, 'Calmar', '', '⚖️ 칼마비율 (CAGR÷|MDD|, 수익·안전 균형)');
+
+  const html = buildDarkReportHtml({
+    title: `🌟 3종 검증 종합 리포트`,
+    meta: `생성 시각: ${dateStr} · 롤링/Walk-Forward/블록부트스트랩 종합`,
+    explain: explainCombo,
+    bodyHtml,
+  });
+  downloadReportBlob(html, `종합리포트_3종검증`);
+}
+$('comboPdfBtn').addEventListener('click', downloadComboPdf);
+updateComboButtonState();
 
 let showingRankView = false;
 function showRankView() {
