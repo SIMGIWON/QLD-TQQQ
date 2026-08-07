@@ -1,0 +1,41 @@
+name: Update QQQ/QLD/TQQQ price data
+
+on:
+  schedule:
+    # 매일 UTC 21:30 = 한국시간(KST, UTC+9) 다음날 06:30
+    # 미국 정규장 마감(16:00 ET) 이후 데이터가 반영될 시간을 넉넉히 확보
+    - cron: "30 21 * * 1-5"
+  workflow_dispatch: {}   # Actions 탭에서 수동 실행 버튼도 사용 가능
+
+permissions:
+  contents: write
+
+jobs:
+  update-price-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run update script
+        run: python update_price_data.py
+
+      - name: Commit and push if price_data.json changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- price_data.json; then
+            echo "변경 사항 없음, 커밋 생략"
+          else
+            git add price_data.json
+            git commit -m "chore: update price_data.json ($(date -u +%Y-%m-%d))"
+            git push
+          fi
