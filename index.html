@@ -3060,15 +3060,27 @@ function getComboRankings() {
   };
   return { allNames, avgRankByMetric, overallAvgRank, raw };
 }
+function computeOrdinalRanks(avgMap) {
+  // 평균값을 그냥 반올림하면 여러 전략이 같은 정수로 뭉쳐 "1위"가 아예 안 보이는 등 왜곡이 생김.
+  // 대신 정렬 순서 그대로 1~N 순위를 매기고, 완전히 같은 값일 때만 공동순위 처리.
+  const sorted = Object.entries(avgMap).sort((a, b) => a[1] - b[1]);
+  const ranks = {};
+  sorted.forEach(([nm, val], i) => {
+    ranks[nm] = (i > 0 && val === sorted[i - 1][1]) ? ranks[sorted[i - 1][0]] : i + 1;
+  });
+  return ranks;
+}
 function buildComboRankTableHtml(rk) {
   const sorted = Object.entries(rk.overallAvgRank).sort((a, b) => a[1] - b[1]);
-  const ord = v => `${Math.round(v)}위`;
+  const cagrRanks = computeOrdinalRanks(rk.avgRankByMetric.CAGR);
+  const mddRanks = computeOrdinalRanks(rk.avgRankByMetric.MDD);
+  const calRanks = computeOrdinalRanks(rk.avgRankByMetric.Calmar);
   let html = `<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr>
     <th>순위</th><th>전략</th><th class="best-col">종합 순위</th><th>CAGR 순위</th><th>MDD 순위</th><th>Calmar 순위</th>
   </tr></thead><tbody>`;
   sorted.forEach(([nm, v], i) => {
-    html += `<tr><td>${i + 1}${i === 0 ? ' 🏆' : ''}</td><td>${nm}</td><td class="best-col">${ord(v)}</td>` +
-      `<td>${ord(rk.avgRankByMetric.CAGR[nm])}</td><td>${ord(rk.avgRankByMetric.MDD[nm])}</td><td>${ord(rk.avgRankByMetric.Calmar[nm])}</td></tr>`;
+    html += `<tr><td>${i + 1}${i === 0 ? ' 🏆' : ''}</td><td>${nm}</td><td class="best-col">${i + 1}위</td>` +
+      `<td>${cagrRanks[nm]}위</td><td>${mddRanks[nm]}위</td><td>${calRanks[nm]}위</td></tr>`;
   });
   html += '</tbody></table></div>';
   return { html, sorted };
