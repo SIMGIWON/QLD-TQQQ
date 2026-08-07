@@ -1,0 +1,3472 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="QQQ 백테스트">
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232563eb'/%3E%3Ctext x='50' y='62' font-size='40' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3EQ%3C/text%3E%3C/svg%3E">
+<title>QQQ 백테스트 시뮬레이터</title>
+<style>
+:root {
+  --bg: #f7f8fa;
+  --panel: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --sub: #6b7280;
+  --blue: #2563eb;
+  --green: #16a34a;
+  --purple: #9333ea;
+  --red: #dc2626;
+  --accent: #2563eb;
+  --sans: -apple-system, 'Pretendard', 'Malgun Gothic', sans-serif;
+  --mono: 'SF Mono', 'Consolas', monospace;
+  --on-accent: #ffffff;
+  --panel2: #f3f4f6;
+  --panel3: #f8fafc;
+  --text-mid: #374151;
+  --text-weak: #4b5563;
+  --text-faint: #9ca3af;
+  --pos: #16a34a;
+  --neg: #dc2626;
+  --shadow: rgba(0,0,0,.08);
+}
+body.dark-mode {
+  --bg: #0f1420;
+  --panel: #171d2b;
+  --panel2: #232a3b;
+  --panel3: #1c2233;
+  --border: #2d3548;
+  --text: #e5e9f0;
+  --sub: #94a3b8;
+  --text-mid: #cbd5e1;
+  --text-weak: #a8b3c5;
+  --text-faint: #64748b;
+  --shadow: rgba(0,0,0,.4);
+  --blue: #60a5fa;
+  --green: #4ade80;
+  --purple: #c084fc;
+  --red: #f87171;
+  --pos: #4ade80;
+  --neg: #f87171;
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.app { display:flex; min-height:calc(100vh - 60px); transform-origin: top left; }
+.top-toolbar {
+  display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+  background:var(--panel); border-bottom:1px solid var(--border); padding:10px 16px;
+}
+.toolbar-group { display:flex; align-items:center; gap:6px; }
+.toolbar-divider { width:1px; height:20px; background:var(--border); }
+.view-ctrl-label {
+  font-size:10px; font-weight:700; color:var(--text-faint); text-transform:uppercase; letter-spacing:.03em;
+  margin-right:2px;
+}
+.top-toolbar button {
+  border:none; background:var(--panel2); border-radius:7px; padding:6px 12px; font-size:11.5px; font-weight:700;
+  color:var(--text-mid); cursor:pointer; transition:background .15s;
+}
+.top-toolbar button:hover { background:var(--border); }
+.top-toolbar button.active { background:var(--blue); color:var(--on-accent); }
+#lightModeBtn.active { background:#1e293b !important; color:#fff !important; }
+#darkModeBtn.active { background:#fbbf24 !important; color:#1e293b !important; }
+.zoom-group button {
+  width:26px; height:26px; padding:0; display:flex; align-items:center; justify-content:center; font-size:15px;
+}
+.zoom-group .zoom-label { width:40px; text-align:center; font-size:11.5px; font-weight:700; color:var(--text-mid); font-family:var(--mono); }
+.table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.results-cards { display:none; flex-direction:column; gap:10px; }
+.cmp-period-block { border:1px solid var(--border); border-radius:10px; margin-bottom:14px; overflow:hidden; }
+.cmp-period-title { background:var(--panel2); font-weight:800; font-size:13px; padding:8px 12px; color:var(--text); }
+.cmp-period-cols { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; }
+.cmp-rank-col { padding:8px 10px; }
+.cmp-rank-col-return { background:rgba(37,99,235,0.04); border-right:1px solid var(--border); }
+.cmp-rank-col-mdd { background:rgba(220,38,38,0.04); border-right:1px solid var(--border); }
+.cmp-rank-col-calmar { background:rgba(202,138,4,0.06); }
+.cmp-col-header { font-size:10.5px; font-weight:800; margin-bottom:6px; padding-bottom:4px; border-bottom:1.5px solid var(--border); }
+.cmp-rank-col-return .cmp-col-header { color:#1e3a8a; }
+.cmp-rank-col-mdd .cmp-col-header { color:#991b1b; }
+.cmp-rank-col-calmar .cmp-col-header { color:#92400e; }
+.cmp-rank-item { display:flex; justify-content:space-between; gap:8px; font-size:11.5px; padding:4px 2px; border-bottom:1px dashed var(--border); }
+.cmp-rank-item:last-child { border-bottom:none; }
+.cmp-rank-num { font-weight:700; color:var(--sub); flex-shrink:0; width:26px; }
+.cmp-rank-name { flex:1; text-align:left; }
+.cmp-rank-val { flex-shrink:0; font-family:var(--mono); font-weight:700; text-align:right; }
+.cmp-rank-sub { font-size:9.5px; color:var(--sub); font-weight:400; display:block; }
+.cmp-rank-item.cmp-rank1 .cmp-rank-num, .cmp-rank-item.cmp-rank1 .cmp-rank-val { color:var(--pos); }
+.cmp-rank-item.cmp-highlight-rebal { background:#fef9c3; border-radius:5px; padding-left:6px; margin:1px 0; }
+.cmp-empty { color:var(--text-faint); font-size:11.5px; padding:10px; }
+.cmp-total-block { border:2px solid #ca8a04; border-radius:10px; margin-bottom:16px; overflow:hidden; }
+.cmp-total-block .cmp-period-title { background:#fef9c3; color:#92400e; }
+.cmp-total-block .cmp-rank-col-return { background:rgba(37,99,235,0.07); }
+.cmp-total-block .cmp-rank-col-mdd { background:rgba(220,38,38,0.07); }
+.cmp-total-block .cmp-rank-col-calmar { background:rgba(202,138,4,0.10); }
+.cmp-analysis { font-size:12.5px; line-height:1.8; background:var(--panel3); border:1px solid var(--border); border-radius:10px; padding:16px 18px; }
+.cmp-analysis b { color:var(--blue); }
+.cmp-legend { font-size:10.5px; color:var(--sub); margin-bottom:10px; }
+.cmp-legend .cmp-legend-swatch { display:inline-block; width:10px; height:10px; background:#fef9c3; border-radius:2px; vertical-align:middle; margin:0 4px 0 10px; }
+@media (max-width: 900px) {
+  .cmp-period-cols { grid-template-columns:1fr; }
+  .cmp-rank-col-return, .cmp-rank-col-mdd { border-right:none; border-bottom:1px solid var(--border); }
+}
+.result-card { border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+.result-card .rc-head { display:flex; align-items:center; gap:6px; font-size:13.5px; font-weight:700; margin-bottom:8px; }
+.result-card .rc-row { display:flex; justify-content:space-between; font-size:12.5px; padding:5px 0; border-top:1px solid #f1f5f9; }
+.result-card .rc-row span { color:var(--sub); }
+.result-card .rc-row b { font-family:var(--mono); }
+body.mobile-mode .app { flex-direction:column !important; }
+body.mobile-mode .sidebar { width:100% !important; height:auto !important; position:static !important; border-right:none; border-bottom:2px solid var(--border); }
+body.mobile-mode .main { padding:12px 10px; }
+body.mobile-mode table#resultsTable { display:none; }
+body.mobile-mode .results-cards { display:flex; }
+body.mobile-mode .chart-title { font-size:15px; }
+body.mobile-mode .chart-top { flex-direction:column; align-items:flex-start; }
+body.mobile-mode .chart-actions { width:100%; gap:6px; }
+body.mobile-mode .dev-toggle-btn, body.mobile-mode .mini-btn { font-size:11px; padding:6px 9px; }
+body.mobile-mode .log-toggle { font-size:11px; padding:6px 2px; }
+body.mobile-mode .rebal-table { min-width:640px; }
+body.mobile-mode .top-toolbar { gap:10px; padding:8px 10px; }
+.sidebar {
+  width: 300px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--border);
+  padding: 18px 16px; overflow-y:auto; height:100vh; position:sticky; top:0;
+}
+.main { flex:1; padding: 18px 20px; min-width:0; }
+h2 { font-size:14px; font-weight:700; margin:0 0 12px 0; }
+.tabbar { display:grid; grid-template-columns: repeat(2, 1fr); background:var(--panel2); border-radius:8px; padding:3px; margin-bottom:16px; gap:4px; }
+.tabbar button {
+  border:none; background:none; padding:9px 4px; font-size:11px; font-weight:600; line-height:1.3;
+  color:var(--sub); border-radius:6px; cursor:pointer; font-family:var(--sans); white-space:normal; word-break:keep-all;
+}
+.tabbar button.active { background:var(--panel); color:var(--text); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+.tabbar button:last-child:nth-child(odd) { grid-column: span 2; }
+.section { margin-bottom: 18px; }
+.section-title { font-size:11px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.opt-btn {
+  border:1.5px solid var(--border); background:var(--panel); border-radius:7px; padding:9px 6px;
+  font-size:12.5px; font-weight:600; color:var(--text-mid); cursor:pointer; text-align:center; font-family:var(--sans);
+}
+.opt-btn.active { background:var(--blue); border-color:var(--blue); color:var(--on-accent); }
+.opt-btn.disabled { opacity:.4; cursor:not-allowed; }
+.qp-btn { font-size:11px; padding:8px 2px; }
+.field { margin-bottom:10px; }
+.field label { display:block; font-size:11.5px; color:var(--sub); margin-bottom:4px; font-weight:600; }
+.field input, .field select {
+  width:100%; border:1.5px solid var(--border); border-radius:7px; padding:8px 10px;
+  font-size:13px; font-family:var(--mono); color:var(--text); background:var(--panel);
+}
+.field input:focus, .field select:focus { outline:none; border-color:var(--blue); }
+.readonly-box {
+  background:var(--panel2); border:1.5px solid var(--border); border-radius:7px; padding:8px 10px;
+  font-size:13px; font-family:var(--mono); color:var(--text-mid); font-weight:700;
+}
+.sub-hint { font-size:11px; color:var(--sub); margin-top:5px; font-family:var(--mono); }
+.unit-toggle-row { display:flex; gap:4px; margin-bottom:5px; }
+.unit-btn { font-size:10.5px; padding:3px 11px; border-radius:6px; border:1px solid var(--border); background:var(--panel); color:var(--sub); cursor:pointer; font-weight:700; }
+.unit-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+.rolling-explain { font-size:11px; color:var(--sub); line-height:1.6; margin-bottom:10px; background:var(--panel2); border-radius:8px; padding:10px 12px; }
+.rank-period { font-size:12px; color:var(--sub); margin-bottom:14px; font-family:var(--mono); }
+.rank-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.rank-item { display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+.rank-item-1 { border-color:#eab308; background:rgba(234,179,8,0.08); }
+.rank-num { font-family:var(--mono); font-weight:800; font-size:18px; color:var(--sub); width:28px; flex-shrink:0; text-align:center; }
+.rank-item-1 .rank-num { color:#eab308; }
+.rank-body { flex:1; min-width:0; }
+.rank-name { font-weight:700; font-size:13.5px; margin-bottom:2px; }
+.rank-final { font-family:var(--mono); font-size:12px; color:var(--sub); margin-bottom:5px; }
+.rank-stats { display:flex; gap:14px; font-size:11.5px; color:var(--sub); flex-wrap:wrap; }
+.rank-stats b { font-family:var(--mono); color:var(--text); }
+.rank-pos { color:var(--pos) !important; }
+.rank-neg { color:var(--neg) !important; }
+.rank-comment { background:var(--panel3); border:1px solid var(--border); border-radius:10px; padding:14px 16px; font-size:12.5px; line-height:1.7; }
+.rank-note { font-size:10.5px; color:var(--text-faint); margin-top:8px; }
+.rank-empty { color:var(--text-faint); font-size:12px; padding:20px; text-align:center; }
+.sidebar-divider { height:1px; background:var(--border); margin:20px 0; }
+.wf-grid-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px; }
+#rollingStaleBanner { background:rgba(234,179,8,0.12); border:1px solid #eab308; color:#a16207; font-size:11px; line-height:1.6; padding:10px 12px; border-radius:8px; margin-bottom:12px; }
+body.dark-mode #rollingStaleBanner { color:#facc15; }
+#rollingResultsBody.is-stale { opacity:0.45; filter:grayscale(40%); pointer-events:none; }
+.rolling-progress-bar { height:8px; background:var(--panel2); border-radius:4px; overflow:hidden; }
+.rolling-progress-fill { height:100%; width:0%; background:#7c3aed; transition:width 0.2s; }
+.rolling-progress-text { font-size:11px; color:var(--sub); margin-top:6px; text-align:center; }
+.rolling-table-block { margin-bottom:14px; }
+.rolling-table-title { font-size:12px; font-weight:800; color:var(--text); margin-bottom:6px; }
+.rolling-table-desc { font-size:10px; font-weight:400; color:var(--text-faint); margin-left:8px; }
+.rolling-table-scroll { overflow-x:auto; }
+.rolling-table { width:100%; border-collapse:collapse; font-size:10px; font-family:var(--mono); }
+.rolling-table th, .rolling-table td { padding:5px 4px; text-align:center; border:1px solid var(--border); white-space:nowrap; }
+.rolling-table thead th { background:var(--panel2); font-weight:700; font-size:9.5px; color:var(--sub); font-family:-apple-system,sans-serif; }
+.rolling-table td:first-child, .rolling-table th:first-child { text-align:left; font-weight:700; font-family:-apple-system,sans-serif; font-size:10.5px; min-width:76px; }
+.rolling-table .best-col { background:rgba(124,58,237,0.08); }
+.detail-btn {
+  width:100%; background:#eef2ff; border:1.5px solid var(--border); color:#4338ca; border-radius:7px;
+  padding:10px; font-size:13px; font-weight:700; cursor:pointer; font-family:var(--sans);
+}
+.detail-btn:hover { background:#e0e7ff; }
+.dev-toggle-btn { font-size:11.5px; border:1px solid var(--border); background:var(--panel); border-radius:6px; padding:5px 10px; cursor:pointer; color:var(--text-mid); white-space:nowrap; }
+.dev-toggle-btn.active { background:var(--blue); border-color:var(--blue); color:var(--on-accent); }
+
+/* modal */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:2000;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.modal-box {
+  background:var(--panel); border-radius:14px; width:100%; max-width:980px; max-height:90vh;
+  display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.3);
+}
+.modal-header {
+  display:flex; justify-content:space-between; align-items:center; padding:16px 22px;
+  border-bottom:1px solid var(--border); font-size:15px; font-weight:700;
+}
+.modal-header button { border:none; background:none; font-size:18px; cursor:pointer; color:var(--sub); }
+.modal-header-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.modal-zoom-ctrl {
+  display:flex; align-items:center; gap:2px; background:var(--panel2); border:1px solid var(--border);
+  border-radius:7px; padding:3px;
+}
+.modal-zoom-ctrl button {
+  width:24px; height:24px; padding:0; border-radius:5px; font-size:13px !important; font-weight:700;
+  color:var(--text-mid) !important; display:flex; align-items:center; justify-content:center; background:var(--panel);
+}
+.modal-zoom-ctrl button:hover { background:var(--border); }
+.modal-zoom-ctrl .zoom-label { width:36px; text-align:center; font-size:10.5px; font-weight:700; color:var(--text-mid); font-family:var(--mono); }
+.modal-box { transform-origin: top center; }
+.modal-body { padding:18px 22px; overflow-y:auto; }
+.modal-note { font-size:12.5px; color:var(--text-weak); background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:10px 12px; margin-bottom:16px; line-height:1.6; }
+.zone-bound-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
+.zone-bound-row .field label { font-size:11px; }
+.boundary-header-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.boundary-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+.boundary-chip {
+  display:flex; align-items:center; gap:6px; background:var(--panel3); border:1.5px solid var(--border);
+  border-radius:20px; padding:5px 6px 5px 12px;
+}
+.boundary-chip.fixed { background:var(--panel2); }
+.boundary-chip input {
+  width:52px; border:none; background:none; text-align:center; font-family:var(--mono);
+  font-size:13px; font-weight:700; color:var(--text);
+}
+.boundary-chip input:disabled { color:var(--text-faint); }
+.boundary-chip .pct-sign { font-size:11px; color:var(--text-faint); margin-right:2px; }
+.boundary-chip .chip-remove {
+  width:18px; height:18px; border-radius:50%; border:none; background:#fee2e2; color:#dc2626;
+  font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;
+}
+.boundary-chip .chip-lock { font-size:11px; color:var(--text-faint); padding:0 4px; }
+.add-btn {
+  background:#eef2ff; border:1px solid var(--border); color:#4338ca; border-radius:7px;
+  padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer;
+}
+.add-btn:hover { background:#e0e7ff; }
+.table-footer-row { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+.reset-btn {
+  background:none; border:none; color:var(--sub); font-size:11.5px; cursor:pointer; text-decoration:underline;
+}
+.reset-btn:hover { color:#dc2626; }
+.zone-row-remove {
+  width:20px; height:20px; border-radius:50%; border:none; background:#fee2e2; color:#dc2626;
+  font-size:12px; cursor:pointer;
+}
+.rebal-table { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:16px; }
+.rebal-table th {
+  background:var(--panel2); padding:8px 6px; font-size:10.5px; font-weight:700; color:var(--text-weak);
+  border:1px solid var(--border); text-align:center; line-height:1.4;
+}
+.rebal-table td { border:1px solid var(--border); padding:6px; text-align:center; font-family:var(--sans); }
+.rebal-table td:nth-child(2) { text-align:left; font-weight:600; font-size:11.5px; }
+.rebal-table input {
+  width:70px; text-align:center; border:1.5px solid var(--border); border-radius:6px; padding:6px 4px;
+  font-family:var(--mono); font-size:12.5px; background:var(--panel); color:var(--text);
+}
+.rebal-table .dash { color:#cbd5e1; }
+.example-box { background:var(--panel3); border:1px solid var(--border); border-radius:9px; padding:14px 16px; }
+.example-box .ex-title { font-size:12px; font-weight:700; color:var(--text-mid); margin-bottom:10px; }
+.example-item { font-size:12px; color:var(--text-mid); line-height:1.7; margin-bottom:8px; padding-left:10px; border-left:3px solid var(--blue); }
+.example-item b { color:var(--text); }
+.modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:14px 22px; border-top:1px solid var(--border); }
+.freq-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
+.preset-list { display:flex; flex-direction:column; gap:6px; }
+.preset-item {
+  background:#ecfdf5; border:1px solid #a7f3d0; color:#047857; border-radius:7px;
+  padding:8px 10px; font-size:12px; font-weight:600; cursor:pointer; text-align:left;
+}
+.preset-item:hover { background:#d1fae5; }
+.preset-item.active { background:#059669; border-color:#059669; color:#ffffff; }
+.checkbox-row { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--sub); margin-top:4px; }
+.run-btn {
+  width:100%; background:var(--blue); color:var(--on-accent); border:none; border-radius:8px;
+  padding:12px; font-size:14px; font-weight:700; cursor:pointer; margin-top:6px;
+}
+.run-btn:hover { background:#1d4ed8; }
+.card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:14px; }
+.chart-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:10px; }
+.chart-title { font-size:14px; font-weight:700; flex-shrink:0; }
+.chart-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.mini-btn { font-size:11.5px; border:1px solid var(--border); background:var(--panel); border-radius:6px; padding:5px 10px; cursor:pointer; color:var(--text-mid); white-space:nowrap; }
+.mini-btn:hover { border-color:var(--blue); color:var(--blue); }
+.log-toggle { display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--sub); cursor:pointer; white-space:nowrap; }
+canvas { width:100%; display:block; }
+table { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; }
+th { text-align:right; color:var(--sub); font-weight:600; font-size:10.5px; text-transform:uppercase;
+     padding:8px 10px; border-bottom:2px solid var(--border); }
+th:first-child, td:first-child { text-align:left; }
+td { text-align:right; padding:11px 10px; font-family:var(--mono); border-bottom:1px solid var(--border); }
+tr:last-child td { border-bottom:none; }
+.lev-badge { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+.pos { color:var(--green); } .neg { color:var(--red); }
+.final-asset { font-weight:700; }
+.period-note { font-size:11.5px; color:var(--sub); margin-bottom:10px; font-family:var(--mono); }
+.disclaimer { font-size:10.5px; color:var(--text-faint); line-height:1.7; margin-top:4px; }
+.info-card { background:var(--panel3); border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:14px; }
+.info-card-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+.glossary-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+.glossary-item { background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:12px 14px; }
+.glossary-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.glossary-badge {
+  width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:800; color:var(--on-accent); flex-shrink:0;
+}
+.glossary-name { font-size:13px; font-weight:700; color:var(--text); }
+.glossary-desc { font-size:11.5px; color:var(--text-weak); line-height:1.55; }
+.note-card { background:var(--panel3); border:1px solid var(--border); border-radius:9px; padding:12px 14px; }
+.note-title { font-size:11px; font-weight:700; color:var(--sub); margin-bottom:6px; display:flex; align-items:center; gap:5px; }
+.note-list { margin:0; padding-left:16px; }
+.note-list li { font-size:11px; color:var(--sub); line-height:1.7; }
+@media (max-width: 700px) {
+  .glossary-grid { grid-template-columns:1fr; }
+}
+@media (max-width: 860px) {
+  .app { flex-direction:column; }
+  .sidebar { width:100%; height:auto; position:relative; border-right:none; border-bottom:1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+<div class="top-toolbar">
+  <div class="toolbar-group">
+    <span class="view-ctrl-label">화면</span>
+    <button id="pcModeBtn" class="active">PC</button>
+    <button id="mobileModeBtn">모바일</button>
+  </div>
+  <div class="toolbar-divider"></div>
+  <div class="toolbar-group">
+    <span class="view-ctrl-label">테마</span>
+    <button id="lightModeBtn" class="active">☀ 화이트</button>
+    <button id="darkModeBtn">☾ 다크</button>
+  </div>
+  <div class="toolbar-divider"></div>
+  <div class="toolbar-group zoom-group">
+    <span class="view-ctrl-label">화면크기</span>
+    <button id="zoomOut" title="축소">−</button>
+    <span class="zoom-label" id="zoomLabel">100%</span>
+    <button id="zoomIn" title="확대">+</button>
+    <button id="zoomReset" title="100%로 초기화">⟲</button>
+  </div>
+</div>
+<div class="app">
+  <div class="sidebar">
+    <h2>투자 조건 설정</h2>
+    <div class="tabbar">
+      <button id="tabRebal" class="active">리밸런싱비교(QLD_3종)</button>
+      <button id="tabV2">리밸런싱비교(QLD/TQQQ_7종)</button>
+      <button id="tabDca">적립식(QQQ,QLD,TQQQ)</button>
+      <button id="tabLump">거치식(QQQ,QLD,TQQQ)</button>
+    </div>
+
+    <div class="section" id="levSection" style="display:none;">
+      <div class="section-title">레버리지</div>
+      <div class="grid2" id="levButtons" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <div class="opt-btn" data-lev="1">1배</div>
+        <div class="opt-btn" data-lev="2">2배</div>
+        <div class="opt-btn" data-lev="3">3배</div>
+        <div class="opt-btn active" data-lev="all">모두비교</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="field">
+        <label>총 투자예산 (원)</label>
+        <input type="text" inputmode="numeric" id="initAmount" value="10,000,000">
+      </div>
+    </div>
+
+    <div class="section" id="dcaFields" style="display:none;">
+      <div class="field">
+        <label>매회 적립금</label>
+        <div class="unit-toggle-row" data-target="contribAmount">
+          <button class="unit-btn active" data-unit="amount">원</button>
+          <button class="unit-btn" data-unit="percent">% (총예산 대비)</button>
+        </div>
+        <input type="text" inputmode="numeric" id="contribAmount" value="1,000,000">
+        <div class="sub-hint" id="contribAmountHint"></div>
+      </div>
+      <div class="field">
+        <label>적립 주기</label>
+        <div class="freq-row" id="freqButtons">
+          <div class="opt-btn" data-freq="daily">매일</div>
+          <div class="opt-btn active" data-freq="monthly">매월</div>
+          <div class="opt-btn" data-freq="weekly">매주</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>연간 적립금 증액률 (%)</label>
+        <input type="number" id="growthRate" value="0" step="0.5">
+      </div>
+    </div>
+
+    <div class="section" id="rebalFields">
+      <div class="field">
+        <label>① QLD 거치식 (시작일에 총액 한 번에 매수)</label>
+        <div class="readonly-box" id="lumpDisplay">₩10,000,000</div>
+      </div>
+      <div class="field">
+        <label>② QLD 일일 분할 매수</label>
+        <div class="unit-toggle-row" data-target="dcaCompareDaily">
+          <button class="unit-btn active" data-unit="percent">%</button>
+          <button class="unit-btn" data-unit="amount">원 (하루)</button>
+        </div>
+        <input type="text" inputmode="decimal" id="dcaCompareDaily" value="5">
+        <div class="sub-hint" id="dcaCompareDailyWon">→ 하루 ₩500,000씩 매수</div>
+        <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
+      </div>
+      <div class="field">
+        <label>③ QLD 200일 이격도 리밸런싱</label>
+        <button class="detail-btn" id="openRebalDetail">⚙ 세부설정</button>
+      </div>
+    </div>
+
+    <div class="section" id="v2Fields" style="display:none;">
+      <div class="section-title" style="color:var(--blue);">QLD (2배)</div>
+      <div class="field">
+        <label>① QLD 거치식</label>
+        <div class="readonly-box" id="lumpDisplayQld">₩10,000,000</div>
+      </div>
+      <div class="field">
+        <label>② QLD 적립식 — 일일 매수</label>
+        <div class="unit-toggle-row" data-target="dcaCompareDailyQld">
+          <button class="unit-btn active" data-unit="percent">%</button>
+          <button class="unit-btn" data-unit="amount">원 (하루)</button>
+        </div>
+        <input type="text" inputmode="decimal" id="dcaCompareDailyQld" value="5">
+        <div class="sub-hint" id="dcaCompareDailyQldWon">→ 하루 ₩500,000씩 매수</div>
+        <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
+      </div>
+      <div class="field">
+        <label>③ QLD 200일 이격도 리밸런싱</label>
+        <button class="detail-btn" id="openRebalDetailQld">⚙ QLD 세부설정</button>
+      </div>
+
+      <div class="section-title" style="color:var(--purple); margin-top:16px;">TQQQ (3배)</div>
+      <div class="field">
+        <label>④ TQQQ 거치식</label>
+        <div class="readonly-box" id="lumpDisplayTqqq">₩10,000,000</div>
+      </div>
+      <div class="field">
+        <label>⑤ TQQQ 적립식 — 일일 매수</label>
+        <div class="unit-toggle-row" data-target="dcaCompareDailyTqqq">
+          <button class="unit-btn active" data-unit="percent">%</button>
+          <button class="unit-btn" data-unit="amount">원 (하루)</button>
+        </div>
+        <input type="text" inputmode="decimal" id="dcaCompareDailyTqqq" value="5">
+        <div class="sub-hint" id="dcaCompareDailyTqqqWon">→ 하루 ₩500,000씩 매수</div>
+        <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
+      </div>
+      <div class="field">
+        <label>⑥ TQQQ 200일 이격도 리밸런싱</label>
+        <button class="detail-btn" id="openRebalDetailTqqq">⚙ TQQQ 세부설정</button>
+      </div>
+
+      <div class="section-title" style="color:#ca8a04; margin-top:16px;">⑦ 하이브리드 (QLD주력+90%미만만 TQQQ)</div>
+      <div style="font-size:10px;color:var(--sub);line-height:1.5;margin-bottom:8px;">
+        평소(100~120%/90~100%)엔 QLD로 매수하고, <b>90%미만(급락)에서만 TQQQ로 매수</b>해서 낙폭은 QLD 수준으로 억제하면서 수익은 더 확보하는 전략입니다.
+      </div>
+      <div class="field">
+        <button class="detail-btn" id="openRebalDetailHybrid">⚙ 하이브리드 세부설정</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="field">
+        <label>시작일</label>
+        <input type="date" id="startDate">
+      </div>
+      <div class="field">
+        <label>종료일</label>
+        <input type="date" id="endDate">
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">빠른 기간 선택 (오늘 기준)</div>
+      <div class="grid2" id="quickPeriodButtons" style="grid-template-columns:repeat(4,1fr);">
+        <div class="opt-btn qp-btn" data-months="1">1개월</div>
+        <div class="opt-btn qp-btn" data-months="3">3개월</div>
+        <div class="opt-btn qp-btn" data-months="6">6개월</div>
+        <div class="opt-btn qp-btn" data-months="12">1년</div>
+        <div class="opt-btn qp-btn" data-months="24">2년</div>
+        <div class="opt-btn qp-btn" data-months="36">3년</div>
+        <div class="opt-btn qp-btn" data-months="48">4년</div>
+        <div class="opt-btn qp-btn" data-months="60">5년</div>
+        <div class="opt-btn qp-btn" data-months="72">6년</div>
+        <div class="opt-btn qp-btn" data-months="84">7년</div>
+        <div class="opt-btn qp-btn" data-months="96">8년</div>
+        <div class="opt-btn qp-btn" data-months="108">9년</div>
+        <div class="opt-btn qp-btn" data-months="120">10년</div>
+        <div class="opt-btn qp-btn" data-months="180">15년</div>
+        <div class="opt-btn qp-btn" data-months="240">20년</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="checkbox-row">
+        <input type="checkbox" id="feeCheck">
+        <label for="feeCheck">수수료/비용 반영 (매매 시 0.05%)</label>
+      </div>
+    </div>
+
+    <button class="run-btn" id="runBtn">🔄 업데이트 (새로고침)</button>
+    <div style="font-size:10.5px;color:var(--text-faint);text-align:center;margin-top:6px;line-height:1.5;">값을 바꾸면 자동 반영돼요. 대기 없이 바로 보고 싶을 때만 누르세요.</div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="section">
+      <div class="section-title">📊 롤링 백테스트</div>
+      <div class="rolling-explain">
+        특정 한 구간만 보면 "우연히 잘 맞은 시점"일 수 있어요. <b>아래 시작일부터 매월 시작점을 옮겨가며</b>, 1년부터 (오늘−시작일) 최대 보유기간까지 <b>1년 단위로 전부</b> 돌려서 수익률·MDD·칼마비율을 냅니다. (2010년 이전 QLD·TQQQ는 보정합성 데이터)
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label style="font-size:11px;">롤링 시작일 (이 날짜부터 최신 데이터까지 매년 늘려가며 검증)</label>
+        <input type="date" id="rollingStartDate" value="2003-01-01">
+        <div class="sub-hint" id="rollingHorizonPreview" style="color:var(--text-faint);"></div>
+      </div>
+      <button class="run-btn" id="rollingRunBtn" style="background:#7c3aed;">📊 롤링 백테스트 실행</button>
+      <div id="rollingProgress" style="display:none;margin-top:10px;">
+        <div class="rolling-progress-bar"><div class="rolling-progress-fill" id="rollingProgressFill"></div></div>
+        <div class="rolling-progress-text" id="rollingProgressText">시작 중...</div>
+      </div>
+      <div id="rollingResults" style="display:none;margin-top:12px;">
+        <div id="rollingStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
+        <div id="rollingResultsBody"></div>
+        <button class="run-btn" id="rollingPdfBtn" style="background:#1f2937;margin-top:10px;">⬇ 결과 리포트 다운로드 (다크)</button>
+        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">파일 다운로드 후 열면, 그 안에서 PDF로 저장할 수 있어요</div>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="section">
+      <div class="section-title">🔬 Walk-Forward 검증</div>
+      <div class="rolling-explain">
+        지금까지 찾은 세부값은 "전체 기간을 다 보고" 찾은 값이라, 미래에도 통할지는 검증이 안 됐어요. <b>훈련 구간에서만 최적값을 다시 찾고, 그 값을 바로 다음 검증 구간(못 본 데이터)에 적용</b>해서 실전처럼 시험합니다. 이걸 데이터 끝까지 반복해서, "재최적화"가 그냥 "지금 설정 고정"보다 나은지 비교합니다.
+      </div>
+      <div class="wf-grid-row">
+        <div class="field"><label style="font-size:11px;">훈련 기간(년)</label><input type="number" id="wfTrainYears" value="5" min="2" max="15" step="1"></div>
+        <div class="field"><label style="font-size:11px;">검증 기간(년)</label><input type="number" id="wfTestYears" value="2" min="1" max="10" step="1"></div>
+      </div>
+      <div class="sub-hint" id="wfFoldPreview" style="color:var(--text-faint);margin-bottom:10px;"></div>
+      <button class="run-btn" id="wfRunBtn" style="background:#0ea5e9;">🔬 Walk-Forward 실행</button>
+      <div id="wfProgress" style="display:none;margin-top:10px;">
+        <div class="rolling-progress-bar"><div class="rolling-progress-fill" id="wfProgressFill" style="background:#0ea5e9;"></div></div>
+        <div class="rolling-progress-text" id="wfProgressText">시작 중...</div>
+      </div>
+      <div id="wfResults" style="display:none;margin-top:12px;">
+        <div id="wfStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
+        <div id="wfResultsBody"></div>
+        <button class="run-btn" id="wfPdfBtn" style="background:#1f2937;margin-top:10px;">⬇ 결과 리포트 다운로드 (다크)</button>
+        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">파일 다운로드 후 열면, 그 안에서 PDF로 저장할 수 있어요</div>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="section">
+      <div class="section-title">🎲 블록 부트스트랩 검증</div>
+      <div class="rolling-explain">
+        지금 설정으로 실제 있었던 매일의 수익률 흐름을, <b>N일짜리 블록으로 잘라서 무작위로 다시 이어붙여</b> "일어나지 않았을 수도 있는 대체 역사"를 수백~수천 개 만들어 테스트합니다. 결과가 넓게 퍼지면 "운이 크게 작용한다"는 뜻이고, 좁게 모이면 "우연이 아니라 안정적인 결과"라는 뜻이에요.
+      </div>
+      <div class="wf-grid-row">
+        <div class="field"><label style="font-size:11px;">블록 길이(거래일)</label>
+          <select id="bbBlockDays"><option value="20">20일</option><option value="60" selected>60일</option><option value="120">120일</option></select>
+        </div>
+        <div class="field"><label style="font-size:11px;">보유기간(년)</label><input type="number" id="bbHoldYears" value="5" min="1" max="20" step="1"></div>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label style="font-size:11px;">반복 횟수</label>
+        <select id="bbIterations"><option value="300">300회 (빠름)</option><option value="1000" selected>1,000회 (권장)</option><option value="3000">3,000회 (느림, 정밀)</option></select>
+      </div>
+      <button class="run-btn" id="bbRunBtn" style="background:#db2777;">🎲 블록 부트스트랩 실행</button>
+      <div id="bbProgress" style="display:none;margin-top:10px;">
+        <div class="rolling-progress-bar"><div class="rolling-progress-fill" id="bbProgressFill" style="background:#db2777;"></div></div>
+        <div class="rolling-progress-text" id="bbProgressText">시작 중...</div>
+      </div>
+      <div id="bbResults" style="display:none;margin-top:12px;">
+        <div id="bbStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
+        <div id="bbResultsBody"></div>
+        <button class="run-btn" id="bbPdfBtn" style="background:#1f2937;margin-top:10px;">⬇ 결과 리포트 다운로드 (다크)</button>
+        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">파일 다운로드 후 열면, 그 안에서 PDF로 저장할 수 있어요</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="card" id="rankCard" style="display:none;">
+      <div class="chart-top">
+        <div class="chart-title">📊 순위 비교 (현재 선택 기간 기준)</div>
+        <div class="chart-actions">
+          <button class="mini-btn" id="rankBackBtn">📈 차트로 돌아가기</button>
+        </div>
+      </div>
+      <div id="rankContent"></div>
+    </div>
+
+    <div class="card" id="chartCard">
+      <div class="chart-top">
+        <div class="chart-title" id="chartTitle">QQQ 투자 시뮬레이션</div>
+        <div class="chart-actions">
+          <button class="dev-toggle-btn" id="devToggleBtn" style="display:none;">200일 이격도 보기</button>
+          <button class="dev-toggle-btn" id="devToggleBtnQld" style="display:none;">QLD 200일 이격도</button>
+          <button class="dev-toggle-btn" id="devToggleBtnTqqq" style="display:none;">TQQQ 200일 이격도</button>
+          <button class="dev-toggle-btn" id="devToggleBtnHybrid" style="display:none;">하이브리드 200일 이격도</button>
+          <span class="log-toggle" id="scaleToggle"><input type="checkbox" id="logCheck">로그 스케일</span>
+          <button class="mini-btn" id="saveImgBtn">이미지 저장</button>
+          <button class="mini-btn" id="rebalDetailCsvBtn" style="display:none;">일자별 상세검증 엑셀 다운로드</button>
+          <button class="mini-btn" id="rankToggleBtn">📊 순위비교 보기</button>
+        </div>
+      </div>
+      <div class="period-note" id="periodNote"></div>
+      <canvas id="chart" width="1760" height="420"></canvas>
+    </div>
+
+    <div class="card" id="resultsCard">
+      <div class="table-scroll">
+      <table id="resultsTable">
+        <thead>
+          <tr><th id="strategyHeader">레버리지</th><th>최종자산 (세전)</th><th>총수익률</th><th>최종자산 (세후)</th><th>세후수익률</th><th>CAGR</th><th>MDD</th><th>샤프지수</th></tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+      </div>
+      <div class="results-cards" id="resultsCards"></div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">📖 용어 설명</div>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-head">
+            <div class="glossary-badge" style="background:#2563eb;">%</div>
+            <div class="glossary-name">CAGR (연평균 복리 성장률)</div>
+          </div>
+          <div class="glossary-desc">매년 몇 %씩 복리로 불어난 셈인지를 나타내는 값. 예를 들어 10년간 총수익률 +300%는 매년 약 15%씩 복리로 늘어난 것과 같습니다. 기간이 다른 투자끼리 비교할 때 유용해요.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-head">
+            <div class="glossary-badge" style="background:#dc2626;">▼</div>
+            <div class="glossary-name">MDD (최대낙폭)</div>
+          </div>
+          <div class="glossary-desc">역대 최고점에서 얼마나 크게 떨어져봤는지. MDD -50%는 어느 시점에 자산이 고점 대비 반토막 났었다는 뜻. 레버리지 상품일수록 이 값이 훨씬 커지는 경향이 있어요.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-head">
+            <div class="glossary-badge" style="background:#16a34a;">⚖</div>
+            <div class="glossary-name">샤프지수</div>
+          </div>
+          <div class="glossary-desc">위험(변동성) 대비 얼마나 효율적으로 벌었는지. 숫자가 클수록 적게 흔들리면서 많이 번 것. 보통 1.0 이상이면 양호, 2.0 이상이면 상당히 우수한 수준으로 봅니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note-card">
+      <div class="note-title">ℹ️ 참고 사항</div>
+      <ul class="note-list">
+        <li>데이터: QQQ 실제 종가(2000.1.3~) 기준. 2배/3배는 일일 리밸런싱 레버리지 가정 (실제 QLD/TQQQ 상장 이후 구간은 실제 종가로 보정)</li>
+        <li>세후수익률: 해외ETF 양도소득세 기준(수익 250만원 공제 후 22%, 1회 과세) 근사치이며 실제 세금은 개인 상황에 따라 다를 수 있음</li>
+        <li>적립식 CAGR은 단순연환산 근사치 (자금흐름을 고려한 정밀 IRR 아님)</li>
+        <li>수수료/세금 외 <b>슬리피지</b>(매수·매도 버튼을 누른 시점의 가격과 실제로 체결되는 가격 사이의 차이 — 거래량이 적거나 가격이 급하게 움직일 때 원하던 가격보다 불리하게 체결되는 것)는 미반영 · 과거 성과가 미래 수익을 보장하지 않음</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="rebalModalOverlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div id="rebalModalTitle">③ QQQ 200일 이격도 기준 리밸런싱 — 세부설정</div>
+      <div class="modal-header-right">
+        <div class="modal-zoom-ctrl">
+          <button id="modalZoomOut" title="축소">−</button>
+          <span class="zoom-label" id="modalZoomLabel">100%</span>
+          <button id="modalZoomIn" title="확대">+</button>
+          <button id="modalZoomReset" title="100%로 초기화">⟲</button>
+        </div>
+        <button id="closeRebalModal">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-note">
+        QQQ 200일 이격도(현재가가 200일 이동평균선 대비 몇 %인지)를 기준으로 5개 구간을 나누고, 구간별로 <b>매도 / 거치매수 / 분할매수</b> 규칙을 다르게 적용합니다.
+        값을 바꾸면 아래 예시 금액이 실시간으로 바뀌니 참고해서 나만의 전략을 만들어보세요.
+      </div>
+
+      <div class="section-title">구간 경계값 (%) — 100%는 200일선 자체라 고정</div>
+      <div class="boundary-chip-row" id="boundaryChipRow"></div>
+
+      <div class="section-title" style="margin-top:16px;">거치매수 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
+      <div class="field" style="max-width:220px;">
+        <input type="number" id="depositCooldownDays" value="30" step="1">
+      </div>
+      <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
+        구간에 "새로 진입"할 때마다 거치매수하는 게 아니라, <b>아래 표에서 구간별로 설정한 예수금 비율 이상 남아있을 때만</b> 발동합니다. 한 번 발동하면 그 뒤로는 조건을 다시 만족해도 <b>이 대기일수가 지나기 전엔(같은 구간 기준) 재발동하지 않고</b>, 그 사이엔 분할매수만 계속됩니다.
+      </div>
+
+      <div class="section-title">주식매도 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
+      <div class="field" style="max-width:220px;">
+        <input type="number" id="sellCooldownDays" value="30" step="1">
+      </div>
+      <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
+        120%·130%이상 구간에 진입할 때마다 매도하는 게 아니라, <b>마지막 매도 후 이 대기일수가 지나야만</b> 재발동합니다. 짧은 기간에 구간 경계를 왔다갔다(왕복)해도 매도가 여러 번 겹쳐 발동하지 않도록 막아줍니다.
+      </div>
+
+      <div class="table-scroll">
+      <table class="rebal-table">
+        <thead>
+          <tr>
+            <th>No</th><th>구간</th>
+            <th>매도비중<br>(주식비중 %)</th>
+            <th>거치매수<br>(전체자산 %)</th>
+            <th>거치매수 발동<br>예수금 조건(%)</th>
+            <th>분할매수 예산<br>(전체자산 %)</th>
+            <th>일일분할매수<br>비율(%)</th>
+            <th>분할매수 중단기준<br>(현금보유율 %)</th>
+          </tr>
+        </thead>
+        <tbody id="rebalTableBody"></tbody>
+      </table>
+      </div>
+      <div class="table-footer-row">
+        <button class="reset-btn" id="resetDefaultBtn">↺ 처음 기본값으로 초기화</button>
+      </div>
+      <div style="font-size:10.5px;color:var(--sub);margin:10px 0 16px 0;line-height:1.6;">
+        모든 칸을 자유롭게 입력할 수 있어요. 값을 0으로 두면 해당 규칙은 그 구간에서 작동하지 않습니다 (예: 매도비중 0 = 매도 안 함, 분할매수 예산 0 = 분할매수 안 함). "+ 구간 추가"는 지금 가장 넓은 구간을 반으로 나눕니다 — 나눈 뒤 경계값과 규칙을 원하는 대로 다시 조정하세요. <b>값을 바꾸면 아래 예시와 뒤의 차트·표가 실시간으로 같이 바뀝니다.</b>
+        <br><br>⚙️ <b>자동 동기화</b>: ① 어떤 구간의 "분할매수 예산(전체자산 %)"을 입력하면, 같은 구간의 "분할매수 중단기준(현금보유율%)"이 자동으로 (100-분할매수예산)으로 채워집니다 (이 구간 진입 전엔 0%에서 시작한다고 가정한 기본값이라, 이미 앞 구간에서 사둔 게 있는 구간은 필요시 직접 다시 조정하세요). ② 어떤 구간의 "분할매수 중단기준"이 바뀌면(위 ①로 자동 변경된 경우 포함), 바로 아래(더 저평가된) 구간의 "거치매수 발동 예수금 조건"이 자동으로 (중단기준-0.1)로 맞춰집니다 — 예수금이 중단기준 밑으로 못 내려가서 다음 구간 거치매수가 영원히 발동 안 되는 모순을 방지하기 위해서예요. 둘 다 자동채움일 뿐이라, 이후 언제든 직접 다시 수정하실 수 있습니다.
+      </div>
+
+      <div class="example-box">
+        <div class="ex-title">📐 지금 입력한 값으로 계산한 실제 예시 (투자금 기준)</div>
+        <div id="rebalExampleBox"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="cancelRebalModal" class="mini-btn">취소</button>
+      <button id="saveRebalModal" class="run-btn" style="width:auto;padding:10px 24px;">적용하기 (닫기)</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>
+(async function(){
+  try {
+    const res = await fetch('price_data.json', {cache:'no-store'});
+    if (!res.ok) throw new Error('price_data.json 로드 실패 (HTTP ' + res.status + ')');
+    const PRICE = await res.json();
+
+const N = PRICE.dates.length;
+
+let mode = 'rebal'; // 'lump' | 'dca' | 'rebal'
+let selectedLev = 'all';
+let selectedFreq = 'monthly';
+let logScale = false;
+let showDevChart = false;
+let devChartTarget = 'qld'; // V2 탭에서 이격도 볼 때 어떤 자산 기준인지 ('qld' | 'tqqq')
+
+// 200일 이격도 경계값들 (오름차순 정렬, 100은 200일선 그 자체라서 항상 고정 포함)
+const REBAL_DEFAULT_BOUNDARIES = [90, 100, 120, 130];
+// 구간 규칙 (배열 index 0 = 맨 위(가장 과열) ... 마지막 = 맨 아래(가장 저평가))
+// depositCashGate: 거치매수는 예수금(현금비중)이 이 값(%) 이상일 때만 발동 (구간별로 다르게 설정 가능)
+// 아래 값은 하이브리드 전용 그리드서치(1,548개 조합, 최대 147구간 롤링)에서 찾은 최적 조합과 동일하게 통일
+const REBAL_DEFAULT_ZONES = [
+  { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 130%이상
+  { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130%
+  { sell:0,   deposit:0,  split:60, rate:3,  stop:40, depositCashGate:0 },     // 100~120%
+  { sell:0,   deposit:5,  split:5,  rate:2,  stop:15, depositCashGate:39.9 },  // 90~100%
+  { sell:0,   deposit:40, split:5,  rate:20, stop:0,  depositCashGate:14.9 },  // 90%미만
+];
+// TQQQ 기본값도 동일하게 통일
+const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z));
+// 하이브리드 전용 기본값: 100~120%/90~100%는 QLD로 매수, 90%미만만 TQQQ로 매수 (검증된 최적 조합)
+const REBAL_DEFAULT_ZONES_HYBRID = [
+  { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 130%이상 (QLD+TQQQ 비례매도)
+  { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130% (QLD+TQQQ 비례매도)
+  { sell:0,   deposit:0,  split:60, rate:3,  stop:40, depositCashGate:0 },     // 100~120% → QLD 매수
+  { sell:0,   deposit:5,  split:5,  rate:2,  stop:15, depositCashGate:39.9 },  // 90~100% → QLD 매수
+  { sell:0,   deposit:40, split:5,  rate:20, stop:0,  depositCashGate:14.9 },  // 90%미만 → TQQQ 매수
+];
+const REBAL_DEFAULT_DCA_COMPARE = 5;
+
+let REBAL_BOUNDARIES = REBAL_DEFAULT_BOUNDARIES.slice();
+let REBAL_ZONES = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z));
+let REBAL_DCA_COMPARE = REBAL_DEFAULT_DCA_COMPARE;
+
+// TQQQ용 독립 세부설정 상태 (V2 탭에서 사용, QLD와 별개로 관리)
+let REBAL_BOUNDARIES_TQQQ = REBAL_DEFAULT_BOUNDARIES.slice();
+let REBAL_ZONES_TQQQ = REBAL_DEFAULT_ZONES_TQQQ.map(z=>Object.assign({},z));
+
+// 하이브리드(QLD주력+90%미만만TQQQ) 세부설정 상태
+let REBAL_BOUNDARIES_HYBRID = REBAL_DEFAULT_BOUNDARIES.slice();
+let REBAL_ZONES_HYBRID = REBAL_DEFAULT_ZONES_HYBRID.map(z=>Object.assign({},z));
+
+// 팝업이 지금 QLD/TQQQ 중 어느 쪽을 편집 중인지
+let modalTarget = 'qld';
+
+function getRebalState(target) {
+  if (target==='tqqq') return { boundaries: REBAL_BOUNDARIES_TQQQ, zones: REBAL_ZONES_TQQQ };
+  if (target==='hybrid') return { boundaries: REBAL_BOUNDARIES_HYBRID, zones: REBAL_ZONES_HYBRID };
+  return { boundaries: REBAL_BOUNDARIES, zones: REBAL_ZONES };
+}
+function setRebalState(target, boundaries, zones) {
+  if (target==='tqqq') { REBAL_BOUNDARIES_TQQQ = boundaries; REBAL_ZONES_TQQQ = zones; }
+  else if (target==='hybrid') { REBAL_BOUNDARIES_HYBRID = boundaries; REBAL_ZONES_HYBRID = zones; }
+  else { REBAL_BOUNDARIES = boundaries; REBAL_ZONES = zones; }
+}
+
+// 편집 중(팝업 열려있는 동안)인 임시 상태 - "적용하기"를 눌러야 위의 확정값으로 반영됨
+let EDIT_BOUNDARIES = REBAL_BOUNDARIES.slice();
+let EDIT_ZONES = REBAL_ZONES.map(z=>Object.assign({},z));
+
+function zoneLabel(i, boundaries) {
+  const m = boundaries.length;
+  if (i===0) return `${boundaries[m-1]}%이상`;
+  if (i===m) return `${boundaries[0]}%미만`;
+  return `${boundaries[m-1-i]}~${boundaries[m-i]}%`;
+}
+
+const LEV_META = {
+  '1': { key:'p1', name:'1배 (QQQ)', color:'#2563eb' },
+  '2': { key:'p2', name:'2배', color:'#16a34a' },
+  '3': { key:'p3', name:'3배', color:'#9333ea' },
+};
+
+function $(id){ return document.getElementById(id); }
+
+// ---------- date helpers ----------
+function bsearchGte(dates, target) {
+  let lo=0, hi=dates.length-1, ans=dates.length-1;
+  while(lo<=hi){ const mid=(lo+hi)>>1; if(dates[mid]>=target){ans=mid; hi=mid-1;} else lo=mid+1; }
+  return ans;
+}
+function bsearchLte(dates, target) {
+  let lo=0, hi=dates.length-1, ans=0;
+  while(lo<=hi){ const mid=(lo+hi)>>1; if(dates[mid]<=target){ans=mid; lo=mid+1;} else hi=mid-1; }
+  return ans;
+}
+function addMonths(dateStr, k) {
+  const d = new Date(dateStr+'T00:00:00');
+  const day = d.getDate();
+  d.setMonth(d.getMonth()+k);
+  if (d.getDate() !== day) d.setDate(0); // clamp to last day of month
+  return d.toISOString().slice(0,10);
+}
+function addDays(dateStr, k) {
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+k);
+  return d.toISOString().slice(0,10);
+}
+function yearsBetween(d0,d1){ return (new Date(d1)-new Date(d0))/(1000*60*60*24*365.25); }
+
+// ---------- tax ----------
+function afterTaxCalc(finalVal, principal) {
+  const gain = finalVal - principal;
+  if (gain <= 0) return { afterTaxFinal: finalVal, afterTaxReturn: (finalVal-principal)/principal*100 };
+  const exemption = 2500000;
+  const taxable = Math.max(0, gain - exemption);
+  const tax = taxable*0.22;
+  const afterTaxFinal = finalVal - tax;
+  return { afterTaxFinal, afterTaxReturn: (afterTaxFinal-principal)/principal*100 };
+}
+
+// ---------- core simulation: returns {equity: [...], dates:[...], invested:[...] } ----------
+function simulateLump(priceKey, iStart, iEnd, initAmount, feeOn) {
+  const prices = PRICE[priceKey];
+  const fee = feeOn ? 0.0005 : 0;
+  const shares = (initAmount*(1-fee)) / prices[iStart];
+  const equity = new Array(iEnd-iStart+1);
+  for (let i=iStart;i<=iEnd;i++) equity[i-iStart] = shares*prices[i];
+  return { equity, invested: initAmount };
+}
+
+function buildContribSchedule(startDate, endDate, freq, iStart, iEnd) {
+  const dates = PRICE.dates;
+  const sched = []; // {idx, yearIdx}
+  if (freq === 'daily') {
+    for (let i=iStart;i<=iEnd;i++) {
+      const yIdx = Math.floor(yearsBetween(startDate, dates[i]));
+      sched.push({idx:i, yearIdx:yIdx});
+    }
+  } else {
+    const stepDays = freq === 'weekly' ? 7 : null;
+    let k = 0;
+    let cur = startDate;
+    while (true) {
+      cur = freq === 'weekly' ? addDays(startDate, k*7) : addMonths(startDate, k);
+      if (cur > endDate) break;
+      const idx = bsearchGte(dates, cur);
+      if (idx <= iEnd && dates[idx] <= endDate) {
+        const yIdx = Math.floor(yearsBetween(startDate, dates[idx]));
+        sched.push({idx, yearIdx:yIdx});
+      }
+      k++;
+      if (k>20000) break;
+    }
+  }
+  return sched;
+}
+
+function simulateDca(priceKey, iStart, iEnd, initAmount, contribAmount, freq, growthRatePct, startDate, endDate, feeOn) {
+  const prices = PRICE[priceKey];
+  const fee = feeOn ? 0.0005 : 0;
+  const growth = growthRatePct/100;
+  const n = iEnd-iStart+1;
+  const equity = new Array(n).fill(0);
+  let shares = 0, invested = 0;
+
+  if (initAmount > 0) {
+    shares += (initAmount*(1-fee))/prices[iStart];
+    invested += initAmount;
+  }
+
+  const sched = buildContribSchedule(startDate, endDate, freq, iStart, iEnd);
+  let schedPtr = 0;
+
+  for (let i=iStart;i<=iEnd;i++) {
+    while (schedPtr < sched.length && sched[schedPtr].idx === i) {
+      const amt = contribAmount * Math.pow(1+growth, sched[schedPtr].yearIdx);
+      shares += (amt*(1-fee))/prices[i];
+      invested += amt;
+      schedPtr++;
+    }
+    equity[i-iStart] = shares*prices[i];
+  }
+  return { equity, invested };
+}
+
+// ---------- ① 리밸런싱비교(By견이): QQQ 200일 이격도 기반 QLD 리밸런싱 엔진 ----------
+function median(arr) {
+  const s = arr.slice().sort((a,b)=>a-b);
+  const n = s.length;
+  const mid = Math.floor(n/2);
+  return n % 2 ? s[mid] : (s[mid-1]+s[mid])/2;
+}
+
+let MA200_CACHE = null;
+function getMA200() {
+  if (MA200_CACHE) return MA200_CACHE;
+  const p1 = PRICE.p1;
+  const n = p1.length;
+  const ma = new Array(n).fill(NaN);
+  let sum = 0;
+  for (let i=0;i<n;i++){
+    sum += p1[i];
+    if (i>=200) sum -= p1[i-200];
+    if (i>=199) ma[i] = sum/200;
+  }
+  MA200_CACHE = ma;
+  return ma;
+}
+
+function classifyZoneIdx(dev, boundaries) {
+  const m = boundaries.length;
+  for (let i=0;i<m;i++){
+    if (dev >= boundaries[m-1-i]) return i;
+  }
+  return m;
+}
+
+function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCooldownDays, sellCooldownDays) {
+  if (depositCooldownDays === undefined) depositCooldownDays = 30;
+  if (sellCooldownDays === undefined) sellCooldownDays = 30;
+  const p1 = PRICE.p1;
+  const ma = getMA200();
+  const nZones = zoneConfigs.length;
+  const zones = new Array(iEnd+1); // 0-based zone index per day, -1 = not tradable yet
+  for (let i=0;i<=iEnd;i++){
+    if (isNaN(ma[i])) { zones[i]=-1; continue; }
+    const dev = p1[i]/ma[i]*100;
+    zones[i] = classifyZoneIdx(dev, boundaries);
+  }
+  let firstTradable = 0;
+  while (firstTradable<=iEnd && zones[firstTradable]===-1) firstTradable++;
+  const investStart = Math.max(iStartSel, firstTradable);
+
+  let curZone = null;
+  let w1 = 0; // ★ 선택한 시작일부터 진짜 0%(현금)에서 새로 시작 (이전 이력 이어받지 않음)
+  const bought = new Array(nZones).fill(0); // cumulative % of total assets bought in the CURRENT episode of that zone
+  const w1arr = new Array(iEnd+1).fill(0);
+  const actionArr = new Array(iEnd+1).fill(null); // 'deposit' | 'split' | 'sell' | null
+  const lastDepositDay = new Array(nZones).fill(-Infinity); // 거치매수 쿨다운 추적 (구간별로 개별 추적)
+  let lastSellDay = -Infinity; // 매도 쿨다운 추적 (전체 구간 공통 — 짧은 기간에 구간을 왔다갔다해도 중복매도 방지)
+
+  for (let i=investStart;i<=iEnd;i++){
+    const z = zones[i];
+    if (z !== -1) {
+      let isNewEpisode = false;
+      if (curZone === null || z !== curZone) {
+        isNewEpisode = true; curZone = z; bought[z] = 0;
+      }
+      const cfg = zoneConfigs[z] || {sell:0,deposit:0,split:0,rate:0,stop:0,depositCashGate:0};
+      const { sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0 } = cfg;
+      let action = null;
+
+      // ★ 매도: 구간 진입 여부와 무관하게, 마지막 매도 후 쿨다운(기본 30일)이 지나야만 재발동 (짧은 기간 내 구간 왕복으로 인한 중복매도 방지)
+      if (sell > 0) {
+        const daysSinceLastSell = i - lastSellDay;
+        if (daysSinceLastSell > sellCooldownDays) {
+          const w1BeforeSell = w1;
+          w1 = w1 * (1 - sell/100);
+          if (w1 < w1BeforeSell - 0.001) { action = 'sell'; lastSellDay = i; }
+        }
+      }
+      // ★ 거치매수: "새 구간 진입" 대신 "예수금이 이 구간의 게이트% 이상 남아있는지" + "이 구간에서 마지막 거치매수 후 쿨다운 지났는지"로 판단
+      if (deposit > 0) {
+        const cash = 100 - w1;
+        const daysSinceLastDeposit = i - lastDepositDay[z];
+        if (cash >= depositCashGate && daysSinceLastDeposit > depositCooldownDays) {
+          const w1Before = w1;
+          w1 = Math.min(w1 + deposit, 100);
+          if (w1 > w1Before + 0.001) { action = 'deposit'; lastDepositDay[z] = i; }
+        }
+      }
+      if (split > 0 && rate > 0) {
+        const dailyAdd = split * (rate/100);
+        const remainBucket = split - bought[z];
+        const remainCash = stop > 0 ? (100 - stop) - w1 : (100 - w1);
+        const add = Math.max(0, Math.min(dailyAdd, remainBucket, remainCash, 100 - w1));
+        w1 += add; bought[z] += add;
+        if (add > 0.001 && action === null) action = 'split';
+      }
+      w1 = Math.min(Math.max(w1,0),100);
+      actionArr[i] = action;
+    }
+    w1arr[i]=w1;
+  }
+  return { zones, w1arr, actionArr, investStart };
+}
+
+function computeRebalComparison(iStartSel, iEnd, boundaries, zoneConfigs, dcaCompareDaily, initAmount, priceKey, depositCooldownDays, sellCooldownDays) {
+  const p2 = PRICE[priceKey || 'p2'];
+  const { w1arr, investStart } = computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCooldownDays, sellCooldownDays);
+  if (investStart > iEnd) return null;
+
+  const n = iEnd-investStart+1;
+  const eq1=new Array(n), eq2=new Array(n), eq3=new Array(n);
+  const w2arr=new Array(n), w3arr=new Array(n);
+  let w2=0;
+  for (let i=investStart;i<=iEnd;i++){
+    const idx=i-investStart;
+    w2 = Math.min(w2+dcaCompareDaily,100);
+    w2arr[idx]=w2; w3arr[idx]=100;
+    if (idx===0) {
+      eq1[0]=eq2[0]=eq3[0]=initAmount;
+    } else {
+      const r = p2[i]/p2[i-1]-1;
+      eq1[idx]=eq1[idx-1]*(1+(w1arr[i-1]/100)*r);
+      eq2[idx]=eq2[idx-1]*(1+(w2arr[idx-1]/100)*r);
+      eq3[idx]=eq3[idx-1]*(1+(w3arr[idx-1]/100)*r);
+    }
+  }
+  return { eq1, eq2, eq3, investStart };
+}
+
+// ---------- 하이브리드(QLD주력+90%미만만TQQQ) 전용 엔진 ----------
+// zone index 4(90%미만)만 TQQQ로 매수, 나머지 매수구간(zone 2,3)은 QLD로 매수. 매도(zone 0,1)는 QLD+TQQQ 비례로 같이 축소.
+function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCooldownDays, sellCooldownDays) {
+  if (sellCooldownDays === undefined) sellCooldownDays = 30;
+  const p1 = PRICE.p1, ma = getMA200();
+  const zones = new Array(iEnd+1);
+  for (let i=0;i<=iEnd;i++){
+    if (isNaN(ma[i])) { zones[i]=-1; continue; }
+    zones[i] = classifyZoneIdx(p1[i]/ma[i]*100, boundaries);
+  }
+  let firstTradable=0; while(firstTradable<=iEnd && zones[firstTradable]===-1) firstTradable++;
+  const investStart = Math.max(iStartSel, firstTradable);
+  let curZone=null, wQld=0, wTqqq=0;
+  const bought = {};
+  const wQldArr=new Array(iEnd+1).fill(0), wTqqqArr=new Array(iEnd+1).fill(0);
+  const actionArr = new Array(iEnd+1).fill(null); // 'deposit-qld' | 'split-qld' | 'deposit-tqqq' | 'split-tqqq' | 'sell' | null
+  const lastDepositDay = {};
+  let lastSellDay = -Infinity; // 매도 쿨다운 추적 (전체 구간 공통)
+  const nZones = zoneConfigs.length;
+
+  for (let i=investStart;i<=iEnd;i++){
+    const z = zones[i];
+    if (z!==-1){
+      let isNewEpisode=false;
+      if (curZone===null || z!==curZone){ isNewEpisode=true; curZone=z; bought[z]=0; }
+      const cfg = zoneConfigs[z] || {sell:0,deposit:0,split:0,rate:0,stop:0,depositCashGate:0};
+      const {sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0} = cfg;
+      // 마지막 구간(가장 낮은/저평가 구간)만 TQQQ, 그 외 매수구간은 QLD
+      const targetAsset = (z === nZones-1) ? 'tqqq' : 'qld';
+      let action = null;
+
+      // ★ 매도: 마지막 매도 후 쿨다운(기본 30일)이 지나야만 재발동 (짧은 기간 내 구간 왕복/연속매도 방지)
+      if (sell>0){
+        const daysSinceLastSell = i - lastSellDay;
+        if (daysSinceLastSell > sellCooldownDays) {
+          const wQldBefore=wQld, wTqqqBefore=wTqqq;
+          wQld = wQld*(1-sell/100); wTqqq = wTqqq*(1-sell/100);
+          if (wQld<wQldBefore-0.001 || wTqqq<wTqqqBefore-0.001) { action = 'sell'; lastSellDay = i; }
+        }
+      }
+      if (deposit>0){
+        const cash = 100-wQld-wTqqq;
+        const daysSince = i-(lastDepositDay[z]===undefined?-Infinity:lastDepositDay[z]);
+        if (cash>=depositCashGate && daysSince>depositCooldownDays){
+          const add = Math.min(deposit, cash);
+          if (add>0.001){
+            if (targetAsset==='qld') wQld += add; else wTqqq += add;
+            action = 'deposit-'+targetAsset;
+          }
+          lastDepositDay[z]=i;
+        }
+      }
+      if (split>0 && rate>0){
+        const cash = 100-wQld-wTqqq;
+        const dailyAdd = split*(rate/100);
+        const remainBucket = split-bought[z];
+        const remainCash = stop>0 ? (100-stop)-(wQld+wTqqq) : cash;
+        const add = Math.max(0, Math.min(dailyAdd, remainBucket, remainCash, cash));
+        if (targetAsset==='qld') wQld += add; else wTqqq += add;
+        bought[z]+=add;
+        if (add>0.001 && action===null) action = 'split-'+targetAsset;
+      }
+      wQld=Math.min(Math.max(wQld,0),100);
+      wTqqq=Math.min(Math.max(wTqqq,0),100-wQld);
+      actionArr[i]=action;
+    }
+    wQldArr[i]=wQld; wTqqqArr[i]=wTqqq;
+  }
+  return { zones, wQldArr, wTqqqArr, actionArr, investStart };
+}
+
+function computeHybridComparison(iStartSel, iEnd, boundaries, zoneConfigs, initAmount, depositCooldownDays, sellCooldownDays) {
+  const { wQldArr, wTqqqArr, investStart } = computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCooldownDays, sellCooldownDays);
+  if (investStart > iEnd) return null;
+  const p2 = PRICE.p2, p3 = PRICE.p3;
+  const n = iEnd-investStart+1;
+  const eq1 = new Array(n);
+  for (let i=investStart;i<=iEnd;i++){
+    const idx=i-investStart;
+    if (idx===0) { eq1[0]=initAmount; continue; }
+    const rQld = p2[i]/p2[i-1]-1, rTqqq = p3[i]/p3[i-1]-1;
+    eq1[idx] = eq1[idx-1]*(1+(wQldArr[i-1]/100)*rQld+(wTqqqArr[i-1]/100)*rTqqq);
+  }
+  return { eq1, investStart, wQldArr, wTqqqArr };
+}
+
+// ---------- V3: 코어(A)+전술(B) 2계좌 전략 엔진 ----------
+// A계좌: 100~120%구간에서만 매수, 목표비중(capA)까지 "전체 누적" 캡 (재진입해도 절대 안 넘음), 절대 매도 안 함
+// B계좌: 90~100%/90%미만에서 거치+분할 매수, 120~130%/130%이상에서 매도, + 매일 일정비율 시간기반 자동익절
+function computeTwoAccountWeights(iEnd, boundaries, cfgA, cfgB) {
+  const p1 = PRICE.p1;
+  const ma = getMA200();
+  const zones = new Array(iEnd+1);
+  for (let i=0;i<=iEnd;i++){
+    if (isNaN(ma[i])) { zones[i]=-1; continue; }
+    const dev = p1[i]/ma[i]*100;
+    zones[i] = classifyZoneIdx(dev, boundaries);
+  }
+  let curZone = null;
+  let wA = 0, wB = 0;
+  let boughtB4 = 0, boughtB5 = 0;
+  const wAarr = new Array(iEnd+1).fill(0);
+  const wBarr = new Array(iEnd+1).fill(0);
+
+  for (let i=0;i<=iEnd;i++){
+    const z = zones[i];
+    if (z !== -1) {
+      let isNewEpisode = false;
+      if (curZone === null || z !== curZone) {
+        isNewEpisode = true; curZone = z;
+        if (z===3) boughtB4 = 0;
+        if (z===4) boughtB5 = 0;
+      }
+
+      // A계좌 (index 2 = 100~120%): 전체 누적 캡
+      if (z === 2) {
+        const dailyAdd = cfgA.capA * (cfgA.rateA/100);
+        const remainToCap = cfgA.capA - wA;
+        const add = Math.max(0, Math.min(dailyAdd, remainToCap, 100-wA-wB));
+        wA += add;
+      }
+
+      // B계좌 (index 3 = 90~100%)
+      if (z === 3) {
+        if (isNewEpisode) wB = Math.min(wB + cfgB.deposit4, 100-wA);
+        const dailyAdd = cfgB.split4 * (cfgB.rate4/100);
+        const remainBucket = cfgB.split4 - boughtB4;
+        const add = Math.max(0, Math.min(dailyAdd, remainBucket, 100-wA-wB));
+        wB += add; boughtB4 += add;
+      } else if (z === 4) { // 90%미만
+        if (isNewEpisode) wB = Math.min(wB + cfgB.deposit5, 100-wA);
+        const dailyAdd = cfgB.split5 * (cfgB.rate5/100);
+        const remainBucket = cfgB.split5 - boughtB5;
+        const add = Math.max(0, Math.min(dailyAdd, remainBucket, 100-wA-wB));
+        wB += add; boughtB5 += add;
+      } else if (z === 1) { // 120~130%
+        wB = wB * (1 - cfgB.sell2/100);
+      } else if (z === 0) { // 130%이상
+        wB = wB * (1 - cfgB.sell1/100);
+      }
+
+      if (cfgB.timeSellRate > 0 && wB > 0) wB = wB * (1 - cfgB.timeSellRate/100);
+
+      wA = Math.min(Math.max(wA,0),100);
+      wB = Math.min(Math.max(wB,0),100-wA);
+    }
+    wAarr[i]=wA; wBarr[i]=wB;
+  }
+  return { zones, wAarr, wBarr };
+}
+
+function computeTwoAccountComparison(iStartSel, iEnd, boundaries, cfgA, cfgB, dcaDaily, initAmount, priceKey) {
+  const p = PRICE[priceKey || 'p2'];
+  const { zones, wAarr, wBarr } = computeTwoAccountWeights(iEnd, boundaries, cfgA, cfgB);
+  let firstTradable = 0;
+  while (firstTradable<=iEnd && zones[firstTradable]===-1) firstTradable++;
+  const investStart = Math.max(iStartSel, firstTradable);
+  if (investStart > iEnd) return null;
+
+  const n = iEnd-investStart+1;
+  const eq1=new Array(n), eq2=new Array(n), eq3=new Array(n);
+  const w2arr=new Array(n);
+  let w2=0;
+  for (let i=investStart;i<=iEnd;i++){
+    const idx=i-investStart;
+    w2 = Math.min(w2+dcaDaily,100);
+    w2arr[idx]=w2;
+    if (idx===0) {
+      eq1[0]=eq2[0]=eq3[0]=initAmount;
+    } else {
+      const r = p[i]/p[i-1]-1;
+      const wCombined = wAarr[i-1] + wBarr[i-1];
+      eq1[idx]=eq1[idx-1]*(1+(wCombined/100)*r);
+      eq2[idx]=eq2[idx-1]*(1+(w2arr[idx-1]/100)*r);
+      eq3[idx]=eq3[idx-1]*(1+r); // 거치식: 항상 100%
+    }
+  }
+  return { eq1, eq2, eq3, investStart, wAarr, wBarr };
+}
+
+function computeStats(equity, dates, invested) {
+  const n = equity.length;
+  const finalVal = equity[n-1];
+  const totalReturn = (finalVal-invested)/invested*100;
+  const years = yearsBetween(dates[0], dates[n-1]);
+  const cagr = years>0 ? (Math.pow(finalVal/invested, 1/years)-1)*100 : NaN;
+  let peak = equity[0], mdd = 0;
+  const rets = [];
+  for (let i=1;i<n;i++){
+    if (equity[i]>peak) peak=equity[i];
+    const dd = peak>0 ? (equity[i]-peak)/peak*100 : 0;
+    if (dd<mdd) mdd=dd;
+    if (equity[i-1]>0) rets.push(equity[i]/equity[i-1]-1);
+  }
+  const mean = rets.reduce((a,b)=>a+b,0)/rets.length;
+  const variance = rets.reduce((a,b)=>a+(b-mean)*(b-mean),0)/rets.length;
+  const vol = Math.sqrt(variance)*Math.sqrt(252)*100;
+  const sharpe = vol>0 ? (mean*252*100)/vol : NaN;
+  const afterTax = afterTaxCalc(finalVal, invested);
+  return { finalVal, totalReturn, cagr, mdd, vol, sharpe, afterTaxFinal: afterTax.afterTaxFinal, afterTaxReturn: afterTax.afterTaxReturn, years };
+}
+
+function fmtWon(x){ return Math.round(x).toLocaleString('ko-KR')+'원'; }
+
+// ★ 적립식 매수 필드(%↔원) 단위 전환 지원
+const dcaUnitState = { dcaCompareDaily:'percent', dcaCompareDailyQld:'percent', dcaCompareDailyTqqq:'percent', contribAmount:'amount' };
+function getBudgetAmount() { return parseFloat(($('initAmount').value||'0').replace(/,/g,''))||0; }
+function getEffectivePercent(fieldId, fallback) {
+  const raw = parseFloat(($(fieldId).value||'0').replace(/,/g,''));
+  if (isNaN(raw)) return fallback!==undefined ? fallback : 0;
+  if (dcaUnitState[fieldId] === 'percent') return raw;
+  const budget = getBudgetAmount();
+  return budget>0 ? (raw/budget*100) : 0;
+}
+function getEffectiveAmount(fieldId, fallback) {
+  const raw = parseFloat(($(fieldId).value||'0').replace(/,/g,''));
+  if (isNaN(raw)) return fallback!==undefined ? fallback : 0;
+  if (dcaUnitState[fieldId] === 'amount') return raw;
+  const budget = getBudgetAmount();
+  return budget * (raw/100);
+}
+
+function fmtPct(x,d=2){ const s=x>=0?'+':''; return s+x.toFixed(d)+'%'; }
+
+function computeResultsForRange(iStart, iEnd, initAmount) {
+  const feeOn = $('feeCheck').checked;
+  const startDate = PRICE.dates[iStart], endDate = PRICE.dates[iEnd];
+  let results = [];
+
+  if (mode === 'rebal') {
+    const { boundaries, zones } = getCurrentRebalConfig();
+    const dcaCompareDaily = getEffectivePercent('dcaCompareDaily', 0.4);
+    const dg = getDepositGateSettings();
+    const comp = computeRebalComparison(iStart, iEnd, boundaries, zones, dcaCompareDaily, initAmount, 'p2', dg.cooldown, dg.sellCooldown);
+    if (!comp) return null;
+    const cd = PRICE.dates.slice(comp.investStart, iEnd+1);
+    const defs = [
+      { name:'QLD이격도 리밸런싱', equity:comp.eq1 },
+      { name:`QLD 적립식(일 ${dcaCompareDaily}%)`, equity:comp.eq2 },
+      { name:'QLD 거치식', equity:comp.eq3 },
+    ];
+    results = defs.map(d => ({ meta:{name:d.name}, stats: computeStats(d.equity, cd, initAmount) }));
+  } else if (mode === 'v2') {
+    const qldCfg = getCurrentRebalConfig('qld');
+    const tqqqCfg = getCurrentRebalConfig('tqqq');
+    const hybridCfg = getCurrentRebalConfig('hybrid');
+    const dcaQld = getEffectivePercent('dcaCompareDailyQld', 0.4);
+    const dcaTqqq = getEffectivePercent('dcaCompareDailyTqqq', 0.4);
+    const dg = getDepositGateSettings();
+    const compQld = computeRebalComparison(iStart, iEnd, qldCfg.boundaries, qldCfg.zones, dcaQld, initAmount, 'p2', dg.cooldown, dg.sellCooldown);
+    const compTqqq = computeRebalComparison(iStart, iEnd, tqqqCfg.boundaries, tqqqCfg.zones, dcaTqqq, initAmount, 'p3', dg.cooldown, dg.sellCooldown);
+    const compHybrid = computeHybridComparison(iStart, iEnd, hybridCfg.boundaries, hybridCfg.zones, initAmount, dg.cooldown, dg.sellCooldown);
+    if (!compQld || !compTqqq || !compHybrid) return null;
+    const cd = PRICE.dates.slice(compQld.investStart, iEnd+1);
+    const cdH = PRICE.dates.slice(compHybrid.investStart, iEnd+1);
+    const defs = [
+      { name:'QLD 이격도 리밸런싱', equity:compQld.eq1 },
+      { name:`QLD 적립식(일 ${dcaQld}%)`, equity:compQld.eq2 },
+      { name:'QLD 거치식', equity:compQld.eq3 },
+      { name:'TQQQ 이격도 리밸런싱', equity:compTqqq.eq1 },
+      { name:`TQQQ 적립식(일 ${dcaTqqq}%)`, equity:compTqqq.eq2 },
+      { name:'TQQQ 거치식', equity:compTqqq.eq3 },
+      { name:'하이브리드(QLD+TQQQ)', equity:compHybrid.eq1, dates:cdH },
+    ];
+    results = defs.map(d => ({ meta:{name:d.name}, stats: computeStats(d.equity, d.dates||cd, initAmount) }));
+  } else {
+    const levs = selectedLev==='all' ? ['1','2','3'] : [selectedLev];
+    const cd = PRICE.dates.slice(iStart, iEnd+1);
+    levs.forEach(lev => {
+      const meta = LEV_META[lev];
+      let sim;
+      if (mode==='lump') {
+        sim = simulateLump(meta.key, iStart, iEnd, initAmount, feeOn);
+      } else {
+        const contribAmount = getEffectiveAmount('contribAmount');
+        const growthRate = parseFloat($('growthRate').value)||0;
+        sim = simulateDca(meta.key, iStart, iEnd, initAmount, contribAmount, selectedFreq, growthRate, startDate, endDate, feeOn);
+      }
+      const stats = computeStats(sim.equity, cd, sim.invested);
+      results.push({ meta:{name:meta.name}, stats });
+    });
+  }
+  return results;
+}
+
+function render() {
+  markRollingStale(); // ★ 조건이 바뀌어서 다시 그릴 때마다, 이미 돌려둔 롤링백테스트 결과가 있으면 "예전 설정 기준"이라고 표시
+  markWfStale();
+  markBbStale();
+  const startDate = $('startDate').value, endDate = $('endDate').value;
+  const dates = PRICE.dates;
+  if (!startDate || !endDate || startDate>=endDate) { $('periodNote').textContent='시작일과 종료일을 확인해주세요.'; return; }
+
+  let iStart = bsearchGte(dates, startDate);
+  let iEnd = bsearchLte(dates, endDate);
+  if (iEnd<=iStart) { $('periodNote').textContent='선택한 기간에 데이터가 부족합니다.'; return; }
+
+  const feeOn = $('feeCheck').checked;
+  const initAmount = parseFloat($('initAmount').value.replace(/,/g,''))||0;
+
+  let results = [];
+  let chartDates;
+
+  if (mode === 'rebal') {
+    const { boundaries, zones } = getCurrentRebalConfig();
+    const dcaCompareDaily = getEffectivePercent('dcaCompareDaily', 0.4);
+    const dg = getDepositGateSettings();
+    const comp = computeRebalComparison(iStart, iEnd, boundaries, zones, dcaCompareDaily, initAmount, 'p2', dg.cooldown, dg.sellCooldown);
+    if (!comp) { $('periodNote').textContent='선택한 기간엔 QQQ 200일선이 아직 형성되지 않았습니다.'; return; }
+    chartDates = dates.slice(comp.investStart, iEnd+1);
+    const defs = [
+      { name:'① QLD이격도 리밸런싱', color:'#2563eb', equity:comp.eq1 },
+      { name:`② QLD 적립식(일 ${dcaCompareDaily}%)`, color:'#16a34a', equity:comp.eq2 },
+      { name:'③ QLD 거치식', color:'#9333ea', equity:comp.eq3 },
+    ];
+    results = defs.map(d => ({
+      meta: { name:d.name, color:d.color },
+      stats: computeStats(d.equity, chartDates, initAmount),
+      equity: d.equity,
+    }));
+    $('strategyHeader').textContent = '전략';
+    $('chartTitle').textContent = showDevChart ? 'QQQ 200일 이격도 + 매수/매도 시점 검증' : 'QLD 리밸런싱비교(By견이)';
+    $('devToggleBtn').style.display = 'inline-block';
+    $('devToggleBtnQld').style.display = 'none';
+    $('devToggleBtnTqqq').style.display = 'none';
+    $('devToggleBtnHybrid').style.display = 'none';
+    $('rebalDetailCsvBtn').style.display = 'inline-block';
+  } else if (mode === 'v2') {
+    const qldCfg = getCurrentRebalConfig('qld');
+    const tqqqCfg = getCurrentRebalConfig('tqqq');
+    const hybridCfg = getCurrentRebalConfig('hybrid');
+    const dcaQld = getEffectivePercent('dcaCompareDailyQld', 0.4);
+    const dcaTqqq = getEffectivePercent('dcaCompareDailyTqqq', 0.4);
+
+    const dg = getDepositGateSettings();
+    const compQld = computeRebalComparison(iStart, iEnd, qldCfg.boundaries, qldCfg.zones, dcaQld, initAmount, 'p2', dg.cooldown, dg.sellCooldown);
+    const compTqqq = computeRebalComparison(iStart, iEnd, tqqqCfg.boundaries, tqqqCfg.zones, dcaTqqq, initAmount, 'p3', dg.cooldown, dg.sellCooldown);
+    const compHybrid = computeHybridComparison(iStart, iEnd, hybridCfg.boundaries, hybridCfg.zones, initAmount, dg.cooldown, dg.sellCooldown);
+    if (!compQld || !compTqqq || !compHybrid) { $('periodNote').textContent='선택한 기간엔 QQQ 200일선이 아직 형성되지 않았습니다.'; return; }
+
+    chartDates = dates.slice(compQld.investStart, iEnd+1);
+    const chartDatesH = dates.slice(compHybrid.investStart, iEnd+1);
+    const defs = [
+      { name:'① QLD 이격도 리밸런싱', color:'#2563eb', equity:compQld.eq1, cd:chartDates },
+      { name:`② QLD 적립식(일 ${dcaQld}%)`, color:'#16a34a', equity:compQld.eq2, cd:chartDates },
+      { name:'③ QLD 거치식', color:'#9333ea', equity:compQld.eq3, cd:chartDates },
+      { name:'④ TQQQ 이격도 리밸런싱', color:'#dc2626', equity:compTqqq.eq1, cd:chartDates },
+      { name:`⑤ TQQQ 적립식(일 ${dcaTqqq}%)`, color:'#ea580c', equity:compTqqq.eq2, cd:chartDates },
+      { name:'⑥ TQQQ 거치식', color:'#0891b2', equity:compTqqq.eq3, cd:chartDates },
+      { name:'⑦ 하이브리드(QLD+TQQQ)', color:'#ca8a04', equity:compHybrid.eq1, cd:chartDatesH },
+    ];
+    results = defs.map(d => ({
+      meta: { name:d.name, color:d.color },
+      stats: computeStats(d.equity, d.cd, initAmount),
+      equity: d.equity,
+    }));
+    $('strategyHeader').textContent = '전략';
+    $('chartTitle').textContent = showDevChart
+      ? `${devChartTarget==='tqqq'?'TQQQ':devChartTarget==='hybrid'?'하이브리드':'QLD'} 200일 이격도 + 매수/매도 시점 검증`
+      : 'V2: QLD·TQQQ 6종비교';
+    $('devToggleBtn').style.display = 'none';
+    $('devToggleBtnQld').style.display = 'inline-block';
+    $('devToggleBtnTqqq').style.display = 'inline-block';
+    $('devToggleBtnHybrid').style.display = 'inline-block';
+    $('rebalDetailCsvBtn').style.display = 'inline-block';
+  } else {
+    const levs = selectedLev==='all' ? ['1','2','3'] : [selectedLev];
+    chartDates = dates.slice(iStart,iEnd+1);
+    levs.forEach(lev => {
+      const meta = LEV_META[lev];
+      let sim;
+      if (mode==='lump') {
+        sim = simulateLump(meta.key, iStart, iEnd, initAmount, feeOn);
+      } else {
+        const contribAmount = getEffectiveAmount('contribAmount');
+        const growthRate = parseFloat($('growthRate').value)||0;
+        sim = simulateDca(meta.key, iStart, iEnd, initAmount, contribAmount, selectedFreq, growthRate, startDate, endDate, feeOn);
+      }
+      const stats = computeStats(sim.equity, chartDates, sim.invested);
+      results.push({ meta, stats, equity: sim.equity });
+    });
+    $('strategyHeader').textContent = '레버리지';
+    $('chartTitle').textContent = `QQQ 투자 시뮬레이션 (${mode==='lump'?'거치식':'적립식'})`;
+    $('devToggleBtn').style.display = 'none';
+    $('devToggleBtnQld').style.display = 'none';
+    $('devToggleBtnTqqq').style.display = 'none';
+    $('devToggleBtnHybrid').style.display = 'none';
+    $('rebalDetailCsvBtn').style.display = 'none';
+  }
+
+  const days = chartDates.length - 1;
+  $('periodNote').textContent = `${chartDates[0]} ~ ${chartDates[chartDates.length-1]}  (거래일 ${days.toLocaleString()}일, 약 ${(days/252).toFixed(1)}년)`;
+
+  // 수익률/CAGR 높은 순서대로 정렬해서 표시
+  results.sort((a,b) => b.stats.cagr - a.stats.cagr);
+
+  const tbody = $('resultsBody');
+  const bestCagr = Math.max(...results.map(r=>r.stats.cagr));
+  tbody.innerHTML = results.map(r => `
+    <tr>
+      <td><span class="lev-badge" style="background:${r.meta.color}"></span>${r.meta.name}</td>
+      <td class="final-asset">${fmtWon(r.stats.finalVal)}</td>
+      <td class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</td>
+      <td class="final-asset">${fmtWon(r.stats.afterTaxFinal)}</td>
+      <td class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}</td>
+      <td style="font-weight:${r.stats.cagr===bestCagr?'700':'400'}">${fmtPct(r.stats.cagr)}</td>
+      <td class="neg">${r.stats.mdd.toFixed(2)}%</td>
+      <td>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</td>
+    </tr>
+  `).join('');
+
+  $('resultsCards').innerHTML = results.map(r => `
+    <div class="result-card">
+      <div class="rc-head"><span class="lev-badge" style="background:${r.meta.color}"></span>${r.meta.name}</div>
+      <div class="rc-row"><span>최종자산 (세전)</span><b>${fmtWon(r.stats.finalVal)}</b></div>
+      <div class="rc-row"><span>총수익률</span><b class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</b></div>
+      <div class="rc-row"><span>최종자산 (세후)</span><b>${fmtWon(r.stats.afterTaxFinal)}</b></div>
+      <div class="rc-row"><span>세후수익률</span><b class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}</b></div>
+      <div class="rc-row"><span>CAGR ${r.stats.cagr===bestCagr?'⭐':''}</span><b>${fmtPct(r.stats.cagr)}</b></div>
+      <div class="rc-row"><span>MDD</span><b class="neg">${r.stats.mdd.toFixed(2)}%</b></div>
+      <div class="rc-row"><span>샤프지수</span><b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></div>
+    </div>
+  `).join('');
+
+  if ((mode==='rebal' || mode==='v2') && showDevChart) {
+    const target = mode==='v2' ? devChartTarget : 'qld';
+    const rc = getCurrentRebalConfig(target);
+    drawDeviationChart(iStart, iEnd, rc.boundaries, rc.zones);
+  } else {
+    drawChart(results, chartDates);
+  }
+}
+
+function drawChart(results, dates) {
+  const canvas = $('chart'); const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const isDark = document.body.classList.contains('dark-mode');
+  const gridColor = isDark ? '#2d3548' : '#e5e7eb';
+  const textColor = isDark ? '#94a3b8' : '#6b7280';
+  const strongText = isDark ? '#e5e9f0' : '#111827';
+  const padL=90, padR=20, padT=16, padB=34;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+
+  let allVals=[];
+  results.forEach(r=>allVals=allVals.concat(r.equity));
+  let minV=Math.min(...allVals), maxV=Math.max(...allVals);
+  if (logScale) minV=Math.max(minV, Math.min(...allVals.filter(v=>v>0))*0.9);
+  if (minV===maxV){ minV*=0.9; maxV*=1.1; }
+
+  function yToPix(v){
+    if(logScale){
+      const lv=Math.log(Math.max(v,0.01)), lmin=Math.log(Math.max(minV,0.01)), lmax=Math.log(maxV);
+      return padT+plotH-(lv-lmin)/(lmax-lmin)*plotH;
+    }
+    return padT+plotH-(v-minV)/(maxV-minV)*plotH;
+  }
+  function xToPix(i,n){ return padL+i/(n-1)*plotW; }
+
+  ctx.strokeStyle=gridColor; ctx.lineWidth=1; ctx.font='11px monospace'; ctx.fillStyle=textColor;
+  for(let t=0;t<=5;t++){
+    const frac=t/5;
+    const v= logScale? Math.exp(Math.log(Math.max(minV,0.01))+frac*(Math.log(maxV)-Math.log(Math.max(minV,0.01)))) : minV+frac*(maxV-minV);
+    const y=padT+plotH-frac*plotH;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    let label;
+    if (v>=100000000) label=(v/100000000).toFixed(1)+'억';
+    else if (v>=10000) label=(v/10000).toFixed(0)+'만';
+    else label=v.toFixed(0);
+    ctx.fillText(label, 4, y+4);
+  }
+  ctx.fillText(dates[0], padL, H-12);
+  ctx.textAlign='right'; ctx.fillText(dates[dates.length-1], W-padR, H-12); ctx.textAlign='left';
+
+  results.forEach(r=>{
+    ctx.strokeStyle=r.meta.color; ctx.lineWidth=2.2; ctx.beginPath();
+    const n=r.equity.length; const step=Math.max(1,Math.floor(n/1800));
+    for(let i=0;i<n;i+=step){ const x=xToPix(i,n), y=yToPix(r.equity[i]); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+    ctx.stroke();
+  });
+
+  // legend
+  let lx = padL+8;
+  results.forEach(r=>{
+    ctx.fillStyle=r.meta.color; ctx.fillRect(lx, padT+6, 10,10);
+    ctx.fillStyle=strongText; ctx.font='12px sans-serif'; ctx.fillText(r.meta.name, lx+14, padT+15);
+    lx += ctx.measureText(r.meta.name).width+40;
+  });
+}
+
+// ---------- UI wiring ----------
+document.querySelectorAll('#levButtons .opt-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#levButtons .opt-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedLev = btn.dataset.lev;
+    render();
+  });
+});
+document.querySelectorAll('#freqButtons .opt-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#freqButtons .opt-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedFreq = btn.dataset.freq;
+    render();
+  });
+});
+const ALL_TABS = ['tabRebal','tabV2','tabDca','tabLump'];
+const ALL_SECTIONS = { levSection:'none', dcaFields:'none', rebalFields:'none', v2Fields:'none' };
+
+function activateTab(activeId, activeMode, sectionsShown) {
+  mode = activeMode;
+  showDevChart = false;
+  showingRankView = false;
+  $('rankToggleBtn').textContent = '📊 순위비교 보기';
+  $('rankCard').style.display = 'none';
+  $('chartCard').style.display = 'block';
+  $('resultsCard').style.display = 'block';
+  ALL_TABS.forEach(id => $(id).classList.toggle('active', id===activeId));
+  Object.keys(ALL_SECTIONS).forEach(secId => {
+    $(secId).style.display = sectionsShown.includes(secId) ? 'block' : 'none';
+  });
+  render();
+}
+$('tabLump').addEventListener('click', ()=> activateTab('tabLump', 'lump', ['levSection']));
+$('tabDca').addEventListener('click', ()=> activateTab('tabDca', 'dca', ['levSection','dcaFields']));
+$('tabRebal').addEventListener('click', ()=> activateTab('tabRebal', 'rebal', ['rebalFields']));
+$('tabV2').addEventListener('click', ()=> activateTab('tabV2', 'v2', ['v2Fields']));
+
+// ---------- ③ 세부설정 팝업 (동적 구간 추가/삭제) ----------
+const ZONE_FIELD_TYPES = ['sell','deposit','depositCashGate','split','rate','stop'];
+const ZONE_FIELD_LABELS = { sell:'매도비중', deposit:'거치매수', depositCashGate:'거치매수 발동 예수금(%)', split:'분할매수예산', rate:'일일분할매수비율', stop:'중단기준(현금%)' };
+
+function isModalOpen() {
+  return $('rebalModalOverlay').style.display === 'flex';
+}
+
+// 모달이 열려있는 동안엔 편집중인 임시 상태(EDIT_*)를, 닫혀있으면 마지막 적용값(REBAL_*)을 사용
+// target 생략 시 기존 호출부(리밸런싱비교 탭)와의 호환을 위해 'qld' 취급
+function getCurrentRebalConfig(target) {
+  target = target || 'qld';
+  if (isModalOpen() && modalTarget === target) return { boundaries: EDIT_BOUNDARIES, zones: EDIT_ZONES };
+  return getRebalState(target);
+}
+
+function getDepositGateSettings() {
+  return {
+    cooldown: parseFloat($('depositCooldownDays').value) || 30,
+    sellCooldown: parseFloat($('sellCooldownDays').value) || 30,
+  };
+}
+
+function renderBoundaryChips() {
+  const container = $('boundaryChipRow');
+  const arr = EDIT_BOUNDARIES.slice().sort((a,b)=>a-b);
+  container.innerHTML = arr.map((v, k) => {
+    const isFixed = v === 100;
+    return `
+      <div class="boundary-chip ${isFixed?'fixed':''}">
+        <input type="number" class="boundary-input" data-idx="${k}" value="${v}" ${isFixed?'disabled':''}>
+        <span class="pct-sign">%</span>
+        ${isFixed ? '<span class="chip-lock" title="200일선 자체라 고정">🔒</span>' : `<button class="chip-remove" data-idx="${k}">✕</button>`}
+      </div>`;
+  }).join('') + `<button class="add-btn" id="addBoundaryChipBtn">+ 경계 추가</button>`;
+
+  container.querySelectorAll('.boundary-input').forEach(inp=>{
+    inp.addEventListener('input', onBoundaryValueChange);
+  });
+  container.querySelectorAll('.chip-remove').forEach(btn=>{
+    btn.addEventListener('click', ()=>removeBoundaryAt(parseInt(btn.dataset.idx)));
+  });
+  const addBtn = container.querySelector('#addBoundaryChipBtn');
+  if (addBtn) addBtn.addEventListener('click', addBoundary);
+}
+
+function onBoundaryValueChange(e) {
+  const idx = parseInt(e.target.dataset.idx);
+  const val = parseFloat(e.target.value);
+  if (isNaN(val)) return;
+  // idx는 정렬된 배열 기준 index였으므로, 현재 EDIT_BOUNDARIES를 정렬해서 그 위치의 값을 교체
+  const sorted = EDIT_BOUNDARIES.slice().sort((a,b)=>a-b);
+  sorted[idx] = val;
+  EDIT_BOUNDARIES = sorted;
+  renderRebalTable();  // 라벨(구간 범위 표시) 갱신
+  updateExampleBox();
+  render();
+}
+
+function addBoundary() {
+  const arr = EDIT_BOUNDARIES.slice().sort((a,b)=>a-b);
+  let widestGapIdx = 0, widestGapSize = -1;
+  for (let i=0;i<arr.length-1;i++){
+    const gap = arr[i+1]-arr[i];
+    if (gap > widestGapSize) { widestGapSize = gap; widestGapIdx = i; }
+  }
+  const newVal = Math.round((arr[widestGapIdx]+arr[widestGapIdx+1])/2 * 10)/10;
+  const m = arr.length;
+  const zoneIdxForThisGap = m - 1 - widestGapIdx;
+  const duplicated = Object.assign({}, EDIT_ZONES[zoneIdxForThisGap]);
+  arr.splice(widestGapIdx+1, 0, newVal);
+  EDIT_BOUNDARIES = arr;
+  EDIT_ZONES.splice(zoneIdxForThisGap, 0, duplicated);
+  renderBoundaryChips();
+  renderRebalTable();
+  updateExampleBox();
+  render();
+}
+
+function removeBoundaryAt(idx) {
+  const arr = EDIT_BOUNDARIES.slice().sort((a,b)=>a-b);
+  if (arr[idx] === 100) return; // 고정 경계는 삭제 불가
+  const m = arr.length;
+  if (m <= 1) return; // 최소 1개 경계(=100)는 항상 남아야 함
+  const zoneIdxAbove = m-1-idx;
+  arr.splice(idx,1);
+  EDIT_BOUNDARIES = arr;
+  EDIT_ZONES.splice(zoneIdxAbove, 1);
+  renderBoundaryChips();
+  renderRebalTable();
+  updateExampleBox();
+  render();
+}
+
+function renderRebalTable() {
+  const B = EDIT_BOUNDARIES.slice().sort((a,b)=>a-b);
+  const tbody = $('rebalTableBody');
+  tbody.innerHTML = EDIT_ZONES.map((z, i) => {
+    const label = zoneLabel(i, B);
+    const canRemove = EDIT_ZONES.length > 1;
+    return `
+      <tr>
+        <td>${i+1}${canRemove ? `<br><button class="zone-row-remove" data-idx="${i}" title="이 구간 삭제">✕</button>` : ''}</td>
+        <td>${label}</td>
+        <td><input class="zi" data-idx="${i}" data-field="sell" value="${z.sell}"></td>
+        <td><input class="zi" data-idx="${i}" data-field="deposit" value="${z.deposit}"></td>
+        <td><input class="zi" data-idx="${i}" data-field="depositCashGate" value="${z.depositCashGate||0}"></td>
+        <td><input class="zi" data-idx="${i}" data-field="split" value="${z.split}"></td>
+        <td><input class="zi" data-idx="${i}" data-field="rate" value="${z.rate}" step="0.1"></td>
+        <td><input class="zi" data-idx="${i}" data-field="stop" value="${z.stop}"></td>
+      </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.zi').forEach(inp=>{
+    inp.addEventListener('input', (e)=>{
+      const idx = parseInt(e.target.dataset.idx);
+      const field = e.target.dataset.field;
+      const val = parseFloat(e.target.value)||0;
+      EDIT_ZONES[idx][field] = val;
+
+      // ★ 자동 동기화 ①: "분할매수 예산(split)"을 입력하면, 같은 구간의 "분할매수 중단기준(stop)"을
+      // 자동으로 (100-분할매수예산)으로 채움 — "이 구간 진입 전엔 0%에서 시작"하는 경우에 맞는 기본값.
+      // (앞 구간에서 이미 사둔 게 있는 구간은 이 관계가 안 맞을 수 있어 사용자가 직접 다시 조정 가능)
+      if (field === 'split' && val > 0) {
+        const newStop = Math.max(100 - val, 0);
+        EDIT_ZONES[idx].stop = newStop;
+        const stopInput = tbody.querySelector(`.zi[data-idx="${idx}"][data-field="stop"]`);
+        if (stopInput) stopInput.value = newStop;
+      }
+
+      // ★ 자동 동기화 ②: 이 구간의 "분할매수 중단기준(stop)"이 바뀌면,
+      // 바로 다음(한 단계 저평가) 구간의 "거치매수 발동 예수금 조건"을 자동으로 (stop-0.1)로 맞춰서
+      // "예수금이 그 밑으로 못 내려가서 거치매수가 영원히 발동 안 되는" 모순을 방지
+      if ((field === 'stop' || field === 'split') && idx+1 < EDIT_ZONES.length) {
+        const stopVal = EDIT_ZONES[idx].stop;
+        if (stopVal > 0) {
+          const newGate = Math.max(stopVal - 0.1, 0);
+          EDIT_ZONES[idx+1].depositCashGate = newGate;
+          const gateInput = tbody.querySelector(`.zi[data-idx="${idx+1}"][data-field="depositCashGate"]`);
+          if (gateInput) gateInput.value = newGate;
+        }
+      }
+
+      updateExampleBox();
+      render();
+    });
+  });
+  tbody.querySelectorAll('.zone-row-remove').forEach(btn=>{
+    btn.addEventListener('click', ()=>removeZoneRow(parseInt(btn.dataset.idx)));
+  });
+}
+
+// 표에서 직접 구간(행)을 삭제 -> 그 행이 담당하던 경계값도 같이 정리 (위쪽 경계를 제거해서 위 구간과 합침, 맨 위/맨 아래 구간이면 바깥쪽 경계 제거)
+function removeZoneRow(zoneIdx) {
+  const B = EDIT_BOUNDARIES.slice().sort((a,b)=>a-b);
+  const m = B.length;
+  if (EDIT_ZONES.length <= 1) return;
+  let boundaryIdxToRemove;
+  if (zoneIdx === 0) {
+    boundaryIdxToRemove = m-1; // 맨 위 구간 삭제 -> 가장 높은 경계 제거
+  } else {
+    boundaryIdxToRemove = m - zoneIdx; // 그 구간의 "위쪽" 경계를 제거해서 바로 위 구간과 합침
+  }
+  if (B[boundaryIdxToRemove] === 100) {
+    // 100은 못 지우니, 대신 반대쪽 경계를 제거 시도
+    boundaryIdxToRemove = zoneIdx === 0 ? m-1 : boundaryIdxToRemove - 1;
+    if (boundaryIdxToRemove < 0 || B[boundaryIdxToRemove] === 100) return;
+  }
+  B.splice(boundaryIdxToRemove, 1);
+  EDIT_BOUNDARIES = B;
+  EDIT_ZONES.splice(zoneIdx, 1);
+  renderBoundaryChips();
+  renderRebalTable();
+  updateExampleBox();
+  render();
+}
+
+function resetToDefault() {
+  EDIT_BOUNDARIES = REBAL_DEFAULT_BOUNDARIES.slice();
+  const defaultsFor = modalTarget==='tqqq' ? REBAL_DEFAULT_ZONES_TQQQ : modalTarget==='hybrid' ? REBAL_DEFAULT_ZONES_HYBRID : REBAL_DEFAULT_ZONES;
+  EDIT_ZONES = defaultsFor.map(z=>Object.assign({},z));
+  $('depositCooldownDays').value = 30;
+  $('sellCooldownDays').value = 30;
+  renderBoundaryChips();
+  renderRebalTable();
+  updateExampleBox();
+  render();
+}
+
+function updateExampleBox() {
+  const total = parseFloat($('initAmount').value.replace(/,/g,''))||100000000;
+  const B = EDIT_BOUNDARIES.slice().sort((a,b)=>a-b);
+  const fmt = (x) => fmtWon(Math.round(x));
+
+  const items = EDIT_ZONES.map((z, i) => {
+    const label = zoneLabel(i, B);
+    const parts = [];
+    if (z.sell > 0) parts.push(`보유 주식의 <b>${z.sell}%</b>를 매도`);
+    if (z.deposit > 0) {
+      const gateText = z.depositCashGate > 0 ? `예수금이 <b>${z.depositCashGate}%</b> 이상 남아있을 때만` : `이 구간에 진입하면`;
+      parts.push(`${gateText} <b>${fmt(total*z.deposit/100)}</b>(전체 ${z.deposit}%) 거치매수 (재발동은 대기일수 지난 뒤에만)`);
+    }
+    if (z.split > 0 && z.rate > 0) {
+      const budget = total*z.split/100, daily = budget*z.rate/100;
+      let s = `분할매수 예산 <b>${fmt(budget)}</b>(전체 ${z.split}%) 안에서 일일 ${z.rate}% 적용 시 하루 <b>${fmt(daily)}</b>씩 매수`;
+      s += z.stop > 0 ? ` (주식비중 ${100-z.stop}%=현금 ${z.stop}%↓ 에서 중단)` : ` (별도 중단기준 없이 예산 소진까지)`;
+      parts.push(s);
+    }
+    if (parts.length === 0) parts.push('설정된 매매 규칙이 없습니다 (모든 값 0)');
+    return `<b>${i+1}) ${label}:</b> ${parts.join(', ')}`;
+  });
+  $('rebalExampleBox').innerHTML = items.map(t=>`<div class="example-item">${t}</div>`).join('');
+}
+
+function openRebalModalFor(target) {
+  modalTarget = target;
+  const st = getRebalState(target);
+  EDIT_BOUNDARIES = st.boundaries.slice();
+  EDIT_ZONES = st.zones.map(z=>Object.assign({},z));
+  renderBoundaryChips();
+  renderRebalTable();
+  updateExampleBox();
+  const targetLabel = target==='tqqq' ? 'TQQQ' : target==='hybrid' ? '하이브리드(QLD+TQQQ)' : 'QLD';
+  $('rebalModalTitle').textContent = `③ ${targetLabel} — QQQ 200일 이격도 기준 리밸런싱 세부설정`;
+  $('rebalModalOverlay').style.display='flex';
+}
+$('openRebalDetail').addEventListener('click', ()=> openRebalModalFor('qld'));
+$('openRebalDetailQld').addEventListener('click', ()=> openRebalModalFor('qld'));
+$('openRebalDetailTqqq').addEventListener('click', ()=> openRebalModalFor('tqqq'));
+$('openRebalDetailHybrid').addEventListener('click', ()=> openRebalModalFor('hybrid'));
+$('closeRebalModal').addEventListener('click', ()=>{ $('rebalModalOverlay').style.display='none'; render(); });
+$('cancelRebalModal').addEventListener('click', ()=>{ $('rebalModalOverlay').style.display='none'; render(); });
+$('saveRebalModal').addEventListener('click', ()=>{
+  setRebalState(modalTarget, EDIT_BOUNDARIES.slice(), EDIT_ZONES.map(z=>Object.assign({},z)));
+  $('rebalModalOverlay').style.display='none';
+  render();
+});
+$('resetDefaultBtn').addEventListener('click', resetToDefault);
+$('depositCooldownDays').addEventListener('change', render);
+$('depositCooldownDays').addEventListener('input', ()=>debouncedRender());
+$('sellCooldownDays').addEventListener('change', render);
+$('sellCooldownDays').addEventListener('input', ()=>debouncedRender());
+
+// ---------- 200일 이격도 밴드 차트 토글 ----------
+$('devToggleBtn').addEventListener('click', ()=>{
+  showDevChart = !showDevChart;
+  $('devToggleBtn').classList.toggle('active', showDevChart);
+  render();
+});
+$('devToggleBtnQld').addEventListener('click', ()=>{
+  if (showDevChart && devChartTarget==='qld') { showDevChart = false; }
+  else { showDevChart = true; devChartTarget = 'qld'; }
+  $('devToggleBtnQld').classList.toggle('active', showDevChart && devChartTarget==='qld');
+  $('devToggleBtnTqqq').classList.remove('active');
+  $('devToggleBtnHybrid').classList.remove('active');
+  render();
+});
+$('devToggleBtnTqqq').addEventListener('click', ()=>{
+  if (showDevChart && devChartTarget==='tqqq') { showDevChart = false; }
+  else { showDevChart = true; devChartTarget = 'tqqq'; }
+  $('devToggleBtnTqqq').classList.toggle('active', showDevChart && devChartTarget==='tqqq');
+  $('devToggleBtnQld').classList.remove('active');
+  $('devToggleBtnHybrid').classList.remove('active');
+  render();
+});
+$('devToggleBtnHybrid').addEventListener('click', ()=>{
+  if (showDevChart && devChartTarget==='hybrid') { showDevChart = false; }
+  else { showDevChart = true; devChartTarget = 'hybrid'; }
+  $('devToggleBtnHybrid').classList.toggle('active', showDevChart && devChartTarget==='hybrid');
+  $('devToggleBtnQld').classList.remove('active');
+  $('devToggleBtnTqqq').classList.remove('active');
+  render();
+});
+
+function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
+  const canvas = $('chart'); const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const isMobile = document.body.classList.contains('mobile-mode');
+  const isDark = document.body.classList.contains('dark-mode');
+  const gridColor = isDark ? '#2d3548' : '#e5e7eb';
+  const textColor = isDark ? '#94a3b8' : '#6b7280';
+  const strongText = isDark ? '#f1f5f9' : '#111827';
+  const midText = isDark ? '#cbd5e1' : '#374151';
+  const priceLineColor = isDark ? '#f1f5f9' : '#111827';
+  const maLineColor = isDark ? '#f1f5f9' : '#111827';
+  const labelBg = isDark ? 'rgba(23,29,43,0.9)' : 'rgba(255,255,255,0.92)';
+  const padL = isMobile ? 70 : 90;
+  const padR = isMobile ? 195 : 240;
+  const padT = isMobile ? 44 : 40;
+  const padB = 34;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+
+  const p1 = PRICE.p1, dates = PRICE.dates;
+  const ma = getMA200();
+  const n = iEnd-iStart+1;
+  const B = boundaries.slice().sort((a,b)=>a-b); // ascending
+  const m = B.length;
+
+  // 매수/매도/거치 시점 마커용: 이 구간 설정으로 실제 리밸런싱 시뮬레이션을 돌려서 매일 어떤 액션이 있었는지 추적
+  const dgChart = getDepositGateSettings();
+  const { w1arr, actionArr } = computeRebalWeights(iStart, iEnd, boundaries, zoneConfigs, dgChart.cooldown, dgChart.sellCooldown);
+
+  // lines[k][i] = price level of boundary k on day i ; lines are ordered top(highest %) to bottom
+  const lines = []; // lines[0] = top boundary line ... lines[m-1] = bottom boundary line
+  for (let k=0;k<m;k++) lines.push(new Array(n));
+  const price = new Array(n);
+  for (let i=0;i<n;i++){
+    const gi = iStart+i;
+    const mv = ma[gi];
+    for (let k=0;k<m;k++) lines[m-1-k][i] = mv * B[k] / 100;
+    price[i] = p1[gi];
+  }
+  const top = lines[0].map(v=>v*1.1);
+  const bottom = lines[m-1].map(v=>v*0.9);
+
+  let minV=Infinity, maxV=-Infinity;
+  for (let i=0;i<n;i++){
+    if (!isNaN(bottom[i])) minV=Math.min(minV, bottom[i], price[i]);
+    if (!isNaN(top[i])) maxV=Math.max(maxV, top[i], price[i]);
+  }
+  if (!isFinite(minV)) { minV=0; maxV=1; }
+
+  function yToPix(v){ return padT+plotH-(v-minV)/(maxV-minV)*plotH; }
+  function xToPix(i){ return padL+i/(n-1)*plotW; }
+
+  function fillBetween(upperArr, lowerArr, color) {
+    ctx.beginPath();
+    let started=false;
+    for (let i=0;i<n;i++){
+      if (isNaN(upperArr[i])) continue;
+      const x=xToPix(i), y=yToPix(upperArr[i]);
+      if (!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
+    }
+    for (let i=n-1;i>=0;i--){
+      if (isNaN(lowerArr[i])) continue;
+      const x=xToPix(i), y=yToPix(lowerArr[i]);
+      ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.fillStyle=color;
+    ctx.fill();
+  }
+
+  // background bands: cycle through a palette from hot(top) to cool(bottom)
+  const palette = ['rgba(220,38,38,0.15)','rgba(234,88,12,0.15)','rgba(202,138,4,0.13)','rgba(22,163,74,0.13)','rgba(107,114,128,0.13)','rgba(59,130,246,0.13)','rgba(147,51,234,0.13)'];
+  fillBetween(top, lines[0], palette[0]);
+  for (let k=0;k<m-1;k++){
+    fillBetween(lines[k], lines[k+1], palette[(k+1)%palette.length]);
+  }
+  fillBetween(lines[m-1], bottom, palette[m%palette.length]);
+
+  // grid + y labels
+  ctx.strokeStyle=gridColor; ctx.lineWidth=1; ctx.font='11px monospace'; ctx.fillStyle=textColor;
+  for(let t=0;t<=5;t++){
+    const frac=t/5;
+    const v=minV+frac*(maxV-minV);
+    const y=padT+plotH-frac*plotH;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    ctx.fillText(v.toFixed(0), 4, y+4);
+  }
+  ctx.fillText(dates[iStart], padL, H-12);
+  ctx.textAlign='right'; ctx.fillText(dates[iEnd], W-padR, H-12); ctx.textAlign='left';
+
+  // boundary lines (100%=200일선 자체는 굵은 검정 점선으로 확실히 구분)
+  const lineColors = ['#dc2626','#ea580c','#ca8a04','#16a34a','#3b82f6','#9333ea','#0891b2'];
+  for (let k=0;k<m;k++){
+    const isMA = B[m-1-k]===100;
+    ctx.strokeStyle = isMA ? maLineColor : lineColors[k%lineColors.length];
+    ctx.lineWidth = isMA ? 2.2 : 1.4;
+    if (isMA) ctx.setLineDash([6,4]); else ctx.setLineDash([]);
+    ctx.beginPath();
+    const step=Math.max(1,Math.floor(n/1800));
+    for(let i=0;i<n;i+=step){ const x=xToPix(i), y=yToPix(lines[k][i]); if(isNaN(lines[k][i])) continue; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // price line
+  ctx.strokeStyle=priceLineColor; ctx.lineWidth=2; ctx.beginPath();
+  const step=Math.max(1,Math.floor(n/1800));
+  for(let i=0;i<n;i+=step){ const x=xToPix(i), y=yToPix(price[i]); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+  ctx.stroke();
+
+  // 매수/매도/거치 마커 (더 크고 뚜렷하게, 3종류로 구분)
+  // 거치매수 = 큰 파란 별  |  분할매수 = 초록 세모(작은것~큰것, 규모비례)  |  매도 = 빨강 역세모
+  for (let i=0;i<n;i++){
+    const gi = iStart+i;
+    const act = actionArr[gi];
+    if (!act) continue;
+    const x = xToPix(i), y = yToPix(price[i]);
+    const GAP = 9; // 가격선에서 마커까지 항상 일정한 간격 (겹치지는 않되 들쭉날쭉해 보이지 않도록)
+    if (act === 'deposit') {
+      ctx.fillStyle = 'rgba(37,99,235,0.95)';
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
+      drawStar(ctx, x, y-GAP-8, 8, 3.5);
+      ctx.fill(); ctx.stroke();
+    } else if (act === 'sell') {
+      const delta = Math.abs((gi>0?w1arr[gi]-w1arr[gi-1]:w1arr[gi]));
+      const size = 5 + Math.min(4, delta/100*15); // 크기만 소폭 변화, 위치(밑변)는 항상 동일
+      const baseY = y - GAP; // 밑변(가격선과 가장 가까운 변)은 항상 같은 위치
+      ctx.fillStyle = '#be185d';
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x, baseY-size); ctx.lineTo(x-size*0.7, baseY); ctx.lineTo(x+size*0.7, baseY);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if (act === 'split') {
+      const delta = Math.abs((gi>0?w1arr[gi]-w1arr[gi-1]:w1arr[gi]));
+      const size = 4 + Math.min(3, delta/100*15);
+      const baseY = y - GAP;
+      ctx.fillStyle = 'rgba(22,163,74,0.9)';
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, baseY-size); ctx.lineTo(x-size*0.6, baseY); ctx.lineTo(x+size*0.6, baseY);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  }
+
+  // ① 선 자체 라벨: 각 경계선(130%, 120%, 100%, 90% ...)에 정확히 그 값만 표시
+  const lastI = n-1;
+  const lineLabels = []; // { y, text, color }
+  for (let k=0;k<m;k++){
+    const boundaryVal = B[m-1-k]; // lines[k]에 대응하는 실제 % 값
+    const isMA = boundaryVal === 100;
+    const text = isMA ? '100% (200일선)' : `${boundaryVal}%`;
+    const color = isMA ? '#6b7280' : lineColors[k%lineColors.length];
+    lineLabels.push({ y: yToPix(lines[k][lastI]), text, color, bold:isMA });
+  }
+  lineLabels.sort((a,b)=>a.y-b.y);
+  const minGapLine = isMobile ? 20 : 18;
+  for (let i=1;i<lineLabels.length;i++){
+    if (lineLabels[i].y - lineLabels[i-1].y < minGapLine) lineLabels[i].y = lineLabels[i-1].y + minGapLine;
+  }
+
+  const fontSize = 13;
+  const col1X = W - padR + 4; // 첫번째 열: 선 값 라벨
+  ctx.font = `${fontSize}px sans-serif`;
+  lineLabels.forEach(lbl=>{
+    const textW = ctx.measureText(lbl.text).width;
+    ctx.fillStyle = labelBg;
+    ctx.fillRect(col1X, lbl.y-10, textW+14, 19);
+    ctx.fillStyle = lbl.color;
+    ctx.fillRect(col1X+2, lbl.y-5, 8, 8);
+    ctx.fillStyle = lbl.bold ? strongText : midText;
+    ctx.font = lbl.bold ? `bold ${fontSize}px sans-serif` : `${fontSize}px sans-serif`;
+    ctx.fillText(lbl.text, col1X+13, lbl.y+4);
+  });
+
+  // ② 구간(zone) 표시: 선 라벨보다 더 오른쪽에 "}" 괄호로 두 선 사이 범위를 묶어서 표현
+  const col2X = col1X + 92; // 괄호 시작 x
+  function drawZoneBracket(yTop, yBottom, label, color) {
+    const cap = 7;
+    ctx.strokeStyle = color; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(col2X, yTop);
+    ctx.lineTo(col2X+cap, yTop);
+    ctx.lineTo(col2X+cap, yBottom);
+    ctx.lineTo(col2X, yBottom);
+    ctx.stroke();
+    ctx.fillStyle = midText;
+    ctx.font = `${fontSize}px sans-serif`;
+    ctx.fillText(label, col2X+cap+6, (yTop+yBottom)/2 + 4);
+  }
+  for (let zi=0; zi<=m; zi++){
+    let yTop, yBottom;
+    if (zi===0) { yTop = lineLabels[0].y - 26; yBottom = lineLabels[0].y; }
+    else if (zi===m) { yTop = lineLabels[m-1].y; yBottom = lineLabels[m-1].y + 26; }
+    else { yTop = lineLabels[zi-1].y; yBottom = lineLabels[zi].y; }
+    const cfg = zoneConfigs[zi] || {};
+    let hint = '';
+    if (cfg.sell > 0) hint = ' (매도)';
+    else if ((cfg.deposit>0) || (cfg.split>0 && cfg.rate>0)) hint = ' (매수)';
+    const label = zoneLabel(zi, B) + hint;
+    const color = zi===0 ? lineColors[0] : (B[m-zi]===100 ? '#6b7280' : lineColors[zi%lineColors.length]);
+    drawZoneBracket(yTop, yBottom, label, color);
+  }
+
+  // legend (상단, 겹치지 않게 줄바꿈 가능하도록 넉넉히 배치)
+  const legendY = isMobile ? 16 : 18;
+  ctx.font = `${isMobile?12:12.5}px sans-serif`;
+  let lx = padL;
+  function legendItem(drawIcon, label, gap) {
+    drawIcon(lx);
+    ctx.fillStyle = strongText;
+    ctx.fillText(label, lx+20, legendY+5);
+    lx += 20 + ctx.measureText(label).width + gap;
+  }
+  legendItem((x)=>{ ctx.strokeStyle=priceLineColor; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,legendY); ctx.lineTo(x+16,legendY); ctx.stroke(); }, 'QQQ 종가', 22);
+  legendItem((x)=>{ ctx.fillStyle='rgba(37,99,235,0.95)'; drawStar(ctx, x+9, legendY, 8, 4); ctx.fill(); }, '거치매수', 22);
+  legendItem((x)=>{ ctx.fillStyle='rgba(22,163,74,0.9)'; ctx.beginPath(); ctx.moveTo(x+9,legendY-7); ctx.lineTo(x+2,legendY+5); ctx.lineTo(x+16,legendY+5); ctx.closePath(); ctx.fill(); }, '분할매수', 22);
+  legendItem((x)=>{ ctx.fillStyle='#be185d'; ctx.beginPath(); ctx.moveTo(x+9,legendY+7); ctx.lineTo(x+2,legendY-5); ctx.lineTo(x+16,legendY-5); ctx.closePath(); ctx.fill(); }, '매도', 0);
+}
+
+function drawStar(ctx, cx, cy, outerR, innerR) {
+  const spikes = 5;
+  ctx.beginPath();
+  for (let i=0;i<spikes*2;i++){
+    const r = i%2===0 ? outerR : innerR;
+    const ang = (Math.PI/spikes)*i - Math.PI/2;
+    const x = cx + Math.cos(ang)*r, y = cy + Math.sin(ang)*r;
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+}
+document.querySelectorAll('.qp-btn').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    clearDateSelectionActive();
+    el.classList.add('active');
+    const months = parseInt(el.dataset.months);
+    const lastDate = PRICE.dates[PRICE.dates.length-1]; // 데이터상 가장 최근 날짜 = "오늘"
+    const startD = addMonths(lastDate, -months);
+    $('endDate').value = lastDate;
+    $('startDate').value = startD < PRICE.dates[0] ? PRICE.dates[0] : startD;
+    syncRollingStartDate($('startDate').value); // ★ 롤링 시작일도 같이 연동
+    if (showingRankView) { showChartView(); } else { render(); }
+  });
+});
+function syncRollingStartDate(dateStr) {
+  const rsd = $('rollingStartDate');
+  if (!rsd || rsd.value === dateStr) return;
+  rsd.value = dateStr;
+  updateRollingHorizonPreview();
+  markRollingStale();
+}
+function clearDateSelectionActive() {
+  document.querySelectorAll('.qp-btn').forEach(b=>b.classList.remove('active'));
+}
+$('runBtn').addEventListener('click', ()=>{
+  clearTimeout(__debounceTimer); // 대기 중인 자동실행(디바운스)이 있으면 취소하고 지금 즉시 반영
+  render();
+});
+
+// ---------- 순위 비교 (현재 선택 기간 기준) ----------
+function renderRankView() {
+  const iStart = bsearchGte(PRICE.dates, $('startDate').value);
+  const iEnd = bsearchLte(PRICE.dates, $('endDate').value);
+  const initAmount = parseFloat($('initAmount').value.replace(/,/g,''))||0;
+  const results = computeResultsForRange(iStart, iEnd, initAmount);
+  if (!results || !results.length) {
+    $('rankContent').innerHTML = '<div class="rank-empty">선택한 기간에는 아직 200일선이 형성되지 않아 데이터가 부족합니다.</div>';
+    return;
+  }
+  results.forEach(r=>{ r.stats.calmar = r.stats.cagr / Math.abs(r.stats.mdd||1); });
+  const byReturn = results.slice().sort((a,b)=>b.stats.totalReturn-a.stats.totalReturn);
+  const byMdd = results.slice().sort((a,b)=>b.stats.mdd-a.stats.mdd);
+  const byCalmar = results.slice().sort((a,b)=>b.stats.calmar-a.stats.calmar);
+
+  let html = `<div class="rank-period">${$('startDate').value} ~ ${$('endDate').value} 기준, 총수익률 순 정렬</div>`;
+  html += '<div class="rank-list">';
+  byReturn.forEach((r,idx)=>{
+    const rank = idx+1;
+    html += `<div class="rank-item${rank===1?' rank-item-1':''}">
+      <div class="rank-num">${rank}</div>
+      <div class="rank-body">
+        <div class="rank-name">${r.meta.name}</div>
+        <div class="rank-final">${fmtWon(r.stats.finalVal)}</div>
+        <div class="rank-stats">
+          <span>총수익 <b class="${r.stats.totalReturn>=0?'rank-pos':'rank-neg'}">${r.stats.totalReturn>=0?'+':''}${r.stats.totalReturn.toFixed(1)}%</b></span>
+          <span>MDD <b>${r.stats.mdd.toFixed(1)}%</b></span>
+          <span>칼마 <b>${r.stats.calmar.toFixed(2)}</b></span>
+        </div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // AI 한줄평
+  const top1 = byReturn[0], mddTop1 = byMdd[0], calTop1 = byCalmar[0];
+  let comment = `📌 이 기간엔 <b>${top1.meta.name}</b>가 수익률 1위(${top1.stats.totalReturn>=0?'+':''}${top1.stats.totalReturn.toFixed(1)}%)였어요.`;
+  if (mddTop1.meta.name !== top1.meta.name) {
+    comment += ` 다만 안전성(MDD)은 <b>${mddTop1.meta.name}</b>가 가장 나았고(${mddTop1.stats.mdd.toFixed(1)}%), 수익과 안전이 같은 전략에서 나오지는 않았습니다.`;
+  } else {
+    comment += ` 이 기간엔 안전성(MDD)도 동시에 가장 좋았습니다.`;
+  }
+  if (calTop1.meta.name !== top1.meta.name && calTop1.meta.name !== mddTop1.meta.name) {
+    comment += ` 균형(칼마비율) 기준으로는 <b>${calTop1.meta.name}</b>가 가장 효율적이었습니다.`;
+  } else if (calTop1.meta.name === top1.meta.name) {
+    comment += ` 칼마비율 기준으로도 1위를 유지했습니다.`;
+  }
+  html += `<div class="rank-comment">🤖 <b>AI 한줄평</b><br>${comment}<div class="rank-note">※ 이건 지금 선택한 기간 "한 번"만 본 결과예요. 우연히 잘 맞은 시점일 수 있으니, 더 신뢰도 높은 판단은 위쪽 "📊 롤링 백테스트"를 참고하세요.</div></div>`;
+
+  $('rankContent').innerHTML = html;
+}
+
+// ============================================================
+// 롤링 백테스트 (Rolling Backtest)
+// 방식: 2003-01-01부터 매월 시작점을 옮겨가며, 1~10·15·20년 보유기간 각각을
+// 독립적으로 검증하고, 각 기간의 평균 CAGR·MDD·칼마비율(CAGR÷|MDD|)을 낸다.
+// 현재 화면(탭)에서 보고 있는 전략 구성 그대로, 현재 세부설정을 그대로 사용한다.
+// ============================================================
+let ROLLING_HORIZONS = [1,2,3,4,5,6,7,8,9,10,15,20]; // 실행 시 사용자가 고른 시작일 기준으로 재계산됨
+let ROLLING_START = '2003-01-01';
+
+function computeMaxRollingYears(startDateStr) {
+  const lastDate = PRICE.dates[PRICE.dates.length-1];
+  const start = new Date(startDateStr);
+  const last = new Date(lastDate);
+  let years = last.getFullYear() - start.getFullYear();
+  // 월/일까지 고려해서 아직 그 해의 기념일이 안 지났으면 1년 빼기
+  const anniv = new Date(start); anniv.setFullYear(start.getFullYear() + years);
+  if (anniv > last) years -= 1;
+  return Math.max(1, years);
+}
+function updateRollingHorizonPreview() {
+  const startVal = $('rollingStartDate').value;
+  if (!startVal) return;
+  const maxY = computeMaxRollingYears(startVal);
+  $('rollingHorizonPreview').textContent = `→ 1년부터 ${maxY}년까지, 총 ${maxY}개 보유기간을 1년 단위로 전부 검증합니다.`;
+}
+function markRollingStale() {
+  if (!window.__rollingResult) return; // 아직 한 번도 안 돌렸으면 표시할 필요 없음
+  if ($('rollingResults').style.display === 'none') return; // 결과 화면이 접혀있으면 굳이 표시 안 함
+  $('rollingStaleBanner').style.display = 'block';
+  $('rollingResultsBody').classList.add('is-stale');
+}
+$('rollingStartDate').addEventListener('change', ()=>{ updateRollingHorizonPreview(); markRollingStale(); });
+$('rollingStartDate').min = PRICE.dates[0];
+$('rollingStartDate').max = PRICE.dates[PRICE.dates.length-1];
+updateRollingHorizonPreview();
+
+async function runRollingBacktest() {
+  const btn = $('rollingRunBtn');
+  btn.disabled = true; btn.style.opacity = '0.6';
+  $('rollingProgress').style.display = 'block';
+  $('rollingResults').style.display = 'none';
+  $('rollingStaleBanner').style.display = 'none'; // 새로 돌리기 시작하면 예전 경고는 일단 숨김
+  $('rollingResultsBody').classList.remove('is-stale');
+  $('rollingProgressFill').style.width = '0%';
+
+  ROLLING_START = $('rollingStartDate').value || '2003-01-01';
+  const maxYears = computeMaxRollingYears(ROLLING_START);
+  ROLLING_HORIZONS = Array.from({length: maxYears}, (_, i) => i+1); // 1,2,...,maxYears (전부 1년 단위)
+
+  const lastDate = PRICE.dates[PRICE.dates.length-1];
+  const initAmount = parseFloat($('initAmount').value.replace(/,/g,''))||0;
+  const perHorizon = {};
+
+  for (let hi=0; hi<ROLLING_HORIZONS.length; hi++) {
+    const years = ROLLING_HORIZONS[hi];
+    $('rollingProgressText').textContent = `${hi+1}/${ROLLING_HORIZONS.length}단계 처리 중... (${years}년 보유 시나리오)`;
+    $('rollingProgressFill').style.width = `${Math.round((hi)/ROLLING_HORIZONS.length*100)}%`;
+    await new Promise(r=>setTimeout(r, 0)); // UI 갱신을 위해 한 틱 양보
+
+    const sums = {};
+    let d = new Date(ROLLING_START);
+    const cutoff = new Date(lastDate); cutoff.setFullYear(cutoff.getFullYear()-years);
+    let n = 0;
+    while (d <= cutoff) {
+      const startD = d.toISOString().slice(0,10);
+      const iStart = bsearchGte(PRICE.dates, startD);
+      const endD = new Date(d); endD.setFullYear(endD.getFullYear()+years);
+      const iEnd = bsearchLte(PRICE.dates, endD.toISOString().slice(0,10));
+      if (iEnd > iStart) {
+        const results = computeResultsForRange(iStart, iEnd, initAmount);
+        if (results && results.length) {
+          results.forEach(r=>{
+            const nm = r.meta.name;
+            const calmar = r.stats.cagr / Math.abs(r.stats.mdd||1);
+            if (!sums[nm]) sums[nm] = {ret:0, mdd:0, calmar:0, n:0};
+            sums[nm].ret += r.stats.cagr;
+            sums[nm].mdd += r.stats.mdd;
+            sums[nm].calmar += calmar;
+            sums[nm].n++;
+          });
+          n++;
+        }
+      }
+      d.setMonth(d.getMonth()+1);
+    }
+    const avg = {};
+    Object.keys(sums).forEach(nm=>{
+      avg[nm] = { ret: sums[nm].ret/sums[nm].n, mdd: sums[nm].mdd/sums[nm].n, calmar: sums[nm].calmar/sums[nm].n };
+    });
+    perHorizon[years] = { avg, n };
+  }
+
+  $('rollingProgressFill').style.width = '100%';
+  window.__rollingResult = { perHorizon, initAmount, mode, computedAt: new Date().toISOString() };
+  renderRollingResults(window.__rollingResult);
+
+  btn.disabled = false; btn.style.opacity = '1';
+  $('rollingProgress').style.display = 'none';
+  $('rollingResults').style.display = 'block';
+}
+
+function rollingModeLabel() {
+  return {rebal:'리밸런싱비교(QLD_3종)', v2:'리밸런싱비교(QLD/TQQQ_7종)', dca:'적립식(QQQ,QLD,TQQQ)', lump:'거치식(QQQ,QLD,TQQQ)'}[mode] || mode;
+}
+
+function median(arr) {
+  const s = [...arr].sort((a,b)=>a-b);
+  const n = s.length;
+  return n%2 ? s[(n-1)/2] : (s[n/2-1]+s[n/2])/2;
+}
+
+function buildRollingTableHtml(perHorizon, metricKey, title, fmt, desc) {
+  const names = Object.keys(perHorizon[ROLLING_HORIZONS[0]].avg);
+  // 각 전략의 12개 기간별 값 중위값을 구해서, 그 기준으로 행 정렬 (높을수록 좋음 — MDD도 0에 가까울수록/즉 클수록 좋음)
+  const rows = names.map(nm=>{
+    const vals = ROLLING_HORIZONS.map(y => perHorizon[y].avg[nm] ? perHorizon[y].avg[nm][metricKey] : NaN).filter(v=>!isNaN(v));
+    return { nm, med: vals.length ? median(vals) : NaN };
+  }).sort((a,b)=> b.med - a.med);
+
+  let html = `<div class="rolling-table-block"><div class="rolling-table-title">${title}${desc ? `<span class="rolling-table-desc">${desc}</span>` : ''}</div><div class="rolling-table-scroll"><table class="rolling-table"><thead><tr><th>전략</th><th class="best-col">중위값★</th>`;
+  ROLLING_HORIZONS.forEach(y=>{ html += `<th>${y}년</th>`; });
+  html += '</tr></thead><tbody>';
+  rows.forEach(({nm, med: medVal})=>{
+    html += `<tr><td>${nm}</td><td class="best-col">${isNaN(medVal) ? '-' : fmt(medVal)}</td>`;
+    ROLLING_HORIZONS.forEach(y=>{
+      const v = perHorizon[y].avg[nm] ? perHorizon[y].avg[nm][metricKey] : NaN;
+      html += `<td>${isNaN(v) ? '-' : fmt(v)}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  return html;
+}
+
+function renderRollingResults(result) {
+  const { perHorizon } = result;
+  const sampleLine = ROLLING_HORIZONS.map(y=>`${y}년:${perHorizon[y].n}개`).join(' · ');
+  let html = `<div style="font-size:10px;color:var(--text-faint);margin-bottom:10px;">표본 수 — ${sampleLine}</div>`;
+  html += `<div style="font-size:10px;color:var(--text-faint);margin-bottom:10px;">★ 중위값 기준 순위 정렬 — 롤링구간은 서로 겹쳐있어 위기 시점 몇 개가 평균을 크게 왜곡할 수 있어, 평균보다 중위값이 "전형적인 결과"를 더 잘 보여줍니다.</div>`;
+  html += buildRollingTableHtml(perHorizon, 'ret', 'CAGR (%)', v=>v.toFixed(1)+'%', '연평균 복리 수익률. 높을수록 많이 번 것');
+  html += buildRollingTableHtml(perHorizon, 'mdd', 'MDD (%)', v=>v.toFixed(1)+'%', '최고점 대비 최대 낙폭. 0에 가까울수록 안전');
+  html += buildRollingTableHtml(perHorizon, 'calmar', '칼마비율 (CAGR÷|MDD|)', v=>v.toFixed(2), '수익÷안전 종합 효율. 높을수록 균형이 좋음');
+  $('rollingResultsBody').innerHTML = html;
+}
+
+function getRankedRows(perHorizon, metricKey) {
+  const names = Object.keys(perHorizon[ROLLING_HORIZONS[0]].avg);
+  return names.map(nm=>{
+    const vals = ROLLING_HORIZONS.map(y => perHorizon[y].avg[nm] ? perHorizon[y].avg[nm][metricKey] : NaN).filter(v=>!isNaN(v));
+    return { nm, med: vals.length ? median(vals) : NaN };
+  }).sort((a,b)=> b.med - a.med);
+}
+
+function buildRollingSummaryHtml(perHorizon) {
+  const retRanked = getRankedRows(perHorizon, 'ret');
+  const mddRanked = getRankedRows(perHorizon, 'mdd');
+  const calRanked = getRankedRows(perHorizon, 'calmar');
+  const top1Ret = retRanked[0], top1Mdd = mddRanked[0], top1Cal = calRanked[0];
+  const findRank = (list, nm) => list.findIndex(x=>x.nm===nm)+1;
+
+  let html = '<div class="summary-grid">';
+  html += `<div class="summary-card ret"><div class="sc-label">수익률(CAGR) 중위값 1위</div><div class="sc-name">${top1Ret.nm}</div><div class="sc-val">${top1Ret.med.toFixed(1)}%</div><div class="sc-sub">MDD ${findRank(mddRanked,top1Ret.nm)}위 · 칼마 ${findRank(calRanked,top1Ret.nm)}위</div></div>`;
+  html += `<div class="summary-card mdd"><div class="sc-label">MDD(안전성) 중위값 1위</div><div class="sc-name">${top1Mdd.nm}</div><div class="sc-val">${top1Mdd.med.toFixed(1)}%</div><div class="sc-sub">수익 ${findRank(retRanked,top1Mdd.nm)}위 · 칼마 ${findRank(calRanked,top1Mdd.nm)}위</div></div>`;
+  html += `<div class="summary-card cal"><div class="sc-label">칼마비율(균형) 중위값 1위</div><div class="sc-name">${top1Cal.nm}</div><div class="sc-val">${top1Cal.med.toFixed(2)}</div><div class="sc-sub">수익 ${findRank(retRanked,top1Cal.nm)}위 · MDD ${findRank(mddRanked,top1Cal.nm)}위</div></div>`;
+  html += '</div>';
+
+  html += '<div class="summary-text">';
+  if (top1Ret.nm === top1Mdd.nm) {
+    html += `<b>${top1Ret.nm}</b>은(는) 수익률과 MDD 양쪽 모두 1위로, 수익과 안정성을 동시에 잡은 결과입니다. `;
+  } else {
+    html += `<b>수익률 1위(${top1Ret.nm})</b>와 <b>MDD 1위(${top1Mdd.nm})</b>가 서로 다른 전략이라는 점은, "가장 많이 버는 것"과 "가장 안전한 것"이 항상 같지 않다는 전형적인 트레이드오프를 보여줍니다. `;
+  }
+  if (top1Cal.nm !== top1Ret.nm && top1Cal.nm !== top1Mdd.nm) {
+    html += `칼마비율(수익÷안전) 기준 1위는 <b>${top1Cal.nm}</b>로, 수익 1위·MDD 1위 어느 쪽도 아닌 "균형형" 전략이 위험조정 효율에서는 가장 앞섰습니다.`;
+  } else {
+    html += `칼마비율 기준으로도 <b>${top1Cal.nm}</b>가 1위를 유지했습니다.`;
+  }
+  html += '</div>';
+  return html;
+}
+
+// ★ 공통 다크 리포트 생성/다운로드 헬퍼 (롤링/Walk-Forward/블록부트스트랩 전부 재사용)
+function buildDarkReportHtml({ title, meta, explain, bodyHtml }) {
+  return `<!DOCTYPE html>
+<html lang="ko" style="background:#0b1120;"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>${title}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
+:root{ color-scheme: dark; }
+*{ box-sizing:border-box; }
+html{ background:#0b1120 !important; }
+body{ margin:0; background:#0b1120 !important; color:#e7ecf5 !important; font-family:'Inter',-apple-system,'Malgun Gothic',sans-serif; padding:0 0 40px; }
+@media print { html,body{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; } .print-btn{ display:none !important; } }
+.wrap{ max-width:900px; margin:0 auto; padding:0 18px; }
+.print-btn{ position:fixed; top:14px; right:14px; background:#7c3aed; color:#fff !important; border:none; border-radius:8px; padding:10px 16px; font-size:12.5px; font-weight:700; cursor:pointer; z-index:10; box-shadow:0 2px 10px rgba(0,0,0,0.3); }
+.hero{ padding:40px 0 24px; border-bottom:1px solid #26314a; }
+.eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#93a1bd !important; text-transform:uppercase; margin-bottom:10px; }
+h1{ font-size:22px; font-weight:900; margin:0 0 8px; color:#f5f7fb !important; letter-spacing:-0.01em; }
+.meta{ font-size:11.5px; color:#93a1bd !important; }
+.explain{ font-size:12px; color:#93a1bd !important; background:#141c30 !important; border:1px solid #26314a; border-radius:12px; padding:16px 18px; margin:20px 0; line-height:1.75; }
+.explain b{ color:#eab308 !important; }
+.sample{ font-size:10.5px; color:#5c6a89 !important; margin-bottom:20px; font-family:'JetBrains Mono',monospace; }
+.section-title{ font-size:15px; font-weight:800; color:#f5f7fb !important; margin:26px 0 12px; }
+.summary-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px; }
+@media (max-width:640px){ .summary-grid{ grid-template-columns:1fr; } }
+.summary-card{ background:#141c30 !important; border:1.5px solid #26314a; border-radius:12px; padding:16px; }
+.summary-card.ret{ border-color:#f43f5e; } .summary-card.mdd{ border-color:#3b82f6; } .summary-card.cal{ border-color:#eab308; }
+.sc-label{ font-size:10px; font-family:'JetBrains Mono',monospace; color:#93a1bd !important; margin-bottom:6px; }
+.sc-name{ font-size:14px; font-weight:800; color:#f5f7fb !important; margin-bottom:4px; }
+.sc-val{ font-size:20px; font-weight:900; font-family:'JetBrains Mono',monospace; color:#f5f7fb !important; margin-bottom:6px; }
+.sc-sub{ font-size:10.5px; color:#5c6a89 !important; }
+.rank-comment{ background:#1a2338 !important; border-radius:10px; padding:14px 16px; font-size:12.5px; line-height:1.75; color:#93a1bd !important; margin-bottom:8px; }
+.rank-comment b{ color:#e7ecf5 !important; }
+.rank-note{ font-size:10.5px; color:#5c6a89 !important; margin-top:8px; }
+.rolling-table-block{ margin-bottom:24px; break-inside:avoid; }
+.rolling-table-title{ font-size:13.5px; font-weight:800; margin-bottom:4px; color:#f5f7fb !important; }
+.rolling-table-desc{ font-size:10.5px; font-weight:400; color:#5c6a89 !important; margin-left:8px; }
+.rolling-table-hint{ font-size:10px; color:#5c6a89 !important; margin-bottom:8px; }
+.rolling-table-scroll{ overflow-x:auto; border-radius:10px; border:1px solid #26314a; -webkit-overflow-scrolling:touch; }
+.rolling-table{ width:100%; border-collapse:collapse; font-size:11px; font-family:'JetBrains Mono',monospace; }
+.rolling-table th,.rolling-table td{ padding:8px 7px; text-align:center; border:1px solid #26314a; color:#e7ecf5 !important; white-space:nowrap; }
+.rolling-table thead th{ background:#1a2338 !important; color:#93a1bd !important; font-family:'Inter',sans-serif; font-size:10px; font-weight:700; }
+.rolling-table td:first-child,.rolling-table th:first-child{ text-align:left; font-weight:700; font-family:'Inter',sans-serif; font-size:11.5px; min-width:80px; position:sticky; left:0; background:#0f172a !important; }
+.rolling-table thead th:first-child{ background:#1a2338 !important; z-index:2; }
+.best-col{ background:rgba(124,58,237,0.18) !important; font-weight:800 !important; color:#c4b5fd !important; }
+.rolling-table td:first-child.best-col, .rolling-table th:first-child.best-col{ background:#241a3d !important; }
+.footer{ margin-top:30px; font-size:10px; color:#5c6a89 !important; text-align:center; font-family:'JetBrains Mono',monospace; }
+</style></head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨 PDF로 저장 (인쇄)</button>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Advanced Validation Report</div>
+    <h1>${title}</h1>
+    <div class="meta">${meta}</div>
+  </div>
+  <div class="explain">${explain}</div>
+  ${bodyHtml}
+  <div class="footer">QQQ LEVERAGE BACKTEST SIMULATOR</div>
+</div>
+</body></html>`;
+}
+function downloadReportBlob(html, filenameBase) {
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().slice(0,16).replace(/[:T]/g,'').replace('-','').replace('-','');
+  a.href = url;
+  a.download = `${filenameBase}_${ts}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+  alert('리포트 파일이 다운로드됐어요.\n다운로드된 파일을 열면(카카오톡이 아닌 일반 브라우저 권장) 우측 상단 "PDF로 저장" 버튼으로 PDF 변환할 수 있어요.');
+}
+
+function downloadRollingPdf() {
+  const result = window.__rollingResult;
+  if (!result) return;
+  const { perHorizon, initAmount, computedAt } = result;
+  const modeLabel = rollingModeLabel();
+  const dateStr = new Date(computedAt).toLocaleString('ko-KR');
+  const sampleLine = ROLLING_HORIZONS.map(y=>`${y}년:${perHorizon[y].n}개`).join(' · ');
+
+  const summaryHtml = buildRollingSummaryHtml(perHorizon);
+  const retTable = buildRollingTableHtml(perHorizon, 'ret', 'CAGR (%)', v=>v.toFixed(1)+'%', '연평균 복리 수익률. 높을수록 많이 번 것');
+  const mddTable = buildRollingTableHtml(perHorizon, 'mdd', 'MDD (%)', v=>v.toFixed(1)+'%', '최고점 대비 최대 낙폭. 0에 가까울수록 안전');
+  const calmarTable = buildRollingTableHtml(perHorizon, 'calmar', '칼마비율 (CAGR÷|MDD|)', v=>v.toFixed(2), '수익÷안전 종합 효율. 높을수록 균형이 좋음');
+
+  const html = `<!DOCTYPE html>
+<html lang="ko" style="background:#0b1120;"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>롤링 백테스트 결과 — ${modeLabel}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
+:root{ color-scheme: dark; }
+*{ box-sizing:border-box; }
+html{ background:#0b1120 !important; }
+body{ margin:0; background:#0b1120 !important; color:#e7ecf5 !important; font-family:'Inter',-apple-system,'Malgun Gothic',sans-serif; padding:0 0 40px; }
+@media print { html,body{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; } .print-btn{ display:none !important; } }
+.wrap{ max-width:900px; margin:0 auto; padding:0 18px; }
+.print-btn{ position:fixed; top:14px; right:14px; background:#7c3aed; color:#fff !important; border:none; border-radius:8px; padding:10px 16px; font-size:12.5px; font-weight:700; cursor:pointer; z-index:10; box-shadow:0 2px 10px rgba(0,0,0,0.3); }
+.hero{ padding:40px 0 24px; border-bottom:1px solid #26314a; }
+.eyebrow{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.1em; color:#93a1bd !important; text-transform:uppercase; margin-bottom:10px; }
+h1{ font-size:22px; font-weight:900; margin:0 0 8px; color:#f5f7fb !important; letter-spacing:-0.01em; }
+.meta{ font-size:11.5px; color:#93a1bd !important; }
+.explain{ font-size:12px; color:#93a1bd !important; background:#141c30 !important; border:1px solid #26314a; border-radius:12px; padding:16px 18px; margin:20px 0; line-height:1.75; }
+.explain b{ color:#eab308 !important; }
+.sample{ font-size:10.5px; color:#5c6a89 !important; margin-bottom:20px; font-family:'JetBrains Mono',monospace; }
+.section-title{ font-size:15px; font-weight:800; color:#f5f7fb !important; margin:26px 0 12px; }
+.summary-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px; }
+@media (max-width:640px){ .summary-grid{ grid-template-columns:1fr; } }
+.summary-card{ background:#141c30 !important; border:1.5px solid #26314a; border-radius:12px; padding:16px; }
+.summary-card.ret{ border-color:#f43f5e; }
+.summary-card.mdd{ border-color:#3b82f6; }
+.summary-card.cal{ border-color:#eab308; }
+.sc-label{ font-size:10px; font-family:'JetBrains Mono',monospace; color:#93a1bd !important; margin-bottom:6px; }
+.sc-name{ font-size:14px; font-weight:800; color:#f5f7fb !important; margin-bottom:4px; }
+.sc-val{ font-size:20px; font-weight:900; font-family:'JetBrains Mono',monospace; color:#f5f7fb !important; margin-bottom:6px; }
+.sc-sub{ font-size:10.5px; color:#5c6a89 !important; }
+.summary-text{ font-size:12.5px; color:#93a1bd !important; background:#1a2338 !important; border-radius:10px; padding:14px 16px; line-height:1.75; margin-bottom:8px; }
+.summary-text b{ color:#e7ecf5 !important; }
+.rolling-table-block{ margin-bottom:24px; break-inside:avoid; }
+.rolling-table-title{ font-size:13.5px; font-weight:800; margin-bottom:4px; color:#f5f7fb !important; }
+.rolling-table-desc{ font-size:10.5px; font-weight:400; color:#5c6a89 !important; margin-left:8px; }
+.rolling-table-hint{ font-size:10px; color:#5c6a89 !important; margin-bottom:8px; }
+.rolling-table-scroll{ overflow-x:auto; border-radius:10px; border:1px solid #26314a; -webkit-overflow-scrolling:touch; }
+.rolling-table{ width:100%; border-collapse:collapse; font-size:11px; font-family:'JetBrains Mono',monospace; }
+.rolling-table th,.rolling-table td{ padding:8px 7px; text-align:center; border:1px solid #26314a; color:#e7ecf5 !important; white-space:nowrap; }
+.rolling-table thead th{ background:#1a2338 !important; color:#93a1bd !important; font-family:'Inter',sans-serif; font-size:10px; font-weight:700; }
+.rolling-table td:first-child,.rolling-table th:first-child{ text-align:left; font-weight:700; font-family:'Inter',sans-serif; font-size:11.5px; min-width:110px; position:sticky; left:0; background:#0f172a !important; }
+.rolling-table thead th:first-child{ background:#1a2338 !important; z-index:2; }
+.best-col{ background:rgba(124,58,237,0.18) !important; font-weight:800 !important; color:#c4b5fd !important; }
+.rolling-table td:first-child.best-col, .rolling-table th:first-child.best-col{ background:#241a3d !important; }
+.footer{ margin-top:30px; font-size:10px; color:#5c6a89 !important; text-align:center; font-family:'JetBrains Mono',monospace; }
+</style></head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨 PDF로 저장 (인쇄)</button>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Rolling Backtest Report</div>
+    <h1>📊 롤링 백테스트 결과 — ${modeLabel}</h1>
+    <div class="meta">생성 시각: ${dateStr} · 총 투자예산: ${initAmount.toLocaleString('ko-KR')}원</div>
+  </div>
+  <div class="explain">${new Date(ROLLING_START).getFullYear()}년 ${new Date(ROLLING_START).getMonth()+1}월부터 매월 시작점을 옮겨가며(롤링), <b>1년부터 ${ROLLING_HORIZONS[ROLLING_HORIZONS.length-1]}년까지 1년 단위로 전부</b> 보유기간을 독립적으로 검증했습니다. 각 표는 ${ROLLING_HORIZONS.length}개 기간의 값을 <b>중위값 기준으로 순위 정렬</b>했습니다 — 롤링구간은 서로 겹쳐있어 위기 시점 몇 개가 평균을 크게 왜곡할 수 있어, 평균보다 중위값이 "전형적인 결과"를 더 잘 보여줍니다. 2010년 이전 QLD·TQQQ는 보정합성 데이터가 일부 포함됩니다.</div>
+  <div class="sample">표본 수 — ${sampleLine}</div>
+
+  <div class="section-title">최종 결과 요약</div>
+  ${summaryHtml}
+
+  <div class="section-title">상세 데이터</div>
+  <div class="rolling-table-hint">← 좌우로 스크롤해서 전체 기간을 볼 수 있어요</div>
+  ${retTable}
+  ${mddTable}
+  ${calmarTable}
+  <div class="footer">QQQ LEVERAGE BACKTEST SIMULATOR · ROLLING BACKTEST REPORT</div>
+</div>
+</body></html>`;
+
+  // ★ window.open()은 카카오톡 등 인앱 브라우저에서 대부분 차단되므로,
+  // 팝업 없이 파일을 바로 다운로드하는 방식으로 대체 (모든 환경에서 동작)
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date(computedAt).toISOString().slice(0,16).replace(/[:T]/g,'').replace('-','').replace('-','');
+  a.href = url;
+  a.download = `롤링백테스트_${modeLabel.replace(/[()\/,]/g,'')}_${ts}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+  alert('리포트 파일이 다운로드됐어요.\n다운로드된 파일을 열면(카카오톡이 아닌 일반 브라우저 권장) 우측 상단 "PDF로 저장" 버튼으로 PDF 변환할 수 있어요.');
+}
+
+$('rollingRunBtn').addEventListener('click', runRollingBacktest);
+$('rollingPdfBtn').addEventListener('click', downloadRollingPdf);
+
+// ============================================================
+// Walk-Forward 검증 — 훈련구간에서 재최적화 → 검증구간(못 본 데이터)에 적용
+// ============================================================
+function calcStatsFromEquity(eq, dates, initAmount) {
+  const years = (new Date(dates[dates.length-1])-new Date(dates[0]))/(1000*60*60*24*365.25);
+  const finalVal = eq[eq.length-1];
+  const cagr = years>0 ? (Math.pow(finalVal/initAmount,1/years)-1)*100 : NaN;
+  let peak=eq[0], mdd=0;
+  eq.forEach(v=>{ if(v>peak) peak=v; const dd=(v-peak)/peak*100; if(dd<mdd) mdd=dd; });
+  return { cagr, mdd, calmar: cagr/Math.abs(mdd||1), finalVal };
+}
+function getWfAssetConfigs() {
+  // 재최적화(그리드서치) 대상 = 리밸런싱 규칙이 있는 자산들. 적립식/거치식은 같은 호출에서 공짜로 같이 나옴.
+  if (mode === 'v2') {
+    return [
+      { assetLabel: 'QLD', boundaries: REBAL_BOUNDARIES, zones: REBAL_ZONES, priceKey: 'p2' },
+      { assetLabel: 'TQQQ', boundaries: REBAL_BOUNDARIES_TQQQ, zones: REBAL_ZONES_TQQQ, priceKey: 'p3' },
+    ];
+  }
+  return [ { assetLabel: 'QLD', boundaries: REBAL_BOUNDARIES, zones: REBAL_ZONES, priceKey: 'p2' } ];
+}
+function hasHybrid() { return mode === 'v2'; }
+function wfBuildVariant(baseZones, split3, deposit5) {
+  const z = baseZones.map(zz=>Object.assign({},zz));
+  z[2] = Object.assign({}, z[2], { split: split3, stop: 100-split3 });
+  z[3] = Object.assign({}, z[3], { depositCashGate: Math.max((100-split3)-0.1, 0) });
+  z[4] = Object.assign({}, z[4], { deposit: deposit5 });
+  return z;
+}
+const WF_GRID_SPLIT3 = [50, 60, 70];
+const WF_GRID_DEP5 = [10, 20, 30, 40];
+function wfEvalAsset(cfg, zones, iStart, iEnd, initAmount) {
+  const comp = computeRebalComparison(iStart, iEnd, cfg.boundaries, zones, REBAL_DCA_COMPARE, initAmount, cfg.priceKey, 30, 30);
+  if (!comp) return null;
+  const dts = PRICE.dates.slice(comp.investStart, iEnd+1);
+  return {
+    rebal: calcStatsFromEquity(comp.eq1, dts, initAmount),
+    dca: calcStatsFromEquity(comp.eq2, dts, initAmount),
+    lump: calcStatsFromEquity(comp.eq3, dts, initAmount),
+  };
+}
+function wfEvalHybrid(zones, iStart, iEnd, initAmount) {
+  const comp = computeHybridComparison(iStart, iEnd, REBAL_BOUNDARIES_HYBRID, zones, initAmount, 30, 30);
+  if (!comp) return null;
+  const dts = PRICE.dates.slice(comp.investStart, iEnd+1);
+  return calcStatsFromEquity(comp.eq1, dts, initAmount);
+}
+function updateWfFoldPreview() {
+  const trainYears = parseInt($('wfTrainYears').value)||5;
+  const testYears = parseInt($('wfTestYears').value)||2;
+  const totalSpan = (new Date(PRICE.dates[PRICE.dates.length-1]) - new Date(PRICE.dates[0])) / (1000*60*60*24*365.25);
+  const foldCount = Math.max(0, Math.floor(totalSpan - trainYears - testYears) + 1);
+  const stratCount = getWfAssetConfigs().length * 3 + (hasHybrid()?1:0);
+  $('wfFoldPreview').textContent = `→ 약 ${foldCount}개 구간(fold) × ${stratCount}개 전략(리밸런싱/적립식/거치식 전부) 검증을 반복합니다.`;
+}
+function markWfStale() {
+  if (!window.__wfResult) return;
+  if ($('wfResults').style.display === 'none') return;
+  $('wfStaleBanner').style.display = 'block';
+  $('wfResultsBody').classList.add('is-stale');
+}
+async function runWalkForward() {
+  if (mode !== 'rebal' && mode !== 'v2') {
+    alert('Walk-Forward는 리밸런싱 전략(QLD_3종 또는 QLD/TQQQ_7종 탭)에서만 사용할 수 있어요.');
+    return;
+  }
+  const btn = $('wfRunBtn');
+  btn.disabled = true; btn.style.opacity='0.6';
+  $('wfProgress').style.display='block';
+  $('wfResults').style.display='none';
+  $('wfStaleBanner').style.display='none';
+  $('wfResultsBody').classList.remove('is-stale');
+  $('wfProgressFill').style.width='0%';
+  await new Promise(r=>setTimeout(r,0));
+
+  const trainYears = parseInt($('wfTrainYears').value)||5;
+  const testYears = parseInt($('wfTestYears').value)||2;
+  const initAmount = parseFloat($('initAmount').value.replace(/,/g,''))||0;
+  const assetConfigs = getWfAssetConfigs();
+  const useHybrid = hasHybrid();
+
+  const lastDate = PRICE.dates[PRICE.dates.length-1];
+  const dataStart = PRICE.dates[0];
+  const folds = [];
+  let d = new Date(dataStart);
+  while (true) {
+    const trainStart = new Date(d);
+    const trainEnd = new Date(d); trainEnd.setFullYear(trainEnd.getFullYear()+trainYears);
+    const testStart = new Date(trainEnd);
+    const testEnd = new Date(testStart); testEnd.setFullYear(testEnd.getFullYear()+testYears);
+    if (testEnd > new Date(lastDate)) break;
+    folds.push({ trainStart: trainStart.toISOString().slice(0,10), trainEnd: trainEnd.toISOString().slice(0,10), testStart: testStart.toISOString().slice(0,10), testEnd: testEnd.toISOString().slice(0,10) });
+    d.setFullYear(d.getFullYear()+1);
+  }
+  if (folds.length === 0) {
+    alert('선택한 훈련+검증 기간이 전체 데이터 기간보다 깁니다. 기간을 줄여주세요.');
+    btn.disabled=false; btn.style.opacity='1'; $('wfProgress').style.display='none';
+    return;
+  }
+  const grid = [];
+  WF_GRID_SPLIT3.forEach(s3=>WF_GRID_DEP5.forEach(d5=>grid.push({split3:s3, deposit5:d5})));
+
+  const strategyNames = [];
+  assetConfigs.forEach(c=>{ strategyNames.push(`${c.assetLabel} 리밸런싱`, `${c.assetLabel} 적립식`, `${c.assetLabel} 거치식`); });
+  if (useHybrid) strategyNames.push('하이브리드(QLD+TQQQ)');
+  const perStrategyResults = {}; strategyNames.forEach(nm=>perStrategyResults[nm]=[]);
+
+  const totalSteps = folds.length * (assetConfigs.length + (useHybrid?1:0));
+  let stepCount = 0;
+  for (let fi=0; fi<folds.length; fi++) {
+    const f = folds[fi];
+    const iTrainStart = bsearchGte(PRICE.dates, f.trainStart);
+    const iTrainEnd = bsearchLte(PRICE.dates, f.trainEnd);
+    const iTestStart = bsearchGte(PRICE.dates, f.testStart);
+    const iTestEnd = bsearchLte(PRICE.dates, f.testEnd);
+
+    for (const cfg of assetConfigs) {
+      stepCount++;
+      $('wfProgressText').textContent = `[${cfg.assetLabel}] ${fi+1}/${folds.length} 구간 처리 중...`;
+      $('wfProgressFill').style.width = `${Math.round(stepCount/totalSteps*100)}%`;
+      await new Promise(r=>setTimeout(r,0));
+
+      let best = null;
+      grid.forEach(c=>{
+        const z = wfBuildVariant(cfg.zones, c.split3, c.deposit5);
+        const r = wfEvalAsset(cfg, z, iTrainStart, iTrainEnd, initAmount);
+        if (r && !isNaN(r.rebal.calmar) && (!best || r.rebal.calmar > best.r.rebal.calmar)) best = { config: c, r };
+      });
+      if (!best) continue;
+      const bestZones = wfBuildVariant(cfg.zones, best.config.split3, best.config.deposit5);
+      const oos = wfEvalAsset(cfg, bestZones, iTestStart, iTestEnd, initAmount);
+      const baseline = wfEvalAsset(cfg, cfg.zones, iTestStart, iTestEnd, initAmount);
+      if (!oos || !baseline) continue;
+      perStrategyResults[`${cfg.assetLabel} 리밸런싱`].push({ fold: f, bestConfig: best.config, oos: oos.rebal, baseline: baseline.rebal });
+      perStrategyResults[`${cfg.assetLabel} 적립식`].push({ fold: f, bestConfig: null, oos: oos.dca, baseline: baseline.dca });
+      perStrategyResults[`${cfg.assetLabel} 거치식`].push({ fold: f, bestConfig: null, oos: oos.lump, baseline: baseline.lump });
+    }
+
+    if (useHybrid) {
+      stepCount++;
+      $('wfProgressText').textContent = `[하이브리드] ${fi+1}/${folds.length} 구간 처리 중...`;
+      $('wfProgressFill').style.width = `${Math.round(stepCount/totalSteps*100)}%`;
+      await new Promise(r=>setTimeout(r,0));
+
+      let best = null;
+      grid.forEach(c=>{
+        const z = wfBuildVariant(REBAL_ZONES_HYBRID, c.split3, c.deposit5);
+        const r = wfEvalHybrid(z, iTrainStart, iTrainEnd, initAmount);
+        if (r && !isNaN(r.calmar) && (!best || r.calmar > best.r.calmar)) best = { config: c, r };
+      });
+      if (best) {
+        const bestZones = wfBuildVariant(REBAL_ZONES_HYBRID, best.config.split3, best.config.deposit5);
+        const oos = wfEvalHybrid(bestZones, iTestStart, iTestEnd, initAmount);
+        const baseline = wfEvalHybrid(REBAL_ZONES_HYBRID, iTestStart, iTestEnd, initAmount);
+        if (oos && baseline) perStrategyResults['하이브리드(QLD+TQQQ)'].push({ fold: f, bestConfig: best.config, oos, baseline });
+      }
+    }
+  }
+
+  $('wfProgressFill').style.width='100%';
+  window.__wfResult = { perStrategyResults, strategyNames, trainYears, testYears, initAmount, computedAt: new Date().toISOString(), modeLabel: rollingModeLabel() };
+  renderWfResults(window.__wfResult);
+  btn.disabled=false; btn.style.opacity='1';
+  $('wfProgress').style.display='none';
+  $('wfResults').style.display='block';
+}
+function buildMetricRankTable(perStrategyResults, strategyNames, metricKey, title, fmt) {
+  const ranked = strategyNames.map(nm=>{
+    const results = perStrategyResults[nm];
+    const oosMed = median(results.map(r=>r.oos[metricKey]));
+    const baseMed = median(results.map(r=>r.baseline[metricKey]));
+    return { nm, oosMed, baseMed };
+  }).sort((a,b)=>b.oosMed - a.oosMed); // 높을수록 좋음 (MDD는 음수라 0에 가까울수록/즉 클수록 안전)
+  let html = `<div class="rolling-table-title">${title}</div>`;
+  html += `<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr><th>전략</th><th class="best-col">재최적화/실제 중위값</th><th>지금 고정값 중위값</th></tr></thead><tbody>`;
+  ranked.forEach((r,idx)=>{
+    html += `<tr><td>${idx===0?'🏆 ':''}${r.nm}</td><td class="best-col">${fmt(r.oosMed)}</td><td>${fmt(r.baseMed)}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  return { html, top: ranked[0] };
+}
+function buildWfSummaryHtml(perStrategyResults, strategyNames) {
+  const retR = buildMetricRankTable(perStrategyResults, strategyNames, 'cagr', '📈 수익률(CAGR) 기준', v=>v.toFixed(1)+'%');
+  const mddR = buildMetricRankTable(perStrategyResults, strategyNames, 'mdd', '🛡 MDD(안전성) 기준 (0에 가까울수록 안전)', v=>v.toFixed(1)+'%');
+  const calR = buildMetricRankTable(perStrategyResults, strategyNames, 'calmar', '⚖️ 칼마비율(균형) 기준', v=>v.toFixed(2));
+  let html = retR.html + mddR.html + calR.html;
+  html += `<div class="rank-comment">🤖 <b>AI 한줄평</b><br>`;
+  if (retR.top.nm === mddR.top.nm && mddR.top.nm === calR.top.nm) {
+    html += `<b>${retR.top.nm}</b>이(가) 수익률·MDD·칼마비율 <b>세 기준 전부에서 1위</b>였습니다. 어느 관점으로 봐도 이 전략이 가장 우수했다는 뜻이에요.`;
+  } else {
+    html += `수익률 기준 1위는 <b>${retR.top.nm}</b>, MDD(안전성) 기준 1위는 <b>${mddR.top.nm}</b>였습니다. `;
+    html += calR.top.nm !== retR.top.nm && calR.top.nm !== mddR.top.nm
+      ? `수익과 안전을 같이 반영한 칼마비율 기준으로는 <b>${calR.top.nm}</b>가 1위로, 둘 중 어느 쪽도 아닌 "균형형"이 종합 효율에서 앞섰습니다.`
+      : `칼마비율 기준 1위는 <b>${calR.top.nm}</b>였습니다.`;
+  }
+  html += `<div class="rank-note">※ 리밸런싱 전략은 매 구간 훈련(train)에서 100~120%예산×90%미만거치매수 12개 조합을 재탐색해 검증(test)구간에 적용했고, 적립식·거치식은 별도 최적화 파라미터가 없어 같은 구간에서의 실제 성과를 그대로 보여줍니다.</div></div>`;
+  return html;
+}
+function buildWfTableHtml(perStrategyResults, strategyNames) {
+  let html = '';
+  strategyNames.forEach(nm=>{
+    const results = perStrategyResults[nm];
+    if (!results.length) return;
+    html += `<div class="rolling-table-title" style="margin-top:16px;">${nm} — 구간별 상세</div>`;
+    html += '<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr><th>구간</th><th>훈련기간</th><th>검증기간</th><th>재최적값</th><th>CAGR</th><th>MDD</th><th>칼마</th></tr></thead><tbody>';
+    results.forEach((r,idx)=>{
+      const cfgLabel = r.bestConfig ? `${r.bestConfig.split3}%/${r.bestConfig.deposit5}%` : '-';
+      html += `<tr><td>${idx+1}</td><td>${r.fold.trainStart}~${r.fold.trainEnd}</td><td>${r.fold.testStart}~${r.fold.testEnd}</td><td>${cfgLabel}</td><td>${r.oos.cagr.toFixed(1)}%</td><td>${r.oos.mdd.toFixed(1)}%</td><td>${r.oos.calmar.toFixed(2)}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+  });
+  return html;
+}
+function renderWfResults(result) {
+  const { perStrategyResults, strategyNames, trainYears, testYears } = result;
+  const anyResults = strategyNames.some(nm=>perStrategyResults[nm].length>0);
+  if (!anyResults) { $('wfResultsBody').innerHTML = '<div class="rank-empty">유효한 구간이 없습니다.</div>'; return; }
+  const foldCount = Math.max(...strategyNames.map(nm=>perStrategyResults[nm].length));
+  let html = `<div class="rank-period">${strategyNames.length}개 전략(리밸런싱/적립식/거치식 전부) × ${foldCount}개 구간(fold), 각 훈련${trainYears}년→검증${testYears}년, 1년씩 이동</div>`;
+  html += buildWfSummaryHtml(perStrategyResults, strategyNames);
+  html += buildWfTableHtml(perStrategyResults, strategyNames);
+  $('wfResultsBody').innerHTML = html;
+}
+$('wfTrainYears').addEventListener('change', ()=>{ updateWfFoldPreview(); markWfStale(); });
+$('wfTestYears').addEventListener('change', ()=>{ updateWfFoldPreview(); markWfStale(); });
+updateWfFoldPreview();
+$('wfRunBtn').addEventListener('click', runWalkForward);
+
+function downloadWfPdf() {
+  const result = window.__wfResult;
+  if (!result) return;
+  const { perStrategyResults, strategyNames, trainYears, testYears, initAmount, computedAt, modeLabel } = result;
+  const dateStr = new Date(computedAt).toLocaleString('ko-KR');
+  const foldCount = perStrategyResults[strategyNames[0]].length;
+  const bodyHtml = buildWfSummaryHtml(perStrategyResults, strategyNames) + buildWfTableHtml(perStrategyResults, strategyNames);
+  const html = buildDarkReportHtml({
+    title: `🔬 Walk-Forward 검증 결과 — ${modeLabel}`,
+    meta: `생성 시각: ${dateStr} · 총 투자예산: ${initAmount.toLocaleString('ko-KR')}원 · 훈련${trainYears}년→검증${testYears}년, ${strategyNames.length}개 전략 × ${foldCount}개 구간`,
+    explain: `전체 데이터를 다 보고 찾은 세부값이 미래에도 통하는지 검증하는 방법입니다. <b>훈련(train) 구간에서만 세부값을 다시 최적화</b>하고, 그 값을 <b>검증(test) 구간(모델이 못 본 데이터)</b>에 그대로 적용해 실전처럼 시험했습니다. 이 과정을 데이터 처음부터 끝까지 1년씩 옮기며 반복합니다.`,
+    bodyHtml,
+  });
+  downloadReportBlob(html, `WalkForward_${modeLabel.replace(/[()\/,]/g,'')}`);
+}
+$('wfPdfBtn').addEventListener('click', downloadWfPdf);
+
+// ============================================================
+// 블록 부트스트랩 검증 — 실제 일별수익률을 블록으로 잘라 무작위 재배열
+// ============================================================
+function getBbReturnsForAsset(cfg) {
+  // 한 번의 계산으로 리밸런싱/적립식/거치식 3종의 일별수익률을 동시에 뽑는다
+  const iStart = 0, iEnd = PRICE.dates.length-1, initAmount = 100000000;
+  const comp = computeRebalComparison(iStart, iEnd, cfg.boundaries, cfg.zones, REBAL_DCA_COMPARE, initAmount, cfg.priceKey, 30, 30);
+  const toRets = (eq)=>{ const r=[]; for(let i=1;i<eq.length;i++) r.push(eq[i]/eq[i-1]-1); return r; };
+  return { rebal: toRets(comp.eq1), dca: toRets(comp.eq2), lump: toRets(comp.eq3) };
+}
+function getBbReturnsForHybrid() {
+  const iStart = 0, iEnd = PRICE.dates.length-1, initAmount = 100000000;
+  const comp = computeHybridComparison(iStart, iEnd, REBAL_BOUNDARIES_HYBRID, REBAL_ZONES_HYBRID, initAmount, 30, 30);
+  const r=[]; for(let i=1;i<comp.eq1.length;i++) r.push(comp.eq1[i]/comp.eq1[i-1]-1);
+  return r;
+}
+function percentile(arr, p) {
+  const s = [...arr].sort((a,b)=>a-b);
+  const idx = (s.length-1)*p;
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  return lo===hi ? s[lo] : s[lo] + (s[hi]-s[lo])*(idx-lo);
+}
+function markBbStale() {
+  if (!window.__bbResult) return;
+  if ($('bbResults').style.display === 'none') return;
+  $('bbStaleBanner').style.display = 'block';
+  $('bbResultsBody').classList.add('is-stale');
+}
+async function bbSimulateOne(dailyReturns, blockDays, targetDays, initAmount, holdYears) {
+  const numBlocks = Math.ceil(dailyReturns.length / blockDays);
+  const blocks = [];
+  for (let b=0;b<numBlocks;b++) blocks.push(dailyReturns.slice(b*blockDays, (b+1)*blockDays));
+  let path = [];
+  while (path.length < targetDays) path = path.concat(blocks[Math.floor(Math.random()*blocks.length)]);
+  path = path.slice(0, targetDays);
+  let eq = initAmount, peak = initAmount, mdd = 0;
+  for (let i=0;i<path.length;i++){ eq *= (1+path[i]); if (eq>peak) peak=eq; const dd=(eq-peak)/peak*100; if (dd<mdd) mdd=dd; }
+  const cagr = (Math.pow(eq/initAmount, 1/holdYears)-1)*100;
+  return { cagr, mdd, calmar: cagr/Math.abs(mdd||1) };
+}
+async function runBlockBootstrap() {
+  if (mode !== 'rebal' && mode !== 'v2') {
+    alert('블록 부트스트랩은 리밸런싱 전략(QLD_3종 또는 QLD/TQQQ_7종 탭)에서만 사용할 수 있어요.');
+    return;
+  }
+  const btn = $('bbRunBtn');
+  btn.disabled = true; btn.style.opacity='0.6';
+  $('bbProgress').style.display='block';
+  $('bbResults').style.display='none';
+  $('bbStaleBanner').style.display='none';
+  $('bbResultsBody').classList.remove('is-stale');
+  $('bbProgressFill').style.width='0%';
+  await new Promise(r=>setTimeout(r,0));
+
+  const blockDays = parseInt($('bbBlockDays').value)||60;
+  const holdYears = parseInt($('bbHoldYears').value)||5;
+  const iterations = parseInt($('bbIterations').value)||1000;
+  const initAmount = parseFloat($('initAmount').value.replace(/,/g,''))||0;
+  const targetDays = Math.round(holdYears * 252);
+  const assetConfigs = getWfAssetConfigs();
+  const useHybrid = hasHybrid();
+
+  const returnsByStrategy = {};
+  assetConfigs.forEach(cfg=>{
+    const r = getBbReturnsForAsset(cfg);
+    returnsByStrategy[`${cfg.assetLabel} 리밸런싱`] = r.rebal;
+    returnsByStrategy[`${cfg.assetLabel} 적립식`] = r.dca;
+    returnsByStrategy[`${cfg.assetLabel} 거치식`] = r.lump;
+  });
+  if (useHybrid) returnsByStrategy['하이브리드(QLD+TQQQ)'] = getBbReturnsForHybrid();
+  const strategyNames = Object.keys(returnsByStrategy);
+
+  const perStrategy = {};
+  const totalSteps = strategyNames.length * iterations;
+  let stepCount = 0;
+  for (const nm of strategyNames) {
+    const dailyReturns = returnsByStrategy[nm];
+    const cagrs = [], mdds = [], calmars = [];
+    const chunk = Math.max(1, Math.floor(iterations/10));
+    for (let it=0; it<iterations; it++){
+      stepCount++;
+      if (it % chunk === 0) {
+        $('bbProgressText').textContent = `[${nm}] ${it}/${iterations}회 시뮬레이션 중...`;
+        $('bbProgressFill').style.width = `${Math.round(stepCount/totalSteps*100)}%`;
+        await new Promise(r=>setTimeout(r,0));
+      }
+      const res = await bbSimulateOne(dailyReturns, blockDays, targetDays, initAmount, holdYears);
+      cagrs.push(res.cagr); mdds.push(res.mdd); calmars.push(res.calmar);
+    }
+    perStrategy[nm] = { cagrs, mdds, calmars };
+  }
+
+  $('bbProgressFill').style.width='100%';
+  window.__bbResult = { perStrategy, strategyNames, blockDays, holdYears, iterations, initAmount, computedAt: new Date().toISOString(), modeLabel: rollingModeLabel() };
+  renderBbResults(window.__bbResult);
+  btn.disabled=false; btn.style.opacity='1';
+  $('bbProgress').style.display='none';
+  $('bbResults').style.display='block';
+}
+function bbStratStats(d) {
+  const { cagrs, mdds, calmars } = d;
+  return {
+    cagrMed: median(cagrs), mddMed: median(mdds), calMed: median(calmars),
+    cagrP5: percentile(cagrs,0.05), cagrP95: percentile(cagrs,0.95),
+    mddP5: percentile(mdds,0.05), mddP95: percentile(mdds,0.95),
+    positiveRate: cagrs.filter(v=>v>0).length/cagrs.length*100,
+    worstMdd: Math.min(...mdds),
+  };
+}
+function buildBbMetricTable(statsByName, strategyNames, key, title, fmt) {
+  const ranked = strategyNames.map(nm=>({nm, val: statsByName[nm][key]})).sort((a,b)=>b.val-a.val);
+  let html = `<div class="rolling-table-title">${title}</div>`;
+  html += `<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr><th>전략</th><th class="best-col">중위값</th></tr></thead><tbody>`;
+  ranked.forEach((r,idx)=>{ html += `<tr><td>${idx===0?'🏆 ':''}${r.nm}</td><td class="best-col">${fmt(r.val)}</td></tr>`; });
+  html += '</tbody></table></div>';
+  return { html, top: ranked[0] };
+}
+function buildBbSummaryHtml(perStrategy, strategyNames, blockDays, holdYears, iterations) {
+  const statsByName = {};
+  strategyNames.forEach(nm=>{ statsByName[nm] = bbStratStats(perStrategy[nm]); });
+
+  const retR = buildBbMetricTable(statsByName, strategyNames, 'cagrMed', '📈 CAGR 기준', v=>v.toFixed(1)+'%');
+  const mddR = buildBbMetricTable(statsByName, strategyNames, 'mddMed', '🛡 MDD(안전성) 기준 (0에 가까울수록 안전)', v=>v.toFixed(1)+'%');
+  const calR = buildBbMetricTable(statsByName, strategyNames, 'calMed', '⚖️ 칼마비율(균형) 기준', v=>v.toFixed(2));
+  let html = retR.html + mddR.html + calR.html;
+
+  html += `<div class="rank-comment">🤖 <b>AI 한줄평</b><br>`;
+  if (retR.top.nm === mddR.top.nm && mddR.top.nm === calR.top.nm) {
+    html += `<b>${retR.top.nm}</b>이(가) CAGR·MDD·칼마비율 <b>세 기준 전부에서 1위</b>였습니다 (플러스 비율 ${statsByName[retR.top.nm].positiveRate.toFixed(0)}%).`;
+  } else {
+    html += `CAGR 기준 1위는 <b>${retR.top.nm}</b>, MDD(안전성) 기준 1위는 <b>${mddR.top.nm}</b>였습니다. `;
+    html += calR.top.nm !== retR.top.nm && calR.top.nm !== mddR.top.nm
+      ? `칼마비율 기준으로는 <b>${calR.top.nm}</b>가 1위로, 수익·안전 어느 한쪽으로 치우치지 않은 "균형형"이 종합 효율에서 앞섰습니다.`
+      : `칼마비율 기준 1위는 <b>${calR.top.nm}</b>였습니다.`;
+  }
+  html += `<div class="rank-note">※ 실제 가격을 재시뮬레이션한 게 아니라, 각 전략이 현재 설정으로 실제 있었던 "일별 수익률"을 ${blockDays}일 블록 단위로 무작위 재배열한 결과입니다 (${holdYears}년 보유 가정, 연 252거래일 기준, ${iterations.toLocaleString()}회 반복).</div></div>`;
+  return html;
+}
+function renderBbResults(r) {
+  const { perStrategy, strategyNames, blockDays, holdYears, iterations } = r;
+  let html = `<div class="rank-period">${strategyNames.length}개 전략(리밸런싱/적립식/거치식 전부) × ${iterations.toLocaleString()}회 시뮬레이션</div>`;
+  html += buildBbSummaryHtml(perStrategy, strategyNames, blockDays, holdYears, iterations);
+  $('bbResultsBody').innerHTML = html;
+}
+$('bbBlockDays').addEventListener('change', markBbStale);
+$('bbHoldYears').addEventListener('change', markBbStale);
+$('bbIterations').addEventListener('change', markBbStale);
+$('bbRunBtn').addEventListener('click', runBlockBootstrap);
+
+function downloadBbPdf() {
+  const result = window.__bbResult;
+  if (!result) return;
+  const { perStrategy, strategyNames, blockDays, holdYears, iterations, initAmount, computedAt, modeLabel } = result;
+  const dateStr = new Date(computedAt).toLocaleString('ko-KR');
+  const bodyHtml = `<div class="rank-period">${strategyNames.length}개 전략(리밸런싱/적립식/거치식 전부) × ${iterations.toLocaleString()}회 시뮬레이션</div>` + buildBbSummaryHtml(perStrategy, strategyNames, blockDays, holdYears, iterations);
+  const html = buildDarkReportHtml({
+    title: `🎲 블록 부트스트랩 검증 결과 — ${modeLabel}`,
+    meta: `생성 시각: ${dateStr} · 총 투자예산: ${initAmount.toLocaleString('ko-KR')}원 · ${blockDays}일 블록 × ${iterations.toLocaleString()}회`,
+    explain: `현재 설정으로 실제 있었던 매일의 수익률 흐름을 ${blockDays}일짜리 블록으로 잘라, 무작위로 다시 이어붙여 "일어나지 않았을 수도 있는 대체 역사"를 ${iterations.toLocaleString()}개 만들어 테스트했습니다. 결과가 넓게 퍼지면 운이 크게 작용한다는 뜻이고, 좁게 모이면 우연이 아니라 안정적인 결과라는 뜻입니다.`,
+    bodyHtml,
+  });
+  downloadReportBlob(html, `블록부트스트랩_${modeLabel.replace(/[()\/,]/g,'')}`);
+}
+$('bbPdfBtn').addEventListener('click', downloadBbPdf);
+
+let showingRankView = false;
+function showRankView() {
+  showingRankView = true;
+  $('chartCard').style.display = 'none';
+  $('resultsCard').style.display = 'none';
+  $('rankCard').style.display = 'block';
+  renderRankView();
+}
+function showChartView() {
+  showingRankView = false;
+  $('rankCard').style.display = 'none';
+  $('chartCard').style.display = 'block';
+  $('resultsCard').style.display = 'block';
+  render();
+}
+$('rankToggleBtn').addEventListener('click', showRankView);
+$('rankBackBtn').addEventListener('click', showChartView);
+
+// ★ 숫자/텍스트 필드는 타이핑 멈추고 0.5초 후 자동 실행 (날짜 선택처럼 매번 벗어나지 않아도 되게)
+let __debounceTimer = null;
+function debounce(fn, delay) {
+  return function(...args) {
+    clearTimeout(__debounceTimer);
+    __debounceTimer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+const debouncedRender = debounce(render, 500);
+
+['initAmount','growthRate','feeCheck'].forEach(id=>{
+  $(id).addEventListener('change', render);
+  if ($(id).type !== 'checkbox') $(id).addEventListener('input', debouncedRender);
+});
+['startDate','endDate'].forEach(id=>{
+  $(id).addEventListener('change', ()=>{
+    clearDateSelectionActive(); // 수동으로 날짜를 바꾸면 특정 프리셋 선택 상태는 해제
+    if (id === 'startDate') syncRollingStartDate($('startDate').value); // ★ 롤링 시작일도 같이 연동
+    if (showingRankView) { showChartView(); } else { render(); } // 순위비교 보는 중 날짜를 바꾸면 자동으로 차트 화면으로 전환
+  });
+});
+$('dcaCompareDaily').addEventListener('input', ()=>{ updateRebalSidebarDisplays(); debouncedRender(); });
+$('dcaCompareDaily').addEventListener('change', render);
+function formatInitAmountInput() {
+  const el = $('initAmount');
+  const digits = el.value.replace(/[^\d]/g, '');
+  el.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
+}
+$('initAmount').addEventListener('input', ()=>{
+  // 입력 중엔 숫자만 남기고(콤마 없이), 포커스 벗어날 때 콤마로 재포맷
+  $('initAmount').value = $('initAmount').value.replace(/[^\d]/g, '');
+  updateRebalSidebarDisplays();
+  debouncedRender();
+});
+$('initAmount').addEventListener('blur', formatInitAmountInput);
+formatInitAmountInput(); // 페이지 로드 시 초기값도 콤마 포맷 적용
+
+$('dcaCompareDailyQld').addEventListener('input', ()=>{ updateRebalSidebarDisplays(); debouncedRender(); });
+$('dcaCompareDailyQld').addEventListener('change', render);
+$('dcaCompareDailyTqqq').addEventListener('input', ()=>{ updateRebalSidebarDisplays(); debouncedRender(); });
+$('dcaCompareDailyTqqq').addEventListener('change', render);
+
+// ★ %/원 단위 전환 토글 (적립식 매수 관련 4개 필드 공통)
+function formatFieldForUnit(fieldId) {
+  const el = $(fieldId);
+  if (dcaUnitState[fieldId] === 'amount') {
+    const digits = el.value.replace(/[^\d]/g, '');
+    el.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
+  }
+  // percent 모드는 콤마 없이 소수 그대로 유지
+}
+function setupUnitToggle(fieldId) {
+  const row = document.querySelector(`.unit-toggle-row[data-target="${fieldId}"]`);
+  if (!row) return;
+  row.querySelectorAll('.unit-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const newUnit = btn.dataset.unit;
+      const oldUnit = dcaUnitState[fieldId];
+      if (newUnit === oldUnit) return;
+      const budget = getBudgetAmount();
+      const el = $(fieldId);
+      const raw = parseFloat(el.value.replace(/,/g,'')) || 0;
+      let newVal;
+      if (oldUnit==='percent' && newUnit==='amount') {
+        newVal = Math.round(budget * raw/100);
+      } else if (oldUnit==='amount' && newUnit==='percent') {
+        newVal = budget>0 ? +(raw/budget*100).toFixed(2) : 0;
+      } else {
+        newVal = raw;
+      }
+      dcaUnitState[fieldId] = newUnit;
+      el.value = newUnit==='amount' ? newVal.toLocaleString('ko-KR') : String(newVal);
+      row.querySelectorAll('.unit-btn').forEach(b=>b.classList.toggle('active', b===btn));
+      updateRebalSidebarDisplays();
+      debouncedRender();
+      el.focus();
+    });
+  });
+}
+['dcaCompareDaily','dcaCompareDailyQld','dcaCompareDailyTqqq','contribAmount'].forEach(setupUnitToggle);
+
+// contribAmount 전용 입력 처리 (기본 단위=원, 콤마 포맷 필요)
+$('contribAmount').addEventListener('input', ()=>{
+  if (dcaUnitState.contribAmount === 'amount') {
+    $('contribAmount').value = $('contribAmount').value.replace(/[^\d]/g, '');
+  }
+  updateRebalSidebarDisplays();
+  debouncedRender();
+});
+$('contribAmount').addEventListener('blur', ()=>formatFieldForUnit('contribAmount'));
+$('contribAmount').addEventListener('change', render);
+formatFieldForUnit('contribAmount'); // 초기 콤마 포맷 적용
+
+function updateRebalSidebarDisplays(){
+  const amt = getBudgetAmount();
+  $('lumpDisplay').textContent = fmtWon(amt);
+  const ratePct = getEffectivePercent('dcaCompareDaily');
+  $('dcaCompareDailyWon').textContent = dcaUnitState.dcaCompareDaily === 'percent'
+    ? `→ 하루 ${fmtWon(amt*ratePct/100)}씩 매수`
+    : `→ 하루 ${ratePct.toFixed(2)}%씩 매수`;
+
+  $('lumpDisplayQld').textContent = fmtWon(amt);
+  $('lumpDisplayTqqq').textContent = fmtWon(amt);
+  const rateQldPct = getEffectivePercent('dcaCompareDailyQld');
+  const rateTqqqPct = getEffectivePercent('dcaCompareDailyTqqq');
+  $('dcaCompareDailyQldWon').textContent = dcaUnitState.dcaCompareDailyQld === 'percent'
+    ? `→ 하루 ${fmtWon(amt*rateQldPct/100)}씩 매수`
+    : `→ 하루 ${rateQldPct.toFixed(2)}%씩 매수`;
+  $('dcaCompareDailyTqqqWon').textContent = dcaUnitState.dcaCompareDailyTqqq === 'percent'
+    ? `→ 하루 ${fmtWon(amt*rateTqqqPct/100)}씩 매수`
+    : `→ 하루 ${rateTqqqPct.toFixed(2)}%씩 매수`;
+
+  const contribHintEl = $('contribAmountHint');
+  if (contribHintEl) {
+    const contribPct = amt>0 ? (getEffectiveAmount('contribAmount')/amt*100) : 0;
+    contribHintEl.textContent = dcaUnitState.contribAmount === 'amount'
+      ? `→ 총예산의 ${contribPct.toFixed(2)}%`
+      : `→ ${fmtWon(getEffectiveAmount('contribAmount'))}`;
+  }
+}
+updateRebalSidebarDisplays();
+$('logCheck').addEventListener('change', ()=>{ logScale=$('logCheck').checked; render(); });
+$('saveImgBtn').addEventListener('click', ()=>{
+  const link=document.createElement('a');
+  link.download='qqq_backtest_chart.png';
+  link.href=$('chart').toDataURL('image/png');
+  link.click();
+});
+
+// ---------- 일자별 상세검증 엑셀 (QLD/TQQQ 리밸런싱 raw data, 자산별 시트 분리) ----------
+function addRebalDetailSheets(wb, assetLabel, priceKey, boundaries, zoneConfigs, iStart, iEnd, initAmount, dg, startDate, endDate) {
+  const dates = PRICE.dates;
+  const { zones, w1arr, actionArr, investStart } = computeRebalWeights(iStart, iEnd, boundaries, zoneConfigs, dg.cooldown, dg.sellCooldown);
+  const ma = getMA200();
+  const p1 = PRICE.p1, pAsset = PRICE[priceKey];
+  const B = boundaries.slice().sort((a,b)=>a-b);
+
+  let equity = initAmount;
+  const rows = [];
+  for (let i=investStart; i<=iEnd; i++){
+    const dev = p1[i]/ma[i]*100;
+    const z = zones[i];
+    const zoneText = z<0 ? '' : zoneLabel(z, B);
+    if (i>investStart){ const r = pAsset[i]/pAsset[i-1]-1; equity = equity*(1+(w1arr[i-1]/100)*r); }
+    const act = actionArr[i];
+    const actLabel = act==='deposit'?'거치매수':act==='split'?'분할매수':act==='sell'?'매도':(i===investStart?'초기시작(0%)':'');
+    const deltaW = i>investStart ? (w1arr[i]-w1arr[i-1]) : w1arr[i];
+    const buyAmt = deltaW>0 ? equity*(deltaW/100) : 0;
+    const sellAmt = deltaW<0 ? equity*(-deltaW/100) : 0;
+    const buyWeightPct = deltaW>0 ? deltaW : 0;
+    const sellWeightPct = deltaW<0 ? -deltaW : 0;
+    rows.push({
+      date: dates[i], qqq: p1[i], asset: pAsset[i], ma200: ma[i], zone: zoneText, dev, action: actLabel,
+      buyAmt, buyWeightPct, sellAmt, sellWeightPct,
+      weight: w1arr[i], cashWeight: 100-w1arr[i],
+      stockVal: equity*(w1arr[i]/100), cashVal: equity*(1-w1arr[i]/100), equity,
+    });
+  }
+
+  const ws = wb.addWorksheet(`${assetLabel} 일자별 진행`);
+  const headers = ['날짜','QQQ종가',`${assetLabel}가격(참고)`,'QQQ200일선','구간','이격도(%)','매매액션',
+    '매수금액(원)','매수비중(%)','매도금액(원)','매도비중(%)','주식비중(%)','현금비중(%)',
+    '주식평가금액(원)','예수금(원)','총평가금액(원)'];
+  const nCols = headers.length;
+
+  ws.mergeCells(1,1,1,nCols);
+  const titleCell = ws.getCell(1,1);
+  titleCell.value = `${assetLabel} 리밸런싱 일자별 진행 (${startDate} ~ ${endDate}, 투자금 ${fmtWon(initAmount)})`;
+  titleCell.font = { bold:true, size:14, color:{argb:'FFFFFFFF'} };
+  titleCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF1F2937'} };
+  titleCell.alignment = { horizontal:'center', vertical:'middle' };
+  ws.getRow(1).height = 26;
+
+  ws.mergeCells(3,1,3,nCols);
+  const noteCell = ws.getCell(3,1);
+  noteCell.value = '※ 거치매수/매도는 구간별 예수금 게이트(거치매수)+대기일수(쿨다운) 또는 새 구간 진입 시(매도)에만 1회 발동. 시작일은 진짜 0%(현금)부터 시작. 노랑=초기시작, 파랑=거치매수, 초록=분할매수, 분홍=매도.';
+  noteCell.font = { italic:true, size:9, color:{argb:'FF6B7280'} };
+  ws.getRow(3).height = 28;
+
+  const headerRowIdx = 5;
+  headers.forEach((h, j)=>{
+    const c = ws.getCell(headerRowIdx, j+1);
+    c.value = h;
+    const isSell = (h==='매도금액(원)' || h==='매도비중(%)');
+    c.font = { bold:true, size:10, color:{argb: isSell ? 'FFFEE2E2':'FFFFFFFF'} };
+    c.fill = { type:'pattern', pattern:'solid', fgColor:{argb: isSell ? 'FF991B1B':'FF374151'} };
+    c.alignment = { horizontal:'center' };
+    c.border = { top:{style:'thin',color:{argb:'FFD1D5DB'}}, bottom:{style:'thin',color:{argb:'FFD1D5DB'}}, left:{style:'thin',color:{argb:'FFD1D5DB'}}, right:{style:'thin',color:{argb:'FFD1D5DB'}} };
+  });
+
+  const actionFills = { '초기시작(0%)': 'FFFEF3C7', '거치매수': 'FFDBEAFE', '분할매수': 'FFDCFCE7', '매도': 'FFFCE7F3' };
+
+  rows.forEach((row, i)=>{
+    const r = headerRowIdx + 1 + i;
+    const vals = [
+      row.date, +row.qqq.toFixed(2), +row.asset.toFixed(2), +row.ma200.toFixed(2), row.zone, +row.dev.toFixed(2), row.action,
+      row.buyAmt>0?Math.round(row.buyAmt):null, row.buyWeightPct>0?+row.buyWeightPct.toFixed(2):null,
+      row.sellAmt>0?Math.round(row.sellAmt):null, row.sellWeightPct>0?+row.sellWeightPct.toFixed(2):null,
+      +row.weight.toFixed(2), +row.cashWeight.toFixed(2),
+      Math.round(row.stockVal), Math.round(row.cashVal), Math.round(row.equity),
+    ];
+    const fillColor = actionFills[row.action];
+    vals.forEach((v, j)=>{
+      const c = ws.getCell(r, j+1);
+      c.value = v;
+      c.font = { bold: !!row.action, size:10 };
+      c.alignment = { horizontal:'center' };
+      c.border = { top:{style:'thin',color:{argb:'FFD1D5DB'}}, bottom:{style:'thin',color:{argb:'FFD1D5DB'}}, left:{style:'thin',color:{argb:'FFD1D5DB'}}, right:{style:'thin',color:{argb:'FFD1D5DB'}} };
+      if (fillColor) c.fill = { type:'pattern', pattern:'solid', fgColor:{argb:fillColor} };
+    });
+    if (row.buyAmt>0) {
+      ws.getCell(r,8).font = { bold:true, size:10, color:{argb:'FF16A34A'} };
+      ws.getCell(r,9).font = { bold:true, size:10, color:{argb:'FF16A34A'} };
+    }
+    if (row.sellAmt>0) {
+      ws.getCell(r,10).font = { bold:true, size:10, color:{argb:'FFDC2626'} };
+      ws.getCell(r,11).font = { bold:true, size:10, color:{argb:'FFDC2626'} };
+    }
+  });
+
+  ws.columns = [
+    {width:12},{width:10},{width:13},{width:12},{width:10},{width:10},{width:10},
+    {width:12},{width:11},{width:12},{width:11},{width:10},{width:10},{width:14},{width:12},{width:13},
+  ];
+  ws.views = [{ state:'frozen', ySplit: headerRowIdx }];
+
+  // 요약 시트
+  const ws2 = wb.addWorksheet(`${assetLabel} 요약`);
+  ws2.mergeCells(1,1,1,2);
+  const t2 = ws2.getCell(1,1);
+  t2.value = `${assetLabel} 요약`;
+  t2.font = { bold:true, size:14, color:{argb:'FFFFFFFF'} };
+  t2.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF1F2937'} };
+  t2.alignment = { horizontal:'center', vertical:'middle' };
+  ws2.getRow(1).height = 24;
+
+  const depositRows = rows.filter(r=>r.action==='거치매수');
+  const splitCount = rows.filter(r=>r.action==='분할매수').length;
+  const sellRows = rows.filter(r=>r.action==='매도');
+  const totalBuy = rows.reduce((s,r)=>s+r.buyAmt,0);
+  const totalSell = rows.reduce((s,r)=>s+r.sellAmt,0);
+  const last = rows[rows.length-1];
+  const summaryItems = [
+    ['시작일', rows[0].date], ['종료일', last.date], ['시작 투자금', fmtWon(initAmount)],
+    ['종료 시점 총 평가금액', fmtWon(last.equity)],
+    ['종료 주식비중 / 현금비중', `${last.weight.toFixed(1)}% / ${last.cashWeight.toFixed(1)}%`],
+    ['기간 중 누적 매수금액', fmtWon(totalBuy)], ['기간 중 누적 매도금액', fmtWon(totalSell)],
+    ['거치매수 발생 횟수', `${depositRows.length}회`], ['분할매수 발생일수', `${splitCount}일`], ['매도 발생 횟수', `${sellRows.length}회`],
+  ];
+  summaryItems.forEach((item, i)=>{
+    const r = 3+i;
+    ws2.getCell(r,1).value = item[0]; ws2.getCell(r,1).font = { bold:true, size:10 };
+    ws2.getCell(r,2).value = item[1]; ws2.getCell(r,2).font = { size:10 };
+  });
+  ws2.columns = [{width:40},{width:24}];
+}
+
+function addHybridDetailSheet(wb, boundaries, zoneConfigs, iStart, iEnd, initAmount, dg, startDate, endDate) {
+  const dates = PRICE.dates;
+  const { zones, wQldArr, wTqqqArr, actionArr, investStart } = computeHybridWeights(iStart, iEnd, boundaries, zoneConfigs, dg.cooldown, dg.sellCooldown);
+  const ma = getMA200();
+  const p1 = PRICE.p1, p2 = PRICE.p2, p3 = PRICE.p3;
+  const B = boundaries.slice().sort((a,b)=>a-b);
+
+  let equity = initAmount;
+  const rows = [];
+  for (let i=investStart; i<=iEnd; i++){
+    const dev = p1[i]/ma[i]*100;
+    const z = zones[i];
+    const zoneText = z<0 ? '' : zoneLabel(z, B);
+    if (i>investStart){
+      const rQld = p2[i]/p2[i-1]-1, rTqqq = p3[i]/p3[i-1]-1;
+      equity = equity*(1+(wQldArr[i-1]/100)*rQld+(wTqqqArr[i-1]/100)*rTqqq);
+    }
+    const act = actionArr[i];
+    const actLabel = act==='deposit-qld'?'거치매수(QLD)':act==='split-qld'?'분할매수(QLD)':act==='deposit-tqqq'?'거치매수(TQQQ)':act==='split-tqqq'?'분할매수(TQQQ)':act==='sell'?'매도':(i===investStart?'초기시작(0%)':'');
+    const totalW = wQldArr[i]+wTqqqArr[i];
+    rows.push({
+      date: dates[i], qqq: p1[i], qld: p2[i], tqqq: p3[i], ma200: ma[i], zone: zoneText, dev, action: actLabel,
+      wQld: wQldArr[i], wTqqq: wTqqqArr[i], cashWeight: 100-totalW,
+      qldVal: equity*(wQldArr[i]/100), tqqqVal: equity*(wTqqqArr[i]/100), cashVal: equity*(1-totalW/100), equity,
+    });
+  }
+
+  const ws = wb.addWorksheet('하이브리드 일자별 진행');
+  const headers = ['날짜','QQQ종가','QLD가격','TQQQ가격','QQQ200일선','구간','이격도(%)','매매액션',
+    'QLD비중(%)','TQQQ비중(%)','현금비중(%)','QLD평가금액(원)','TQQQ평가금액(원)','예수금(원)','총평가금액(원)'];
+  const nCols = headers.length;
+
+  ws.mergeCells(1,1,1,nCols);
+  const titleCell = ws.getCell(1,1);
+  titleCell.value = `하이브리드(QLD주력+90%미만만TQQQ) 일자별 진행 (${startDate} ~ ${endDate}, 투자금 ${fmtWon(initAmount)})`;
+  titleCell.font = { bold:true, size:14, color:{argb:'FFFFFFFF'} };
+  titleCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFCA8A04'} };
+  titleCell.alignment = { horizontal:'center', vertical:'middle' };
+  ws.getRow(1).height = 26;
+
+  ws.mergeCells(3,1,3,nCols);
+  const noteCell = ws.getCell(3,1);
+  noteCell.value = '※ 마지막(가장 저평가) 구간만 TQQQ로 매수하고 나머지 매수구간은 QLD로 매수. 매도는 QLD+TQQQ 보유분을 비례로 같이 축소. 노랑=초기시작, 파랑=QLD매수, 보라=TQQQ매수, 분홍=매도.';
+  noteCell.font = { italic:true, size:9, color:{argb:'FF6B7280'} };
+  ws.getRow(3).height = 28;
+
+  const headerRowIdx = 5;
+  headers.forEach((h, j)=>{
+    const c = ws.getCell(headerRowIdx, j+1);
+    c.value = h;
+    c.font = { bold:true, size:10, color:{argb:'FFFFFFFF'} };
+    c.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF374151'} };
+    c.alignment = { horizontal:'center' };
+    c.border = { top:{style:'thin',color:{argb:'FFD1D5DB'}}, bottom:{style:'thin',color:{argb:'FFD1D5DB'}}, left:{style:'thin',color:{argb:'FFD1D5DB'}}, right:{style:'thin',color:{argb:'FFD1D5DB'}} };
+  });
+
+  const actionFills = { '초기시작(0%)':'FFFEF3C7', '거치매수(QLD)':'FFDBEAFE', '분할매수(QLD)':'FFDBEAFE', '거치매수(TQQQ)':'FFEDE9FE', '분할매수(TQQQ)':'FFEDE9FE', '매도':'FFFCE7F3' };
+
+  rows.forEach((row, i)=>{
+    const r = headerRowIdx + 1 + i;
+    const vals = [
+      row.date, +row.qqq.toFixed(2), +row.qld.toFixed(2), +row.tqqq.toFixed(2), +row.ma200.toFixed(2), row.zone, +row.dev.toFixed(2), row.action,
+      +row.wQld.toFixed(2), +row.wTqqq.toFixed(2), +row.cashWeight.toFixed(2),
+      Math.round(row.qldVal), Math.round(row.tqqqVal), Math.round(row.cashVal), Math.round(row.equity),
+    ];
+    const fillColor = actionFills[row.action];
+    vals.forEach((v, j)=>{
+      const c = ws.getCell(r, j+1);
+      c.value = v;
+      c.font = { bold: !!row.action, size:10 };
+      c.alignment = { horizontal:'center' };
+      c.border = { top:{style:'thin',color:{argb:'FFD1D5DB'}}, bottom:{style:'thin',color:{argb:'FFD1D5DB'}}, left:{style:'thin',color:{argb:'FFD1D5DB'}}, right:{style:'thin',color:{argb:'FFD1D5DB'}} };
+      if (fillColor) c.fill = { type:'pattern', pattern:'solid', fgColor:{argb:fillColor} };
+    });
+  });
+
+  ws.columns = [
+    {width:12},{width:9},{width:9},{width:9},{width:12},{width:10},{width:10},{width:13},
+    {width:10},{width:10},{width:10},{width:14},{width:14},{width:12},{width:13},
+  ];
+  ws.views = [{ state:'frozen', ySplit: headerRowIdx }];
+
+  // 요약 시트
+  const ws2 = wb.addWorksheet('하이브리드 요약');
+  ws2.mergeCells(1,1,1,2);
+  const t2 = ws2.getCell(1,1);
+  t2.value = '하이브리드 요약';
+  t2.font = { bold:true, size:14, color:{argb:'FFFFFFFF'} };
+  t2.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFCA8A04'} };
+  t2.alignment = { horizontal:'center', vertical:'middle' };
+  ws2.getRow(1).height = 24;
+
+  const depositQldRows = rows.filter(r=>r.action==='거치매수(QLD)');
+  const depositTqqqRows = rows.filter(r=>r.action==='거치매수(TQQQ)');
+  const sellRows = rows.filter(r=>r.action==='매도');
+  const last = rows[rows.length-1];
+  const summaryItems = [
+    ['시작일', rows[0].date], ['종료일', last.date], ['시작 투자금', fmtWon(initAmount)],
+    ['종료 시점 총 평가금액', fmtWon(last.equity)],
+    ['종료 QLD비중 / TQQQ비중 / 현금비중', `${last.wQld.toFixed(1)}% / ${last.wTqqq.toFixed(1)}% / ${last.cashWeight.toFixed(1)}%`],
+    ['QLD 거치매수 발생 횟수', `${depositQldRows.length}회`],
+    ['TQQQ 거치매수 발생 횟수', `${depositTqqqRows.length}회`],
+    ['매도 발생 횟수', `${sellRows.length}회`],
+  ];
+  summaryItems.forEach((item, i)=>{
+    const r = 3+i;
+    ws2.getCell(r,1).value = item[0]; ws2.getCell(r,1).font = { bold:true, size:10 };
+    ws2.getCell(r,2).value = item[1]; ws2.getCell(r,2).font = { size:10 };
+  });
+  ws2.columns = [{width:40},{width:24}];
+}
+
+$('rebalDetailCsvBtn').addEventListener('click', async ()=>{
+  if (mode !== 'rebal' && mode !== 'v2') return;
+  const startDate=$('startDate').value, endDate=$('endDate').value;
+  const dates=PRICE.dates;
+  const iStart=bsearchGte(dates,startDate), iEnd=bsearchLte(dates,endDate);
+  const initAmount=parseFloat($('initAmount').value.replace(/,/g,''))||0;
+  const dg = getDepositGateSettings();
+  const wb = new ExcelJS.Workbook();
+  let filename;
+
+  if (mode === 'rebal') {
+    const { boundaries, zones: zoneConfigs } = getCurrentRebalConfig();
+    addRebalDetailSheets(wb, 'QLD', 'p2', boundaries, zoneConfigs, iStart, iEnd, initAmount, dg, startDate, endDate);
+    filename = `QLD_리밸런싱_상세검증_${startDate}_${endDate}.xlsx`;
+  } else {
+    const qldCfg = getCurrentRebalConfig('qld');
+    const tqqqCfg = getCurrentRebalConfig('tqqq');
+    const hybridCfg = getCurrentRebalConfig('hybrid');
+    addRebalDetailSheets(wb, 'QLD', 'p2', qldCfg.boundaries, qldCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
+    addRebalDetailSheets(wb, 'TQQQ', 'p3', tqqqCfg.boundaries, tqqqCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
+    addHybridDetailSheet(wb, hybridCfg.boundaries, hybridCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
+    filename = `QLD_TQQQ_하이브리드_리밸런싱_상세검증_${startDate}_${endDate}.xlsx`;
+  }
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const link=document.createElement('a'); link.href=URL.createObjectURL(blob);
+  link.download=filename; link.click();
+});
+
+// ---------- PC 모드 / 모바일 모드 ----------
+let viewMode = 'pc';
+const CHART_SIZE = { pc: {w:1760,h:420}, mobile: {w:900,h:560} };
+
+function setViewMode(m) {
+  viewMode = m;
+  document.body.classList.toggle('mobile-mode', m==='mobile');
+  $('pcModeBtn').classList.toggle('active', m==='pc');
+  $('mobileModeBtn').classList.toggle('active', m==='mobile');
+  const sz = CHART_SIZE[m];
+  const canvas = $('chart');
+  canvas.width = sz.w;
+  canvas.height = sz.h;
+  // 모바일에서는 화면 확대/축소(zoom)를 100%로 초기화 (레이아웃이 이미 최적화되어 있어 겹침 방지)
+  if (m==='mobile') { zoomLevel = 100; applyZoom(); }
+  render();
+}
+$('pcModeBtn').addEventListener('click', ()=>setViewMode('pc'));
+$('mobileModeBtn').addEventListener('click', ()=>setViewMode('mobile'));
+
+// ---------- 다크모드 / 화이트모드 ----------
+let themeMode = 'light';
+function setThemeMode(t) {
+  themeMode = t;
+  document.body.classList.toggle('dark-mode', t==='dark');
+  $('lightModeBtn').classList.toggle('active', t==='light');
+  $('darkModeBtn').classList.toggle('active', t==='dark');
+  render(); // 캔버스 차트 색상도 다시 그려야 함
+}
+$('lightModeBtn').addEventListener('click', ()=>setThemeMode('light'));
+$('darkModeBtn').addEventListener('click', ()=>setThemeMode('dark'));
+
+// ---------- 화면 확대/축소 (zoom) ----------
+let zoomLevel = 100;
+const ZOOM_MIN = 50, ZOOM_MAX = 150, ZOOM_STEP = 10;
+function applyZoom() {
+  document.querySelector('.app').style.zoom = (zoomLevel / 100);
+  $('zoomLabel').textContent = zoomLevel + '%';
+}
+$('zoomOut').addEventListener('click', () => {
+  zoomLevel = Math.max(ZOOM_MIN, zoomLevel - ZOOM_STEP);
+  applyZoom();
+});
+$('zoomIn').addEventListener('click', () => {
+  zoomLevel = Math.min(ZOOM_MAX, zoomLevel + ZOOM_STEP);
+  applyZoom();
+});
+$('zoomReset').addEventListener('click', () => {
+  zoomLevel = 100;
+  applyZoom();
+});
+
+// ---------- 세부설정 팝업 확대/축소 (zoom) ----------
+let modalZoomLevel = 100;
+function applyModalZoom() {
+  document.querySelector('.modal-box').style.zoom = (modalZoomLevel / 100);
+  $('modalZoomLabel').textContent = modalZoomLevel + '%';
+}
+$('modalZoomOut').addEventListener('click', () => {
+  modalZoomLevel = Math.max(ZOOM_MIN, modalZoomLevel - ZOOM_STEP);
+  applyModalZoom();
+});
+$('modalZoomIn').addEventListener('click', () => {
+  modalZoomLevel = Math.min(ZOOM_MAX, modalZoomLevel + ZOOM_STEP);
+  applyModalZoom();
+});
+$('modalZoomReset').addEventListener('click', () => {
+  modalZoomLevel = 100;
+  applyModalZoom();
+});
+
+// init
+$('startDate').value = PRICE.dates[0];
+$('endDate').value = PRICE.dates[PRICE.dates.length-1];
+setViewMode(window.innerWidth < 720 ? 'mobile' : 'pc');
+
+  } catch (err) {
+    document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;line-height:1.6">' +
+      '<h2>⚠ 데이터 로드 실패</h2><p>' + err.message + '</p>' +
+      '<p>이 페이지는 <b>price_data.json</b>을 같은 폴더에서 fetch로 불러옵니다. ' +
+      'GitHub Pages 등 https:// 로 서빙되는 환경에서만 정상 작동하며, ' +
+      '로컬에서 index.html을 더블클릭해 여는 file:// 방식에서는 브라우저 CORS 정책 때문에 작동하지 않습니다.</p></div>';
+  }
+})();
+</script>
+
+</body>
+</html>
