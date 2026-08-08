@@ -582,11 +582,12 @@ tr:last-child td { border-bottom:none; }
     </div>
 
     <div class="card" id="resultsCard">
-      <div class="chart-title" style="margin-bottom:10px;">🏆 순위 (수익률 기준, 현재 선택 기간)</div>
+      <div class="chart-title" style="margin-bottom:10px;">🏆 순위 (종합점수 기준, 현재 선택 기간)</div>
+      <div class="rolling-table-desc" style="margin:0 0 10px;">CAGR 30% + MDD 30% + Calmar 20% + Sharpe 20%로 점수화한 종합순위입니다.</div>
       <div class="table-scroll">
       <table id="resultsTable">
         <thead>
-          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>최종자산 (세전)</th><th>총수익률</th><th>최종자산 (세후)</th><th>세후수익률</th><th>CAGR</th><th>MDD</th><th>칼마비율</th><th>샤프지수</th></tr>
+          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>종합점수</th><th>최종자산 (세전)</th><th>총수익률</th><th>최종자산 (세후)</th><th>세후수익률</th><th>CAGR</th><th>MDD</th><th>칼마비율</th><th>샤프지수</th></tr>
         </thead>
         <tbody id="resultsBody"></tbody>
       </table>
@@ -618,6 +619,40 @@ tr:last-child td { border-bottom:none; }
             <div class="glossary-name">샤프지수</div>
           </div>
           <div class="glossary-desc">위험(변동성) 대비 얼마나 효율적으로 벌었는지. 숫자가 클수록 적게 흔들리면서 많이 번 것. 보통 1.0 이상이면 양호, 2.0 이상이면 상당히 우수한 수준으로 봅니다.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-head">
+            <div class="glossary-badge" style="background:#eab308;">🏆</div>
+            <div class="glossary-name">칼마비율</div>
+          </div>
+          <div class="glossary-desc">CAGR ÷ |MDD|. "감수한 최악의 낙폭 대비 얼마나 벌었나"를 보는 지표예요. 샤프지수가 일상적인 등락 전체를 위험으로 보는 반면, 칼마비율은 딱 한 번 있었던 최악의 순간(MDD)만 기준으로 삼아서 레버리지 상품처럼 급락 리스크가 핵심인 경우에 특히 유용해요. 1.0 이상이면 양호한 편입니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">🔬 백테스트 검증 방법 3가지</div>
+      <div class="glossary-grid">
+        <div class="glossary-item">
+          <div class="glossary-head">
+            <div class="glossary-badge" style="background:#7c3aed;">📊</div>
+            <div class="glossary-name">롤링 백테스트</div>
+          </div>
+          <div class="glossary-desc">실제 있었던 가격 흐름 그대로, 시작 시점만 매월 옮겨가며 1년부터 최대 보유기간까지 전부 검증합니다. 2000년 닷컴버블, 2008년 금융위기 같은 실제 위기를 온전히 포함하는 게 강점이라 "역사적으로 최악의 상황을 버텨내는가"를 가장 현실적으로 보여줍니다.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-head">
+            <div class="glossary-badge" style="background:#0ea5e9;">🔬</div>
+            <div class="glossary-name">Walk-Forward 검증</div>
+          </div>
+          <div class="glossary-desc">일정 기간(훈련 구간)의 데이터로 최적 세부설정을 다시 찾고, 그 값을 바로 다음 구간(한 번도 안 본 데이터)에 적용해서 실전처럼 시험합니다. "지금 쓰는 설정이 특정 시기에만 잘 맞게 끼워 맞춰진 건 아닌지(과최적화)"를 가려내는 데 가장 강력한 방법이에요.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-head">
+            <div class="glossary-badge" style="background:#db2777;">🎲</div>
+            <div class="glossary-name">블록 부트스트랩</div>
+          </div>
+          <div class="glossary-desc">실제 일별 수익률을 블록 단위로 잘라서 무작위로 재배열한 "일어나지 않았을 수도 있는 대체 역사"를 수백~수천 개 만들어 테스트합니다. 결과가 넓게 퍼지면 "운이 크게 작용한다"는 뜻이고, 좁게 모이면 "우연이 아니라 안정적인 결과"라는 뜻이에요.</div>
         </div>
       </div>
     </div>
@@ -1290,6 +1325,23 @@ function computeTwoAccountComparison(iStartSel, iEnd, boundaries, cfgA, cfgB, dc
   return { eq1, eq2, eq3, investStart, wAarr, wBarr };
 }
 
+function computeSingleScore(results) {
+  // CAGR 30% + MDD 30% + Calmar 20% + Sharpe 20%, 각 지표 순위를 1위=100점~꼴찌=0점 선형 환산 후 가중합산
+  const n = results.length;
+  function rankMapFor(key) {
+    const withVal = results.map(r => ({ nm: r.meta.name, v: r.stats[key] }))
+      .map(x => ({ nm: x.nm, v: isFinite(x.v) ? x.v : -Infinity })); // NaN/Infinity는 최하위로
+    const sorted = withVal.slice().sort((a,b)=>b.v-a.v);
+    const m = {};
+    sorted.forEach((x,i)=>{ m[x.nm] = i+1; });
+    return m;
+  }
+  const cagrRank = rankMapFor('cagr'), mddRank = rankMapFor('mdd'), calRank = rankMapFor('calmar'), shpRank = rankMapFor('sharpe');
+  function toScore(rank) { return n > 1 ? 100 * (n - rank) / (n - 1) : 100; }
+  results.forEach(r=>{
+    r.stats.score = 0.30*toScore(cagrRank[r.meta.name]) + 0.30*toScore(mddRank[r.meta.name]) + 0.20*toScore(calRank[r.meta.name]) + 0.20*toScore(shpRank[r.meta.name]);
+  });
+}
 function computeStats(equity, dates, invested) {
   const n = equity.length;
   const finalVal = equity[n-1];
@@ -1469,7 +1521,7 @@ function render() {
     $('strategyHeader').textContent = '전략';
     $('chartTitle').textContent = showDevChart
       ? `${devChartTarget==='tqqq'?'TQQQ':devChartTarget==='hybrid'?'하이브리드':'QLD'} 200일 이격도 + 매수/매도 시점 검증`
-      : 'V2: QLD·TQQQ 6종비교';
+      : 'QLD/TQQQ 리밸런싱 7종 비교';
     $('devToggleBtn').style.display = 'none';
     $('devToggleBtnQld').style.display = 'inline-block';
     $('devToggleBtnTqqq').style.display = 'inline-block';
@@ -1503,16 +1555,19 @@ function render() {
   const days = chartDates.length - 1;
   $('periodNote').textContent = `${chartDates[0]} ~ ${chartDates[chartDates.length-1]}  (거래일 ${days.toLocaleString()}일, 약 ${(days/252).toFixed(1)}년)`;
 
-  // 순위는 무조건 총수익률 기준
-  results.sort((a,b) => b.stats.totalReturn - a.stats.totalReturn);
+  // 종합 점수: CAGR 30% + MDD 30% + Calmar 20% + Sharpe 20% — 각 지표 순위를 1위=100점~꼴찌=0점으로
+  // 선형 환산한 뒤 가중합산 (3종 검증 종합 리포트와 동일한 방식, 단일 기간 버전)
+  results.forEach(r=>{ r.stats.calmar = r.stats.cagr / Math.abs(r.stats.mdd||1); });
+  computeSingleScore(results);
+  results.sort((a,b) => b.stats.score - a.stats.score);
 
   const tbody = $('resultsBody');
   const bestCagr = Math.max(...results.map(r=>r.stats.cagr));
-  results.forEach(r=>{ r.stats.calmar = r.stats.cagr / Math.abs(r.stats.mdd||1); });
   tbody.innerHTML = results.map((r,idx) => `
     <tr>
       <td class="rank-td">${idx+1}${idx===0?' 🏆':''}</td>
       <td><span class="lev-badge" style="background:${r.meta.color}"></span>${r.meta.name}</td>
+      <td class="best-col">${r.stats.score.toFixed(1)}점</td>
       <td class="final-asset">${fmtWon(r.stats.finalVal)}</td>
       <td class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</td>
       <td class="final-asset">${fmtWon(r.stats.afterTaxFinal)}</td>
@@ -1524,15 +1579,15 @@ function render() {
     </tr>
   `).join('');
 
-  // 모바일: 1위~N위 압축 리스트, 탭하면 상세 펼쳐짐 (1위는 기본 펼침)
+  // 모바일: 1위~N위 압축 리스트 (탭 펼치기 없이 핵심 수치를 한 번에 표시)
   $('resultsCards').innerHTML = results.map((r,idx) => {
     const rank = idx+1;
     return `<div class="rank-item${rank===1?' rank-item-1':''}">
-      <div class="rank-head" data-rank-toggle>
+      <div class="rank-head">
         <div class="rank-num">${rank}</div>
         <div class="rank-body">
           <div class="rank-name">${r.meta.name}</div>
-          <div class="rank-final">${fmtWon(r.stats.finalVal)}</div>
+          <div class="rank-final">${fmtWon(r.stats.finalVal)} <span style="opacity:0.6;font-weight:400;">(종합 ${r.stats.score.toFixed(1)}점)</span></div>
           <div class="rank-stats">
             <span>총수익 <b class="${r.stats.totalReturn>=0?'rank-pos':'rank-neg'}">${r.stats.totalReturn>=0?'+':''}${r.stats.totalReturn.toFixed(1)}%</b></span>
             <span>MDD <b>${r.stats.mdd.toFixed(1)}%</b></span>
@@ -1540,25 +1595,9 @@ function render() {
             <span>샤프 <b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></span>
           </div>
         </div>
-        <div class="rank-chevron">▼</div>
-      </div>
-      <div class="rank-detail">
-        <div class="rc-row"><span>최종자산 (세전)</span><b>${fmtWon(r.stats.finalVal)}</b></div>
-        <div class="rc-row"><span>총수익률</span><b class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</b></div>
-        <div class="rc-row"><span>최종자산 (세후)</span><b>${fmtWon(r.stats.afterTaxFinal)}</b></div>
-        <div class="rc-row"><span>세후수익률</span><b class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}</b></div>
-        <div class="rc-row"><span>CAGR ${r.stats.cagr===bestCagr?'⭐':''}</span><b>${fmtPct(r.stats.cagr)}</b></div>
-        <div class="rc-row"><span>MDD</span><b class="neg">${r.stats.mdd.toFixed(2)}%</b></div>
-        <div class="rc-row"><span>칼마비율</span><b>${r.stats.calmar.toFixed(2)}</b></div>
-        <div class="rc-row"><span>샤프지수</span><b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></div>
       </div>
     </div>`;
   }).join('');
-  const rankItemEls = $('resultsCards').querySelectorAll('.rank-item');
-  if (rankItemEls.length) rankItemEls[0].classList.add('open');
-  rankItemEls.forEach(item=>{
-    item.querySelector('[data-rank-toggle]').addEventListener('click', ()=> item.classList.toggle('open'));
-  });
   $('resultsAiComment').innerHTML = buildResultsAiComment(results);
 
   if ((mode==='rebal' || mode==='v2') && showDevChart) {
@@ -2385,24 +2424,32 @@ $('runBtn').addEventListener('click', ()=>{
 // ---------- 결과 카드 밑에 붙는 AI 한줄평 (수익/안전/균형 리더가 다른지 짚어줌) ----------
 function buildResultsAiComment(results) {
   const withCalmar = results.map(r => Object.assign({}, r, { calmar: r.stats.cagr / Math.abs(r.stats.mdd||1) }));
+  const byScore = withCalmar.slice().sort((a,b)=>b.stats.score-a.stats.score);
   const byReturn = withCalmar.slice().sort((a,b)=>b.stats.totalReturn-a.stats.totalReturn);
   const byMdd = withCalmar.slice().sort((a,b)=>b.stats.mdd-a.stats.mdd);
   const byCalmar = withCalmar.slice().sort((a,b)=>b.calmar-a.calmar);
-  const top1 = byReturn[0], mddTop1 = byMdd[0], calTop1 = byCalmar[0];
-  if (!top1) return '';
+  const bySharpe = withCalmar.slice().sort((a,b)=>(b.stats.sharpe||-Infinity)-(a.stats.sharpe||-Infinity));
+  const scoreTop1 = byScore[0], scoreTop2 = byScore[1];
+  const retTop1 = byReturn[0], mddTop1 = byMdd[0], calTop1 = byCalmar[0], shpTop1 = bySharpe[0];
+  if (!scoreTop1) return '';
 
-  let comment = `📌 이 기간엔 <b>${top1.meta.name}</b>가 수익률 1위(${top1.stats.totalReturn>=0?'+':''}${top1.stats.totalReturn.toFixed(1)}%)였어요.`;
-  if (mddTop1.meta.name !== top1.meta.name) {
-    comment += ` 다만 안전성(MDD)은 <b>${mddTop1.meta.name}</b>가 가장 나았고(${mddTop1.stats.mdd.toFixed(1)}%), 수익과 안전이 같은 전략에서 나오지는 않았습니다.`;
+  let comment = `📌 <b>종합점수(CAGR30+MDD30+Calmar20+Sharpe20) 1위는 ${scoreTop1.meta.name}</b>(${scoreTop1.stats.score.toFixed(1)}점)입니다.`;
+  if (scoreTop2) comment += ` 근소한 차이의 2위는 ${scoreTop2.meta.name}(${scoreTop2.stats.score.toFixed(1)}점)입니다.`;
+  comment += `<br><br>`;
+  if (retTop1.meta.name !== scoreTop1.meta.name) {
+    comment += `참고로 수익률만 놓고 보면 <b>${retTop1.meta.name}</b>가 1위(${retTop1.stats.totalReturn>=0?'+':''}${retTop1.stats.totalReturn.toFixed(1)}%)인데, 안전성·효율까지 같이 보면 순위가 바뀝니다 — 종합점수 1위가 수익만 쫓은 결과가 아니라는 뜻이에요. `;
   } else {
-    comment += ` 이 기간엔 안전성(MDD)도 동시에 가장 좋았습니다.`;
+    comment += `수익률 1위(${retTop1.stats.totalReturn>=0?'+':''}${retTop1.stats.totalReturn.toFixed(1)}%)도 동일하게 <b>${retTop1.meta.name}</b>가 차지해서, 이 기간엔 수익과 종합점수가 같은 방향을 가리켰습니다. `;
   }
-  if (calTop1.meta.name !== top1.meta.name && calTop1.meta.name !== mddTop1.meta.name) {
-    comment += ` 균형(칼마비율) 기준으로는 <b>${calTop1.meta.name}</b>가 가장 효율적이었습니다.`;
-  } else if (calTop1.meta.name === top1.meta.name) {
-    comment += ` 칼마비율 기준으로도 1위를 유지했습니다.`;
+  if (mddTop1.meta.name !== scoreTop1.meta.name) {
+    comment += `안전성(MDD)만 보면 <b>${mddTop1.meta.name}</b>가 가장 나았고(${mddTop1.stats.mdd.toFixed(1)}%), `;
   }
-  return `<div class="rank-comment">🤖 <b>AI 한줄평</b><br>${comment}<div class="rank-note">※ 이건 지금 선택한 기간 "한 번"만 본 결과예요. 우연히 잘 맞은 시점일 수 있으니, 더 신뢰도 높은 판단은 아래쪽 "📊 롤링 백테스트"를 참고하세요.</div></div>`;
+  if (shpTop1.meta.name !== scoreTop1.meta.name && shpTop1.meta.name !== mddTop1.meta.name) {
+    comment += `샤프지수(변동성 대비 효율)는 <b>${shpTop1.meta.name}</b>가 가장 좋았습니다(${isFinite(shpTop1.stats.sharpe)?shpTop1.stats.sharpe.toFixed(2):'-'}). `;
+  }
+  comment += `이렇게 지표마다 1위가 갈리는 건 흔한 일이라, 한쪽 지표만 보고 판단하기보다 종합점수를 기준으로 삼는 걸 추천해요.`;
+
+  return `<div class="rank-comment">🤖 <b>AI 한줄평</b><br>${comment}<div class="rank-note">※ 이건 지금 선택한 기간 "한 번"만 본 결과라, 우연히 잘 맞은 시점일 수 있어요. 더 신뢰도 높은 판단이 필요하면 아래 왼쪽 메뉴에서 <b>롤링 백테스트 → Walk-Forward 실행 → 블록 부트스트랩 실행</b>을 차례로 돌려보고, 다 끝나면 뜨는 "🌟 종합 리포트"로 여러 기간·여러 방식을 합쳐서 검증해보세요.</div></div>`;
 }
 
 // ============================================================
