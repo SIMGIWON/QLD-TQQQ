@@ -308,6 +308,19 @@ body.dark-mode #rollingStaleBanner { color:#facc15; }
 }
 .rebal-table input.zi-half { width:44px; padding:6px 2px; }
 .rebal-table .dash { color:#cbd5e1; }
+
+.rebal-mobile-cards { display:none; flex-direction:column; gap:10px; margin-bottom:14px; }
+body.mobile-mode .rebal-table-desktop-only { display:none; }
+body.mobile-mode .rebal-mobile-cards { display:flex; }
+.rzone-card { background:var(--panel3); border:1.5px solid var(--border); border-radius:10px; padding:12px 14px; }
+.rzone-card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.rzone-card-title { font-weight:700; font-size:13px; }
+.rzone-field-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-top:1px solid var(--border); gap:10px; }
+.rzone-field-row:first-of-type { border-top:none; }
+.rzone-field-label { font-size:11px; color:var(--text-faint); flex-shrink:0; max-width:62%; line-height:1.4; }
+.rzone-field-row input { width:64px; text-align:center; border:1.5px solid var(--border); border-radius:6px; padding:7px 4px; font-family:var(--mono); font-size:13px; background:var(--panel); color:var(--text); flex-shrink:0; }
+.rzone-field-row input.zi-half { width:44px; }
+.rzone-minstock-pair { display:flex; align-items:center; gap:4px; flex-shrink:0; }
 .example-box { background:var(--panel3); border:1px solid var(--border); border-radius:9px; padding:14px 16px; }
 .example-box .ex-title { font-size:12px; font-weight:700; color:var(--text-mid); margin-bottom:10px; }
 .example-item { font-size:12px; color:var(--text-mid); line-height:1.7; margin-bottom:8px; padding-left:10px; border-left:3px solid var(--blue); }
@@ -791,8 +804,12 @@ tr:last-child td { border-bottom:none; }
       <div class="section-title" style="margin-top:16px;">구간 경계값 (%) — 100%는 200일선 자체라 고정</div>
       <div class="boundary-chip-row" id="boundaryChipRow"></div>
 
-      <div style="font-size:10.5px;color:var(--sub);margin:16px 0 16px 0;line-height:1.6;background:var(--panel3);border-radius:8px;padding:10px 12px;">
-        ℹ️ 거치매수(③④, ①캐치업)는 <b>구간에 새로 진입할 때 딱 1번만</b> 실행되는 규칙이라 쿨다운이 필요 없어요 — 조건을 다시 만족하려면 구간을 벗어났다가 다시 들어와야 하기 때문에 자연히 반복 발동이 안 막혀요. 대신 <b>매도(②)는 쿨다운이 있어야</b> 짧은 기간에 구간 경계를 왔다갔다 왕복해도 매도가 중복 발동하지 않아요.
+      <div class="section-title" style="margin-top:16px;">거치매수 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
+      <div class="field" style="max-width:220px;">
+        <input type="number" id="depositCooldownDays" value="30" step="1">
+      </div>
+      <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
+        구간에 새로 진입할 때마다(①캐치업+④조건 만족 시 ③) 거치매수가 발동하는데, 같은 구간을 짧은 기간에 왕복하며 반복 발동하지 않도록 <b>마지막 거치매수 후 이 대기일수가 지나야만 재발동</b>합니다. 단, ①캐치업 직후 같은 흐름에서 ④조건을 확인해 ③을 추가로 실행하는 건 하나로 묶인 동작이라 그 사이엔 쿨다운이 끼어들지 않아요 (쿨다운 통과 여부는 캐치업+③ 전체 묶음 단위로 판단).
       </div>
 
       <div class="section-title">주식매도 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
@@ -803,7 +820,7 @@ tr:last-child td { border-bottom:none; }
         120%·130%이상 구간에 진입할 때마다 매도하는 게 아니라, <b>마지막 매도 후 이 대기일수가 지나야만</b> 재발동합니다. 짧은 기간에 구간 경계를 왔다갔다(왕복)해도 매도가 여러 번 겹쳐 발동하지 않도록 막아줍니다.
       </div>
 
-      <div class="table-scroll">
+      <div class="table-scroll rebal-table-desktop-only">
       <table class="rebal-table">
         <thead>
           <tr>
@@ -820,6 +837,7 @@ tr:last-child td { border-bottom:none; }
         <tbody id="rebalTableBody"></tbody>
       </table>
       </div>
+      <div class="rebal-mobile-cards" id="rebalMobileCards"></div>
       <div style="font-size:10.5px;color:var(--text-faint);margin:-6px 0 14px;line-height:1.7;">
         1) ①최소 주식 보유 기준은 100%를 기준으로 예수금이 자동 계산됩니다. 이 구간에 진입했을 때 주식비중이 이 값 미만이면(=이전 구간에서 다 못 채운 목표가 있으면) 그 차액만큼 즉시 거치매수합니다.<br>
         2) ③④는 ①번 캐치업 이후, 예수금이 ④조건 이상이면 ③만큼 추가로 즉시 거치매수합니다 (①②③ 모두 구간 진입 즉시 1회, 쿨다운 미적용).<br>
@@ -1073,9 +1091,11 @@ function classifyZoneIdx(dev, boundaries) {
 }
 
 function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCooldownDays, sellCooldownDays) {
+  if (depositCooldownDays === undefined) depositCooldownDays = 30;
   if (sellCooldownDays === undefined) sellCooldownDays = 30;
   const p1 = PRICE.p1;
   const ma = getMA200();
+  const nZones = zoneConfigs.length;
   const zones = new Array(iEnd+1); // 0-based zone index per day, -1 = not tradable yet
   for (let i=0;i<=iEnd;i++){
     if (isNaN(ma[i])) { zones[i]=-1; continue; }
@@ -1091,6 +1111,7 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
   let episodeSplitTarget = null, dailyAmt = 0; // 이번 구간 에피소드의 드립매수 목표/일일정액
   const w1arr = new Array(iEnd+1).fill(0);
   const actionArr = new Array(iEnd+1).fill(null); // 'deposit' | 'split' | 'sell' | null
+  const lastDepositDay = new Array(nZones).fill(-Infinity); // 거치매수 쿨다운 추적 (구간별로 개별 추적)
   let lastSellDay = -Infinity; // 매도 쿨다운 추적 (전체 구간 공통 — 짧은 기간에 구간을 왔다갔다해도 중복매도 방지)
 
   for (let i=investStart;i<=iEnd;i++){
@@ -1102,21 +1123,24 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
 
       if (z !== curZone) {
         curZone = z;
-        // --- 구간 진입 즉시 1회 실행되는 캐스케이드 (쿨다운 없음) ---
-        // deposit>0인 구간(90~100%/90%미만)에서만: 이전 구간에서 못 채운 목표를 즉시 거치매수로 캐치업
-        if (deposit > 0 && minStock > 0 && w1 < minStock) {
-          w1 = minStock;
-          action = 'deposit';
-        }
+        // --- 구간 진입 즉시 1회 실행되는 캐스케이드: ①캐치업 → ④조건 만족 시 ③ 추가매수, 이 둘은 한 묶음이라
+        //     서로간엔 쿨다운 없이 이어지지만, "이 묶음 자체"가 재발동하려면 이 구간에서 마지막 발동 후
+        //     쿨다운(depositCooldownDays)이 지나야 함 (짧은 기간 왕복 재진입 시 중복 발동 방지) ---
         if (deposit > 0) {
-          const cash = 100 - w1;
-          if (cash >= depositGate) {
-            const before = w1;
-            w1 = Math.min(w1 + deposit, 100);
-            if (w1 > before + 0.001) action = 'deposit';
+          const daysSinceLastDeposit = i - lastDepositDay[z];
+          if (daysSinceLastDeposit > depositCooldownDays) {
+            let fired = false;
+            if (minStock > 0 && w1 < minStock) { w1 = minStock; fired = true; }
+            const cash = 100 - w1;
+            if (cash >= depositGate) {
+              const before = w1;
+              w1 = Math.min(w1 + deposit, 100);
+              if (w1 > before + 0.001) fired = true;
+            }
+            if (fired) { action = 'deposit'; lastDepositDay[z] = i; }
           }
         }
-        // 이번 에피소드의 드립매수 목표/일일정액 계산
+        // 이번 에피소드의 드립매수 목표/일일정액 계산 (캐스케이드가 쿨다운에 막혀 스킵됐어도, 지금 w1 기준으로 드립은 계속 진행)
         if (deposit > 0) {
           episodeSplitTarget = Math.min(w1 + splitBudget, 100);
           dailyAmt = dailyRate/100 * splitBudget;
@@ -1181,6 +1205,7 @@ function computeRebalComparison(iStartSel, iEnd, boundaries, zoneConfigs, dcaCom
 // ---------- 하이브리드(QLD주력+90%미만만TQQQ) 전용 엔진 ----------
 // zone index 4(90%미만)만 TQQQ로 매수, 나머지 매수구간(zone 2,3)은 QLD로 매수. 매도(zone 0,1)는 QLD+TQQQ 비례로 같이 축소.
 function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCooldownDays, sellCooldownDays) {
+  if (depositCooldownDays === undefined) depositCooldownDays = 30;
   if (sellCooldownDays === undefined) sellCooldownDays = 30;
   const p1 = PRICE.p1, ma = getMA200();
   const zones = new Array(iEnd+1);
@@ -1196,6 +1221,7 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
   const actionArr = new Array(iEnd+1).fill(null); // 'deposit-qld' | 'split-qld' | 'deposit-tqqq' | 'split-tqqq' | 'sell' | null
   let lastSellDay = -Infinity; // 매도 쿨다운 추적 (전체 구간 공통)
   const nZones = zoneConfigs.length;
+  const lastDepositDay = new Array(nZones).fill(-Infinity); // 거치매수 쿨다운 추적 (구간별)
 
   for (let i=investStart;i<=iEnd;i++){
     const z = zones[i];
@@ -1209,22 +1235,26 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
 
       if (z !== curZone) {
         curZone = z;
-        // --- 구간 진입 즉시 1회 실행되는 캐스케이드 (쿨다운 없음) ---
-        if (deposit > 0 && minStock > 0 && w1 < minStock) {
-          const add = minStock - w1;
-          if (targetAsset==='qld') wQld += add; else wTqqq += add;
-          w1 = minStock;
-          action = 'deposit-'+targetAsset;
-        }
+        // --- 구간 진입 즉시 1회 실행되는 캐스케이드: ①캐치업 → ④조건 만족 시 ③ 추가매수, 한 묶음이라
+        //     서로간엔 쿨다운 없이 이어지지만, 이 묶음 자체 재발동은 이 구간의 쿨다운이 지나야 함 ---
         if (deposit > 0) {
-          const cash = 100 - w1;
-          if (cash >= depositGate) {
-            const add = Math.min(deposit, cash);
-            if (add > 0.001) {
+          const daysSinceLastDeposit = i - lastDepositDay[z];
+          if (daysSinceLastDeposit > depositCooldownDays) {
+            let fired = false;
+            if (minStock > 0 && w1 < minStock) {
+              const add = minStock - w1;
               if (targetAsset==='qld') wQld += add; else wTqqq += add;
-              w1 += add;
-              action = 'deposit-'+targetAsset;
+              w1 = minStock; fired = true;
             }
+            const cash = 100 - w1;
+            if (cash >= depositGate) {
+              const add = Math.min(deposit, cash);
+              if (add > 0.001) {
+                if (targetAsset==='qld') wQld += add; else wTqqq += add;
+                w1 += add; fired = true;
+              }
+            }
+            if (fired) { action = 'deposit-'+targetAsset; lastDepositDay[z] = i; }
           }
         }
         if (deposit > 0) {
@@ -1995,7 +2025,7 @@ function getCurrentRebalConfig(target) {
 
 function getDepositGateSettings() {
   return {
-    cooldown: 30, // 거치매수는 새 엔진에서 쿨다운 미사용(구간 진입 캐스케이드로 자연 제한됨) — 파라미터 호환용으로만 유지
+    cooldown: parseFloat($('depositCooldownDays').value) || 30,
     sellCooldown: parseFloat($('sellCooldownDays').value) || 30,
   };
 }
@@ -2097,25 +2127,67 @@ function renderRebalTable() {
       </tr>`;
   }).join('');
 
-  tbody.querySelectorAll('.zi:not([readonly])').forEach(inp=>{
+  // 모바일: 가로 테이블 대신 구간별 카드로 세로 스택 (작은 입력칸 여러 개를 옆으로 늘어놓지 않아 훨씬 조작하기 편함)
+  const mobileWrap = $('rebalMobileCards');
+  mobileWrap.innerHTML = EDIT_ZONES.map((z, i) => {
+    const label = zoneLabel(i, B);
+    const canRemove = EDIT_ZONES.length > 1;
+    return `
+      <div class="rzone-card">
+        <div class="rzone-card-head">
+          <div class="rzone-card-title">${i+1}. ${label}</div>
+          ${canRemove ? `<button class="zone-row-remove" data-idx="${i}" title="이 구간 삭제">✕ 삭제</button>` : ''}
+        </div>
+        <div class="rzone-field-row">
+          <span class="rzone-field-label">①최소 주식 보유 기준 (주식%/예수금%)</span>
+          <div class="rzone-minstock-pair">
+            <input class="zi zi-half" data-idx="${i}" data-field="minStock" value="${z.minStock||0}">
+            <span style="color:var(--text-faint);">/</span>
+            <input class="zi zi-half" data-idx="${i}" data-field="minCashDisplay" value="${100-(z.minStock||0)}" readonly style="opacity:0.6;">
+          </div>
+        </div>
+        <div class="rzone-field-row"><span class="rzone-field-label">②매도비중 (주식비중%)</span><input class="zi" data-idx="${i}" data-field="sell" value="${z.sell}"></div>
+        <div class="rzone-field-row"><span class="rzone-field-label">③거치매수 (전체자산%)</span><input class="zi" data-idx="${i}" data-field="deposit" value="${z.deposit}"></div>
+        <div class="rzone-field-row"><span class="rzone-field-label">④거치매수 발동 예수금조건(%)</span><input class="zi" data-idx="${i}" data-field="depositGate" value="${z.depositGate||0}"></div>
+        <div class="rzone-field-row"><span class="rzone-field-label">⑤분할매수 예수금 (전체자산%)</span><input class="zi" data-idx="${i}" data-field="splitBudget" value="${z.splitBudget}"></div>
+        <div class="rzone-field-row"><span class="rzone-field-label">⑥일일 분할매수 (분할매수금 기준%)</span><input class="zi" data-idx="${i}" data-field="dailyRate" value="${z.dailyRate}" step="0.1"></div>
+        <div class="rzone-field-row"><span class="rzone-field-label">⑦분할매수 중단기준 (전체자산 예수금%)</span><input class="zi" data-idx="${i}" data-field="stopCash" value="${z.stopCash}"></div>
+      </div>`;
+  }).join('');
+
+  function wireInput(inp) {
     inp.addEventListener('input', (e)=>{
       const idx = parseInt(e.target.dataset.idx);
       const field = e.target.dataset.field;
       const val = parseFloat(e.target.value)||0;
       EDIT_ZONES[idx][field] = val;
 
-      // 최소 주식 보유 기준을 입력하면 옆 예수금 표시칸을 100-값으로 자동 갱신
+      // 최소 주식 보유 기준을 입력하면 옆 예수금 표시칸(데스크탑+모바일 둘 다)을 100-값으로 자동 갱신
       if (field === 'minStock') {
-        const cashInput = tbody.querySelector(`.zi[data-idx="${idx}"][data-field="minCashDisplay"]`);
-        if (cashInput) cashInput.value = Math.max(100 - val, 0);
+        document.querySelectorAll(`.zi[data-idx="${idx}"][data-field="minCashDisplay"]`).forEach(cashInput=>{
+          cashInput.value = Math.max(100 - val, 0);
+        });
+        // 같은 필드의 다른 뷰(데스크탑/모바일)에 있는 minStock 입력칸도 서로 값 동기화
+        document.querySelectorAll(`.zi[data-idx="${idx}"][data-field="minStock"]`).forEach(other=>{
+          if (other !== e.target) other.value = val;
+        });
+      } else {
+        document.querySelectorAll(`.zi[data-idx="${idx}"][data-field="${field}"]`).forEach(other=>{
+          if (other !== e.target) other.value = val;
+        });
       }
 
       updateExampleBox();
       drawZoneRefChart();
       render();
     });
-  });
+  }
+  tbody.querySelectorAll('.zi:not([readonly])').forEach(wireInput);
+  mobileWrap.querySelectorAll('.zi:not([readonly])').forEach(wireInput);
   tbody.querySelectorAll('.zone-row-remove').forEach(btn=>{
+    btn.addEventListener('click', ()=>removeZoneRow(parseInt(btn.dataset.idx)));
+  });
+  mobileWrap.querySelectorAll('.zone-row-remove').forEach(btn=>{
     btn.addEventListener('click', ()=>removeZoneRow(parseInt(btn.dataset.idx)));
   });
 }
@@ -2150,6 +2222,7 @@ function resetToDefault() {
   EDIT_BOUNDARIES = REBAL_DEFAULT_BOUNDARIES.slice();
   const defaultsFor = modalTarget==='tqqq' ? REBAL_DEFAULT_ZONES_TQQQ : modalTarget==='hybrid' ? REBAL_DEFAULT_ZONES_HYBRID : REBAL_DEFAULT_ZONES;
   EDIT_ZONES = defaultsFor.map(z=>Object.assign({},z));
+  $('depositCooldownDays').value = 30;
   $('sellCooldownDays').value = 30;
   renderBoundaryChips();
   renderRebalTable();
@@ -2291,6 +2364,8 @@ $('saveRebalModal').addEventListener('click', ()=>{
   render();
 });
 $('resetDefaultBtn').addEventListener('click', resetToDefault);
+$('depositCooldownDays').addEventListener('change', render);
+$('depositCooldownDays').addEventListener('input', ()=>debouncedRender());
 $('sellCooldownDays').addEventListener('change', render);
 $('sellCooldownDays').addEventListener('input', ()=>debouncedRender());
 
