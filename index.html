@@ -561,16 +561,6 @@ tr:last-child td { border-bottom:none; }
       </div>
 
   <div class="main">
-    <div class="card" id="rankCard" style="display:none;">
-      <div class="chart-top">
-        <div class="chart-title">📊 순위 비교 (현재 선택 기간 기준)</div>
-        <div class="chart-actions">
-          <button class="mini-btn" id="rankBackBtn">📈 차트로 돌아가기</button>
-        </div>
-      </div>
-      <div id="rankContent"></div>
-    </div>
-
     <div class="card" id="chartCard">
       <div class="chart-top">
         <div class="chart-title" id="chartTitle">QQQ 투자 시뮬레이션</div>
@@ -582,7 +572,6 @@ tr:last-child td { border-bottom:none; }
           <span class="log-toggle" id="scaleToggle"><input type="checkbox" id="logCheck">로그 스케일</span>
           <button class="mini-btn" id="saveImgBtn">이미지 저장</button>
           <button class="mini-btn" id="rebalDetailCsvBtn" style="display:none;">일자별 상세검증 엑셀 다운로드</button>
-          <button class="mini-btn" id="rankToggleBtn">📊 순위비교 보기</button>
         </div>
       </div>
       <div class="period-note" id="periodNote"></div>
@@ -593,15 +582,17 @@ tr:last-child td { border-bottom:none; }
     </div>
 
     <div class="card" id="resultsCard">
+      <div class="chart-title" style="margin-bottom:10px;">🏆 순위 (수익률 기준, 현재 선택 기간)</div>
       <div class="table-scroll">
       <table id="resultsTable">
         <thead>
-          <tr><th id="strategyHeader">레버리지</th><th>최종자산 (세전)</th><th>총수익률</th><th>최종자산 (세후)</th><th>세후수익률</th><th>CAGR</th><th>MDD</th><th>샤프지수</th></tr>
+          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>최종자산 (세전)</th><th>총수익률</th><th>최종자산 (세후)</th><th>세후수익률</th><th>CAGR</th><th>MDD</th><th>샤프지수</th></tr>
         </thead>
         <tbody id="resultsBody"></tbody>
       </table>
       </div>
-      <div class="results-cards" id="resultsCards"></div>
+      <div class="rank-list results-cards" id="resultsCards"></div>
+      <div id="resultsAiComment"></div>
     </div>
 
     <div class="info-card">
@@ -1512,13 +1503,14 @@ function render() {
   const days = chartDates.length - 1;
   $('periodNote').textContent = `${chartDates[0]} ~ ${chartDates[chartDates.length-1]}  (거래일 ${days.toLocaleString()}일, 약 ${(days/252).toFixed(1)}년)`;
 
-  // 수익률/CAGR 높은 순서대로 정렬해서 표시
-  results.sort((a,b) => b.stats.cagr - a.stats.cagr);
+  // 순위는 무조건 총수익률 기준
+  results.sort((a,b) => b.stats.totalReturn - a.stats.totalReturn);
 
   const tbody = $('resultsBody');
   const bestCagr = Math.max(...results.map(r=>r.stats.cagr));
-  tbody.innerHTML = results.map(r => `
+  tbody.innerHTML = results.map((r,idx) => `
     <tr>
+      <td class="rank-td">${idx+1}${idx===0?' 🏆':''}</td>
       <td><span class="lev-badge" style="background:${r.meta.color}"></span>${r.meta.name}</td>
       <td class="final-asset">${fmtWon(r.stats.finalVal)}</td>
       <td class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</td>
@@ -1530,18 +1522,40 @@ function render() {
     </tr>
   `).join('');
 
-  $('resultsCards').innerHTML = results.map(r => `
-    <div class="result-card">
-      <div class="rc-head"><span class="lev-badge" style="background:${r.meta.color}"></span>${r.meta.name}</div>
-      <div class="rc-row"><span>최종자산 (세전)</span><b>${fmtWon(r.stats.finalVal)}</b></div>
-      <div class="rc-row"><span>총수익률</span><b class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</b></div>
-      <div class="rc-row"><span>최종자산 (세후)</span><b>${fmtWon(r.stats.afterTaxFinal)}</b></div>
-      <div class="rc-row"><span>세후수익률</span><b class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}</b></div>
-      <div class="rc-row"><span>CAGR ${r.stats.cagr===bestCagr?'⭐':''}</span><b>${fmtPct(r.stats.cagr)}</b></div>
-      <div class="rc-row"><span>MDD</span><b class="neg">${r.stats.mdd.toFixed(2)}%</b></div>
-      <div class="rc-row"><span>샤프지수</span><b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></div>
-    </div>
-  `).join('');
+  // 모바일: 1위~N위 압축 리스트, 탭하면 상세 펼쳐짐 (1위는 기본 펼침)
+  $('resultsCards').innerHTML = results.map((r,idx) => {
+    const rank = idx+1;
+    return `<div class="rank-item${rank===1?' rank-item-1':''}">
+      <div class="rank-head" data-rank-toggle>
+        <div class="rank-num">${rank}</div>
+        <div class="rank-body">
+          <div class="rank-name">${r.meta.name}</div>
+          <div class="rank-final">${fmtWon(r.stats.finalVal)}</div>
+          <div class="rank-stats">
+            <span>총수익 <b class="${r.stats.totalReturn>=0?'rank-pos':'rank-neg'}">${r.stats.totalReturn>=0?'+':''}${r.stats.totalReturn.toFixed(1)}%</b></span>
+            <span>MDD <b>${r.stats.mdd.toFixed(1)}%</b></span>
+            <span>샤프 <b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></span>
+          </div>
+        </div>
+        <div class="rank-chevron">▼</div>
+      </div>
+      <div class="rank-detail">
+        <div class="rc-row"><span>최종자산 (세전)</span><b>${fmtWon(r.stats.finalVal)}</b></div>
+        <div class="rc-row"><span>총수익률</span><b class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</b></div>
+        <div class="rc-row"><span>최종자산 (세후)</span><b>${fmtWon(r.stats.afterTaxFinal)}</b></div>
+        <div class="rc-row"><span>세후수익률</span><b class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}</b></div>
+        <div class="rc-row"><span>CAGR ${r.stats.cagr===bestCagr?'⭐':''}</span><b>${fmtPct(r.stats.cagr)}</b></div>
+        <div class="rc-row"><span>MDD</span><b class="neg">${r.stats.mdd.toFixed(2)}%</b></div>
+        <div class="rc-row"><span>샤프지수</span><b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></div>
+      </div>
+    </div>`;
+  }).join('');
+  const rankItemEls = $('resultsCards').querySelectorAll('.rank-item');
+  if (rankItemEls.length) rankItemEls[0].classList.add('open');
+  rankItemEls.forEach(item=>{
+    item.querySelector('[data-rank-toggle]').addEventListener('click', ()=> item.classList.toggle('open'));
+  });
+  $('resultsAiComment').innerHTML = buildResultsAiComment(results);
 
   if ((mode==='rebal' || mode==='v2') && showDevChart) {
     const target = mode==='v2' ? devChartTarget : 'qld';
@@ -1735,9 +1749,6 @@ const ALL_SECTIONS = { levSection:'none', dcaFields:'none', rebalFields:'none', 
 function activateTab(activeId, activeMode, sectionsShown) {
   mode = activeMode;
   showDevChart = false;
-  showingRankView = false;
-  $('rankToggleBtn').textContent = '📊 순위비교 보기';
-  $('rankCard').style.display = 'none';
   $('chartCard').style.display = 'block';
   $('resultsCard').style.display = 'block';
   ALL_TABS.forEach(id => $(id).classList.toggle('active', id===activeId));
@@ -2349,7 +2360,7 @@ document.querySelectorAll('.qp-btn').forEach(el=>{
     $('endDate').value = lastDate;
     $('startDate').value = startD < PRICE.dates[0] ? PRICE.dates[0] : startD;
     syncRollingStartDate($('startDate').value); // ★ 롤링 시작일도 같이 연동
-    if (showingRankView) { showChartView(); } else { render(); }
+    render();
   });
 });
 function syncRollingStartDate(dateStr) {
@@ -2367,55 +2378,15 @@ $('runBtn').addEventListener('click', ()=>{
   render();
 });
 
-// ---------- 순위 비교 (현재 선택 기간 기준) ----------
-function renderRankView() {
-  const iStart = bsearchGte(PRICE.dates, $('startDate').value);
-  const iEnd = bsearchLte(PRICE.dates, $('endDate').value);
-  const initAmount = parseFloat($('initAmount').value.replace(/,/g,''))||0;
-  const results = computeResultsForRange(iStart, iEnd, initAmount);
-  if (!results || !results.length) {
-    $('rankContent').innerHTML = '<div class="rank-empty">선택한 기간에는 아직 200일선이 형성되지 않아 데이터가 부족합니다.</div>';
-    return;
-  }
-  results.forEach(r=>{ r.stats.calmar = r.stats.cagr / Math.abs(r.stats.mdd||1); });
-  const byReturn = results.slice().sort((a,b)=>b.stats.totalReturn-a.stats.totalReturn);
-  const byMdd = results.slice().sort((a,b)=>b.stats.mdd-a.stats.mdd);
-  const byCalmar = results.slice().sort((a,b)=>b.stats.calmar-a.stats.calmar);
-
-  let html = `<div class="rank-period">${$('startDate').value} ~ ${$('endDate').value} 기준, 총수익률 순 정렬 — 항목을 탭하면 상세 지표가 펼쳐져요</div>`;
-  html += '<div class="rank-list">';
-  byReturn.forEach((r,idx)=>{
-    const rank = idx+1;
-    html += `<div class="rank-item${rank===1?' rank-item-1':''}">
-      <div class="rank-head" data-rank-toggle>
-        <div class="rank-num">${rank}</div>
-        <div class="rank-body">
-          <div class="rank-name">${r.meta.name}</div>
-          <div class="rank-final">${fmtWon(r.stats.finalVal)}</div>
-          <div class="rank-stats">
-            <span>총수익 <b class="${r.stats.totalReturn>=0?'rank-pos':'rank-neg'}">${r.stats.totalReturn>=0?'+':''}${r.stats.totalReturn.toFixed(1)}%</b></span>
-            <span>MDD <b>${r.stats.mdd.toFixed(1)}%</b></span>
-            <span>칼마 <b>${r.stats.calmar.toFixed(2)}</b></span>
-          </div>
-        </div>
-        <div class="rank-chevron">▼</div>
-      </div>
-      <div class="rank-detail">
-        <div class="rc-row"><span>최종자산 (세전)</span><b>${fmtWon(r.stats.finalVal)}</b></div>
-        <div class="rc-row"><span>총수익률</span><b class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</b></div>
-        <div class="rc-row"><span>최종자산 (세후)</span><b>${fmtWon(r.stats.afterTaxFinal)}</b></div>
-        <div class="rc-row"><span>세후수익률</span><b class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}</b></div>
-        <div class="rc-row"><span>CAGR</span><b>${fmtPct(r.stats.cagr)}</b></div>
-        <div class="rc-row"><span>MDD</span><b class="neg">${r.stats.mdd.toFixed(2)}%</b></div>
-        <div class="rc-row"><span>칼마비율</span><b>${r.stats.calmar.toFixed(2)}</b></div>
-        <div class="rc-row"><span>샤프지수</span><b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></div>
-      </div>
-    </div>`;
-  });
-  html += '</div>';
-
-  // AI 한줄평
+// ---------- 결과 카드 밑에 붙는 AI 한줄평 (수익/안전/균형 리더가 다른지 짚어줌) ----------
+function buildResultsAiComment(results) {
+  const withCalmar = results.map(r => Object.assign({}, r, { calmar: r.stats.cagr / Math.abs(r.stats.mdd||1) }));
+  const byReturn = withCalmar.slice().sort((a,b)=>b.stats.totalReturn-a.stats.totalReturn);
+  const byMdd = withCalmar.slice().sort((a,b)=>b.stats.mdd-a.stats.mdd);
+  const byCalmar = withCalmar.slice().sort((a,b)=>b.calmar-a.calmar);
   const top1 = byReturn[0], mddTop1 = byMdd[0], calTop1 = byCalmar[0];
+  if (!top1) return '';
+
   let comment = `📌 이 기간엔 <b>${top1.meta.name}</b>가 수익률 1위(${top1.stats.totalReturn>=0?'+':''}${top1.stats.totalReturn.toFixed(1)}%)였어요.`;
   if (mddTop1.meta.name !== top1.meta.name) {
     comment += ` 다만 안전성(MDD)은 <b>${mddTop1.meta.name}</b>가 가장 나았고(${mddTop1.stats.mdd.toFixed(1)}%), 수익과 안전이 같은 전략에서 나오지는 않았습니다.`;
@@ -2427,15 +2398,7 @@ function renderRankView() {
   } else if (calTop1.meta.name === top1.meta.name) {
     comment += ` 칼마비율 기준으로도 1위를 유지했습니다.`;
   }
-  html += `<div class="rank-comment">🤖 <b>AI 한줄평</b><br>${comment}<div class="rank-note">※ 이건 지금 선택한 기간 "한 번"만 본 결과예요. 우연히 잘 맞은 시점일 수 있으니, 더 신뢰도 높은 판단은 위쪽 "📊 롤링 백테스트"를 참고하세요.</div></div>`;
-
-  $('rankContent').innerHTML = html;
-  const rankItems = $('rankContent').querySelectorAll('.rank-item');
-  if (rankItems.length) rankItems[0].classList.add('open'); // 1위는 기본으로 펼쳐서 보여줌
-  rankItems.forEach(item=>{
-    const head = item.querySelector('[data-rank-toggle]');
-    head.addEventListener('click', ()=> item.classList.toggle('open'));
-  });
+  return `<div class="rank-comment">🤖 <b>AI 한줄평</b><br>${comment}<div class="rank-note">※ 이건 지금 선택한 기간 "한 번"만 본 결과예요. 우연히 잘 맞은 시점일 수 있으니, 더 신뢰도 높은 판단은 아래쪽 "📊 롤링 백테스트"를 참고하세요.</div></div>`;
 }
 
 // ============================================================
@@ -3436,24 +3399,6 @@ function downloadComboPdf() {
 $('comboPdfBtn').addEventListener('click', downloadComboPdf);
 updateComboButtonState();
 
-let showingRankView = false;
-function showRankView() {
-  showingRankView = true;
-  $('chartCard').style.display = 'none';
-  $('resultsCard').style.display = 'none';
-  $('rankCard').style.display = 'block';
-  renderRankView();
-}
-function showChartView() {
-  showingRankView = false;
-  $('rankCard').style.display = 'none';
-  $('chartCard').style.display = 'block';
-  $('resultsCard').style.display = 'block';
-  render();
-}
-$('rankToggleBtn').addEventListener('click', showRankView);
-$('rankBackBtn').addEventListener('click', showChartView);
-
 // ★ 숫자/텍스트 필드는 타이핑 멈추고 0.5초 후 자동 실행 (날짜 선택처럼 매번 벗어나지 않아도 되게)
 let __debounceTimer = null;
 function debounce(fn, delay) {
@@ -3472,7 +3417,7 @@ const debouncedRender = debounce(render, 500);
   $(id).addEventListener('change', ()=>{
     clearDateSelectionActive(); // 수동으로 날짜를 바꾸면 특정 프리셋 선택 상태는 해제
     if (id === 'startDate') syncRollingStartDate($('startDate').value); // ★ 롤링 시작일도 같이 연동
-    if (showingRankView) { showChartView(); } else { render(); } // 순위비교 보는 중 날짜를 바꾸면 자동으로 차트 화면으로 전환
+    render();
   });
 });
 $('dcaCompareDaily').addEventListener('input', ()=>{ updateRebalSidebarDisplays(); debouncedRender(); });
