@@ -3293,12 +3293,57 @@ function getComboRankings() {
     overallAvgRank[nm] = wsum ? sum / wsum : NaN;
   });
 
+  // ============================================================
+  // 검증방법별 가중치 + 민감도 분석
+  // 3개 검증(롤링/WF/부트스트랩)을 1:1:1로 동등하게 볼지, 검증력에 따라 차등을 둘지는
+  // 방법론적으로 정답이 하나가 아니라서, 3가지 가중치 시나리오를 전부 계산해서
+  // "가중치를 바꿔도 순위가 안 흔들리는가"를 직접 확인합니다.
+  // ============================================================
+  function rankToScore(rank, n) { return n > 1 ? 100 * (n - rank) / (n - 1) : 100; }
+  function testScoreFromRankLists(retList, mddList, calList, shpList) {
+    const n = Math.max(retList.length, mddList.length, calList.length, shpList.length);
+    const rMap = rankListToMap(retList), mMap = rankListToMap(mddList), cMap = rankListToMap(calList), sMap = rankListToMap(shpList);
+    const score = {};
+    allNames.forEach(nm => {
+      let sum = 0, wsum = 0;
+      const parts = [[rMap[nm], COMBO_WEIGHTS.CAGR], [mMap[nm], COMBO_WEIGHTS.MDD], [cMap[nm], COMBO_WEIGHTS.Calmar], [sMap[nm], COMBO_WEIGHTS.Sharpe]];
+      parts.forEach(([rank, w]) => { if (rank != null) { sum += rankToScore(rank, n) * w; wsum += w; } });
+      score[nm] = wsum ? sum / wsum : NaN;
+    });
+    return score;
+  }
+  const perTestScore = {
+    'Rolling': testScoreFromRankLists(rollRet, rollMdd, rollCal, rollShp),
+    'WF': testScoreFromRankLists(wfRet, wfMdd, wfCal, wfShp),
+    'Bootstrap': testScoreFromRankLists(bbRet, bbMdd, bbCal, bbShp),
+  };
+  const SCENARIOS = [
+    { key: 'base', label: '기준안', sub: 'WF45 / Rolling35 / Boot20', w: { WF: 0.45, Rolling: 0.35, Bootstrap: 0.20 } },
+    { key: 's1', label: '민감도①', sub: 'WF40 / Rolling40 / Boot20', w: { WF: 0.40, Rolling: 0.40, Bootstrap: 0.20 } },
+    { key: 's2', label: '민감도②', sub: 'WF50 / Rolling30 / Boot20', w: { WF: 0.50, Rolling: 0.30, Bootstrap: 0.20 } },
+  ];
+  SCENARIOS.forEach(sc => {
+    const final = {};
+    allNames.forEach(nm => {
+      let sum = 0, wsum = 0;
+      Object.keys(sc.w).forEach(t => {
+        const v = perTestScore[t][nm];
+        if (v != null && !isNaN(v)) { sum += v * sc.w[t]; wsum += sc.w[t]; }
+      });
+      final[nm] = wsum ? sum / wsum : NaN;
+    });
+    sc.finalScore = final;
+    sc.sorted = Object.entries(final).filter(([,v])=>!isNaN(v)).sort((a,b)=>b[1]-a[1]);
+    sc.rankOf = {};
+    sc.sorted.forEach(([nm], i) => { sc.rankOf[nm] = i + 1; });
+  });
+
   const raw = {
     '롤링백테스트': { CAGR: rollRet, MDD: rollMdd, Calmar: rollCal, Sharpe: rollShp },
     'Walk-Forward': { CAGR: wfRet, MDD: wfMdd, Calmar: wfCal, Sharpe: wfShp },
     '블록부트스트랩': { CAGR: bbRet, MDD: bbMdd, Calmar: bbCal, Sharpe: bbShp },
   };
-  return { allNames, avgRankByMetric, overallAvgRank, raw };
+  return { allNames, avgRankByMetric, overallAvgRank, raw, SCENARIOS, perTestScore };
 }
 function computeOrdinalRanks(avgMap) {
   // 평균값을 그냥 반올림하면 여러 전략이 같은 정수로 뭉쳐 "1위"가 아예 안 보이는 등 왜곡이 생김.
@@ -3310,18 +3355,49 @@ function computeOrdinalRanks(avgMap) {
   });
   return ranks;
 }
+function buildSensitivityTableHtml(rk) {
+  const base = rk.SCENARIOS.find(s=>s.key==='base');
+  const names = base.sorted.map(([nm])=>nm);
+  let html = `<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr><th>전략</th>`;
+  rk.SCENARIOS.forEach(sc => { html += `<th>${sc.label}<br><span style="opacity:0.6;font-weight:400;">${sc.sub}</span></th>`; });
+  html += `</tr></thead><tbody>`;
+  names.forEach(nm => {
+    html += `<tr><td>${nm}</td>`;
+    rk.SCENARIOS.forEach(sc => {
+      const rank = sc.rankOf[nm];
+      html += `<td${sc.key==='base'?' class="best-col"':''}>${rank!=null?rank+'위':'—'}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += '</tbody></table></div>';
+
+  // 안정성 판정: 1위·2위가 3개 시나리오 전부에서 동일한지 확인
+  const top1s = rk.SCENARIOS.map(sc => sc.sorted[0] ? sc.sorted[0][0] : null);
+  const top2s = rk.SCENARIOS.map(sc => sc.sorted[1] ? sc.sorted[1][0] : null);
+  const top1Stable = top1s.every(v => v === top1s[0]);
+  const top2Stable = top2s.every(v => v === top2s[0]);
+  let verdict;
+  if (top1Stable && top2Stable) {
+    verdict = `✅ <b>강한 결과</b> — 가중치를 45/35/20, 40/40/20, 50/30/20 어느 쪽으로 바꿔도 <b>1위(${top1s[0]})와 2위(${top2s[0]})가 그대로 유지</b>됩니다. 검증방법 간 가중치를 두고 왈가왈부할 필요가 없을 정도로 우위가 뚜렷하다는 뜻입니다.`;
+  } else if (top1Stable) {
+    verdict = `🟡 <b>1위는 안정적, 2위는 유동적</b> — 1위(${top1s[0]})는 세 시나리오 모두 동일하지만, 2위는 가중치에 따라 ${Array.from(new Set(top2s)).join(' / ')}로 바뀝니다. 1위 전략은 믿을 만하지만, 2위 자리를 놓고는 근소한 차이라는 뜻입니다.`;
+  } else {
+    verdict = `⚠️ <b>가중치에 따라 1위가 바뀜</b> — 시나리오별 1위가 ${Array.from(new Set(top1s)).join(' / ')}로 갈립니다. 전략 간 우위가 명확하지 않으니, 특정 검증방법(WF·Rolling·Bootstrap)을 얼마나 신뢰하느냐에 대한 본인의 판단이 결과를 좌우한다는 뜻입니다.`;
+  }
+  html += `<div class="rank-comment" style="margin-top:10px;">${verdict}</div>`;
+  return html;
+}
 function buildComboRankTableHtml(rk) {
-  const sorted = Object.entries(rk.overallAvgRank).sort((a, b) => a[1] - b[1]);
-  const cagrRanks = computeOrdinalRanks(rk.avgRankByMetric.CAGR);
-  const mddRanks = computeOrdinalRanks(rk.avgRankByMetric.MDD);
-  const calRanks = computeOrdinalRanks(rk.avgRankByMetric.Calmar);
-  const shpRanks = computeOrdinalRanks(rk.avgRankByMetric.Sharpe);
+  const base = rk.SCENARIOS.find(s=>s.key==='base');
+  const sorted = base.sorted; // [nm, score] 배열, 점수 내림차순
   let html = `<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr>
-    <th>순위</th><th>전략</th><th class="best-col">종합 순위</th><th>CAGR 순위<br><span style="opacity:0.6;font-weight:400;">(30%)</span></th><th>MDD 순위<br><span style="opacity:0.6;font-weight:400;">(30%)</span></th><th>Calmar 순위<br><span style="opacity:0.6;font-weight:400;">(20%)</span></th><th>샤프 순위<br><span style="opacity:0.6;font-weight:400;">(20%)</span></th>
+    <th>순위</th><th>전략</th><th class="best-col">종합 점수</th><th>Rolling 점수</th><th>WF 점수</th><th>Bootstrap 점수</th>
   </tr></thead><tbody>`;
   sorted.forEach(([nm, v], i) => {
-    html += `<tr><td>${i + 1}${i === 0 ? ' 🏆' : ''}</td><td>${nm}</td><td class="best-col">${i + 1}위</td>` +
-      `<td>${cagrRanks[nm]}위</td><td>${mddRanks[nm]}위</td><td>${calRanks[nm]}위</td><td>${shpRanks[nm]}위</td></tr>`;
+    const r = rk.perTestScore.Rolling[nm], w = rk.perTestScore.WF[nm], b = rk.perTestScore.Bootstrap[nm];
+    const fmt = x => (x!=null && !isNaN(x)) ? x.toFixed(1) : '—';
+    html += `<tr><td>${i + 1}${i === 0 ? ' 🏆' : ''}</td><td>${nm}</td><td class="best-col">${v.toFixed(1)}점</td>` +
+      `<td>${fmt(r)}</td><td>${fmt(w)}</td><td>${fmt(b)}</td></tr>`;
   });
   html += '</tbody></table></div>';
   return { html, sorted };
@@ -3411,19 +3487,22 @@ function downloadComboPdf() {
   const { html: rankTableHtml, sorted } = buildComboRankTableHtml(rk);
   const top1 = sorted[0], top2 = sorted[1];
 
-  let recoHtml = `<div class="rank-comment">🏆 <b>종합 1위: ${top1[0]}</b> (가중평균 순위 ${top1[1].toFixed(2)}) — CAGR 30% + MDD 30% + Calmar 20% + Sharpe 20% 가중치로 종합한 결과입니다. `;
-  if (top2) recoHtml += `근소한 차이의 2위는 <b>${top2[0]}</b>(가중평균 순위 ${top2[1].toFixed(2)})입니다. `;
-  recoHtml += `CAGR 순위가 낮은(=좋은) 전략일수록 수익 추구형, MDD 순위가 낮은 전략일수록 안정 추구형에 가깝습니다.</div>`;
+  let recoHtml = `<div class="rank-comment">🏆 <b>종합 1위: ${top1[0]}</b> (기준안 점수 ${top1[1].toFixed(1)}점/100점) — 검증방법별 가중치는 WF 45% · Rolling 35% · Bootstrap 20%, 각 검증 내부는 CAGR 30% + MDD 30% + Calmar 20% + Sharpe 20%로 점수화(1위=100점, 꼴찌=0점, 선형배점)해서 합산한 결과입니다. `;
+  if (top2) recoHtml += `근소한 차이의 2위는 <b>${top2[0]}</b>(${top2[1].toFixed(1)}점)입니다. `;
+  recoHtml += `아래 "민감도 분석"에서 이 가중치를 흔들어도 순위가 유지되는지 확인해보세요.</div>`;
 
-  const explainCombo = `롤링 백테스트(${rollR.perHorizon ? Object.keys(rollR.perHorizon).length : ''}개 보유기간) · Walk-Forward(훈련${wfR.trainYears}년/검증${wfR.testYears}년) · 블록부트스트랩(${bbR.iterations.toLocaleString()}회)에서 4개 지표를 <b>CAGR 30% + MDD 30% + Calmar 20% + Sharpe 20%</b> 가중치로 종합한 순위입니다. 칼마·샤프는 CAGR·MDD의 파생 지표라 넷을 그냥 똑같이 평균내면 은근히 이중 반영되는데, 그래서 원재료 지표(수익·안전)에 각 30%씩 더 실어주고 효율지표(칼마·샤프)는 20%씩 보조로 반영했습니다. 세 검증은 같은 전략을 다른 방식으로 스트레스 테스트한 것이라 아래 상세 수치표의 절대값은 검증마다 다르게 나오지만(예: Walk-Forward는 검증구간이 짧아 MDD가 작게, 블록부트스트랩은 장기추세가 깨져 CAGR이 낮게 나옴), <b>순위 자체는 대체로 일관됩니다.</b> 이 리포트는 과거 데이터 기반 백테스트 결과 요약이며 투자 자문이 아닙니다.`;
+  const explainCombo = `롤링 백테스트(${rollR.perHorizon ? Object.keys(rollR.perHorizon).length : ''}개 보유기간) · Walk-Forward(훈련${wfR.trainYears}년/검증${wfR.testYears}년) · 블록부트스트랩(${bbR.iterations.toLocaleString()}회), 3개 검증을 <b>WF 45% · Rolling 35% · Bootstrap 20%</b> 가중치로 합산합니다. WF(과최적화 방지력이 가장 강함)에 가장 높은 가중치를, 실제 역사적 위기를 온전히 담은 Rolling에 그다음을, 추세가 깨진 극단적 스트레스 테스트인 Bootstrap에는 보조 가중치를 뒀습니다. 각 검증 내부에서는 CAGR·MDD·Calmar·Sharpe 4개 지표를 <b>30/30/20/20</b>으로 점수화(순위를 1위=100점~꼴찌=0점으로 선형 환산)해서 합산합니다. 세 검증은 같은 전략을 다른 방식으로 스트레스 테스트한 것이라 뒤쪽 상세 수치표의 절대값은 검증마다 다르게 나오지만(예: Walk-Forward는 검증구간이 짧아 MDD가 작게, 블록부트스트랩은 장기추세가 깨져 CAGR이 낮게 나옴), 점수화 이후 순위는 대체로 일관됩니다. 이 리포트는 과거 데이터 기반 백테스트 결과 요약이며 투자 자문이 아닙니다.`;
 
   let bodyHtml = '';
-  bodyHtml += `<div class="section-title">1. 종합 순위 (CAGR30%+MDD30%+Calmar20%+Sharpe20%)</div>`;
+  bodyHtml += `<div class="section-title">1. 종합 순위 (기준안: WF45%+Rolling35%+Bootstrap20%)</div>`;
   bodyHtml += rankTableHtml;
   bodyHtml += recoHtml;
+  bodyHtml += `<div class="section-title" style="margin-top:28px;">2. 민감도 분석 — 가중치를 바꿔도 순위가 유지되는가?</div>`;
+  bodyHtml += `<div class="rolling-table-desc" style="margin:0 0 12px;">검증방법 간 가중치를 정하는 절대적 정답은 없습니다. 그래서 기준안 외 2가지 시나리오를 더 계산해서, 가중치를 흔들어도 결과가 안 흔들리는지 직접 확인합니다.</div>`;
+  bodyHtml += buildSensitivityTableHtml(rk);
   bodyHtml += `<div class="section-title" style="margin-top:28px;">투자 성향별 추천</div>`;
   bodyHtml += buildComboPersonaSection(rk);
-  bodyHtml += `<div class="section-title" style="margin-top:28px;">2. 검증별 상세 수치 (중위값)</div>`;
+  bodyHtml += `<div class="section-title" style="margin-top:28px;">3. 검증별 상세 수치 (중위값)</div>`;
   bodyHtml += buildComboDetailTableHtml(rk, 'CAGR', '%', '📈 CAGR (연평균 복리 수익률, 높을수록 좋음)');
   bodyHtml += buildComboDetailTableHtml(rk, 'MDD', '%', '🛡 MDD (최대 낙폭, 0에 가까울수록 안전)');
   bodyHtml += buildComboDetailTableHtml(rk, 'Calmar', '', '⚖️ 칼마비율 (CAGR÷|MDD|, 수익·안전 효율)');
