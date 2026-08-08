@@ -2476,10 +2476,11 @@ async function runRollingBacktest() {
           results.forEach(r=>{
             const nm = r.meta.name;
             const calmar = r.stats.cagr / Math.abs(r.stats.mdd||1);
-            if (!sums[nm]) sums[nm] = {ret:0, mdd:0, calmar:0, n:0};
+            if (!sums[nm]) sums[nm] = {ret:0, mdd:0, calmar:0, sharpe:0, n:0};
             sums[nm].ret += r.stats.cagr;
             sums[nm].mdd += r.stats.mdd;
             sums[nm].calmar += calmar;
+            sums[nm].sharpe += (isFinite(r.stats.sharpe) ? r.stats.sharpe : 0);
             sums[nm].n++;
           });
           n++;
@@ -2489,7 +2490,7 @@ async function runRollingBacktest() {
     }
     const avg = {};
     Object.keys(sums).forEach(nm=>{
-      avg[nm] = { ret: sums[nm].ret/sums[nm].n, mdd: sums[nm].mdd/sums[nm].n, calmar: sums[nm].calmar/sums[nm].n };
+      avg[nm] = { ret: sums[nm].ret/sums[nm].n, mdd: sums[nm].mdd/sums[nm].n, calmar: sums[nm].calmar/sums[nm].n, sharpe: sums[nm].sharpe/sums[nm].n };
     });
     perHorizon[years] = { avg, n };
   }
@@ -2771,8 +2772,18 @@ function calcStatsFromEquity(eq, dates, initAmount) {
   const finalVal = eq[eq.length-1];
   const cagr = years>0 ? (Math.pow(finalVal/initAmount,1/years)-1)*100 : NaN;
   let peak=eq[0], mdd=0;
-  eq.forEach(v=>{ if(v>peak) peak=v; const dd=(v-peak)/peak*100; if(dd<mdd) mdd=dd; });
-  return { cagr, mdd, calmar: cagr/Math.abs(mdd||1), finalVal };
+  const rets = [];
+  for (let i=1;i<eq.length;i++){
+    if (eq[i]>peak) peak=eq[i];
+    const dd = peak>0 ? (eq[i]-peak)/peak*100 : 0;
+    if (dd<mdd) mdd=dd;
+    if (eq[i-1]>0) rets.push(eq[i]/eq[i-1]-1);
+  }
+  const mean = rets.length ? rets.reduce((a,b)=>a+b,0)/rets.length : 0;
+  const variance = rets.length ? rets.reduce((a,b)=>a+(b-mean)*(b-mean),0)/rets.length : 0;
+  const vol = Math.sqrt(variance)*Math.sqrt(252)*100;
+  const sharpe = vol>0 ? (mean*252*100)/vol : NaN;
+  return { cagr, mdd, calmar: cagr/Math.abs(mdd||1), sharpe, finalVal };
 }
 function getWfAssetConfigs() {
   // 재최적화(그리드서치) 대상 = 리밸런싱 규칙이 있는 자산들. 적립식/거치식은 같은 호출에서 공짜로 같이 나옴.
@@ -3049,7 +3060,11 @@ async function bbSimulateOne(dailyReturns, blockDays, targetDays, initAmount, ho
   let eq = initAmount, peak = initAmount, mdd = 0;
   for (let i=0;i<path.length;i++){ eq *= (1+path[i]); if (eq>peak) peak=eq; const dd=(eq-peak)/peak*100; if (dd<mdd) mdd=dd; }
   const cagr = (Math.pow(eq/initAmount, 1/holdYears)-1)*100;
-  return { cagr, mdd, calmar: cagr/Math.abs(mdd||1) };
+  const mean = path.reduce((a,b)=>a+b,0)/path.length;
+  const variance = path.reduce((a,b)=>a+(b-mean)*(b-mean),0)/path.length;
+  const vol = Math.sqrt(variance)*Math.sqrt(252)*100;
+  const sharpe = vol>0 ? (mean*252*100)/vol : NaN;
+  return { cagr, mdd, calmar: cagr/Math.abs(mdd||1), sharpe };
 }
 async function runBlockBootstrap() {
   if (mode !== 'rebal' && mode !== 'v2') {
@@ -3088,7 +3103,7 @@ async function runBlockBootstrap() {
   let stepCount = 0;
   for (const nm of strategyNames) {
     const dailyReturns = returnsByStrategy[nm];
-    const cagrs = [], mdds = [], calmars = [];
+    const cagrs = [], mdds = [], calmars = [], sharpes = [];
     const chunk = Math.max(1, Math.floor(iterations/10));
     for (let it=0; it<iterations; it++){
       stepCount++;
@@ -3098,9 +3113,9 @@ async function runBlockBootstrap() {
         await new Promise(r=>setTimeout(r,0));
       }
       const res = await bbSimulateOne(dailyReturns, blockDays, targetDays, initAmount, holdYears);
-      cagrs.push(res.cagr); mdds.push(res.mdd); calmars.push(res.calmar);
+      cagrs.push(res.cagr); mdds.push(res.mdd); calmars.push(res.calmar); sharpes.push(res.sharpe);
     }
-    perStrategy[nm] = { cagrs, mdds, calmars };
+    perStrategy[nm] = { cagrs, mdds, calmars, sharpes };
   }
 
   $('bbProgressFill').style.width='100%';
@@ -3112,9 +3127,10 @@ async function runBlockBootstrap() {
   $('bbResults').style.display='block';
 }
 function bbStratStats(d) {
-  const { cagrs, mdds, calmars } = d;
+  const { cagrs, mdds, calmars, sharpes } = d;
   return {
     cagrMed: median(cagrs), mddMed: median(mdds), calMed: median(calmars),
+    sharpeMed: sharpes && sharpes.length ? median(sharpes.filter(v=>isFinite(v))) : NaN,
     cagrP5: percentile(cagrs,0.05), cagrP95: percentile(cagrs,0.95),
     mddP5: percentile(mdds,0.05), mddP95: percentile(mdds,0.95),
     positiveRate: cagrs.filter(v=>v>0).length/cagrs.length*100,
@@ -3221,22 +3237,25 @@ function getComboRankings() {
   const rollRet = canon(getRankedRows(rollR.perHorizon, 'ret'));
   const rollMdd = canon(getRankedRows(rollR.perHorizon, 'mdd'));
   const rollCal = canon(getRankedRows(rollR.perHorizon, 'calmar'));
+  const rollShp = canon(getRankedRows(rollR.perHorizon, 'sharpe'));
 
   function wfRankList(metricKey) {
     return wfR.strategyNames.map(nm => {
       const results = wfR.perStrategyResults[nm];
-      const med = results.length ? median(results.map(r => r.oos[metricKey])) : NaN;
+      const vals = results.map(r => r.oos[metricKey]).filter(v => v!=null && !isNaN(v));
+      const med = vals.length ? median(vals) : NaN;
       return { nm: canonicalStratName(nm), med };
     }).filter(x => !isNaN(x.med)).sort((a, b) => b.med - a.med);
   }
-  const wfRet = wfRankList('cagr'), wfMdd = wfRankList('mdd'), wfCal = wfRankList('calmar');
+  const wfRet = wfRankList('cagr'), wfMdd = wfRankList('mdd'), wfCal = wfRankList('calmar'), wfShp = wfRankList('sharpe');
 
   const bbStats = {};
   bbR.strategyNames.forEach(nm => { bbStats[nm] = bbStratStats(bbR.perStrategy[nm]); });
   function bbRankList(key) {
-    return bbR.strategyNames.map(nm => ({ nm: canonicalStratName(nm), med: bbStats[nm][key] })).sort((a, b) => b.med - a.med);
+    return bbR.strategyNames.map(nm => ({ nm: canonicalStratName(nm), med: bbStats[nm][key] }))
+      .filter(x => !isNaN(x.med)).sort((a, b) => b.med - a.med);
   }
-  const bbRet = bbRankList('cagrMed'), bbMdd = bbRankList('mddMed'), bbCal = bbRankList('calMed');
+  const bbRet = bbRankList('cagrMed'), bbMdd = bbRankList('mddMed'), bbCal = bbRankList('calMed'), bbShp = bbRankList('sharpeMed');
 
   const allNames = Array.from(new Set([...rollRet, ...wfRet, ...bbRet].map(x => x.nm)));
 
@@ -3244,24 +3263,24 @@ function getComboRankings() {
     CAGR: [rollRet, wfRet, bbRet].map(rankListToMap),
     MDD: [rollMdd, wfMdd, bbMdd].map(rankListToMap),
     Calmar: [rollCal, wfCal, bbCal].map(rankListToMap),
+    Sharpe: [rollShp, wfShp, bbShp].map(rankListToMap),
   };
-  const avgRankByMetric = { CAGR: {}, MDD: {}, Calmar: {} };
+  const avgRankByMetric = { CAGR: {}, MDD: {}, Calmar: {}, Sharpe: {} };
   allNames.forEach(nm => {
-    ['CAGR', 'MDD', 'Calmar'].forEach(metric => {
+    ['CAGR', 'MDD', 'Calmar', 'Sharpe'].forEach(metric => {
       const vals = rankMaps[metric].map(m => m[nm]).filter(v => v !== undefined);
       avgRankByMetric[metric][nm] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : NaN;
     });
   });
-  const overallAvgRank = {};
-  allNames.forEach(nm => {
-    const vs = ['CAGR', 'MDD', 'Calmar'].map(m => avgRankByMetric[m][nm]).filter(v => !isNaN(v));
-    overallAvgRank[nm] = vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : NaN;
-  });
+  // "종합" = 칼마 순위 그대로 사용합니다. 칼마 자체가 이미 CAGR÷|MDD|라서, 여기에 CAGR·MDD를
+  // 또 섞어 평균내면 사실상 같은 정보를 중복으로 반영하는 셈이라(칼마 쪽에 은근히 가중치가 더 실림),
+  // 종합=칼마로 명확히 통일하고 CAGR·MDD·샤프는 참고용 보조 지표로 별도 표시합니다.
+  const overallAvgRank = Object.assign({}, avgRankByMetric.Calmar);
 
   const raw = {
-    '롤링백테스트': { CAGR: rollRet, MDD: rollMdd, Calmar: rollCal },
-    'Walk-Forward': { CAGR: wfRet, MDD: wfMdd, Calmar: wfCal },
-    '블록부트스트랩': { CAGR: bbRet, MDD: bbMdd, Calmar: bbCal },
+    '롤링백테스트': { CAGR: rollRet, MDD: rollMdd, Calmar: rollCal, Sharpe: rollShp },
+    'Walk-Forward': { CAGR: wfRet, MDD: wfMdd, Calmar: wfCal, Sharpe: wfShp },
+    '블록부트스트랩': { CAGR: bbRet, MDD: bbMdd, Calmar: bbCal, Sharpe: bbShp },
   };
   return { allNames, avgRankByMetric, overallAvgRank, raw };
 }
@@ -3279,13 +3298,13 @@ function buildComboRankTableHtml(rk) {
   const sorted = Object.entries(rk.overallAvgRank).sort((a, b) => a[1] - b[1]);
   const cagrRanks = computeOrdinalRanks(rk.avgRankByMetric.CAGR);
   const mddRanks = computeOrdinalRanks(rk.avgRankByMetric.MDD);
-  const calRanks = computeOrdinalRanks(rk.avgRankByMetric.Calmar);
+  const shpRanks = computeOrdinalRanks(rk.avgRankByMetric.Sharpe);
   let html = `<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr>
-    <th>순위</th><th>전략</th><th class="best-col">종합 순위</th><th>CAGR 순위</th><th>MDD 순위</th><th>Calmar 순위</th>
+    <th>순위</th><th>전략</th><th class="best-col">칼마(종합) 순위</th><th>수익 순위</th><th>MDD 순위</th><th>샤프 순위</th>
   </tr></thead><tbody>`;
   sorted.forEach(([nm, v], i) => {
     html += `<tr><td>${i + 1}${i === 0 ? ' 🏆' : ''}</td><td>${nm}</td><td class="best-col">${i + 1}위</td>` +
-      `<td>${cagrRanks[nm]}위</td><td>${mddRanks[nm]}위</td><td>${calRanks[nm]}위</td></tr>`;
+      `<td>${cagrRanks[nm]}위</td><td>${mddRanks[nm]}위</td><td>${shpRanks[nm]}위</td></tr>`;
   });
   html += '</tbody></table></div>';
   return { html, sorted };
@@ -3315,32 +3334,36 @@ const MBTI_PERSONA = {
   },
 };
 function buildComboPersonaSection(rk) {
-  const cagrLeader = Object.entries(rk.avgRankByMetric.CAGR).sort((a,b)=>a[1]-b[1])[0][0];
-  const mddLeader = Object.entries(rk.avgRankByMetric.MDD).sort((a,b)=>a[1]-b[1])[0][0];
-  const calLeader = Object.entries(rk.avgRankByMetric.Calmar).sort((a,b)=>a[1]-b[1])[0][0];
+  const cagrTop2 = Object.entries(rk.avgRankByMetric.CAGR).sort((a,b)=>a[1]-b[1]).slice(0,2).map(x=>x[0]);
+  const mddTop2 = Object.entries(rk.avgRankByMetric.MDD).sort((a,b)=>a[1]-b[1]).slice(0,2).map(x=>x[0]);
+  const calTop2 = Object.entries(rk.avgRankByMetric.Calmar).sort((a,b)=>a[1]-b[1]).slice(0,2).map(x=>x[0]);
 
   const personas = [
-    { key:'수익위주', emoji:'🚀', color:'#f43f5e', title:'수익 추구형', strat: cagrLeader,
-      comment: `CAGR 평균순위 1위는 <b>${cagrLeader}</b>입니다. 변동성을 감내하고서라도 최대 수익을 노린다면 이 전략이 세 검증 전부에서 가장 화끈한 성적을 냈어요. 단, MDD도 함께 확인하고 감당 가능한 낙폭인지 꼭 점검하세요.` },
-    { key:'안전위주', emoji:'🛡️', color:'#3b82f6', title:'안정 추구형', strat: mddLeader,
-      comment: `MDD 평균순위 1위는 <b>${mddLeader}</b>입니다. 변동성을 최대한 줄이고 싶다면 이 전략이 세 검증 모두에서 가장 덜 흔들렸어요. 대신 수익률은 다소 낮아질 수 있다는 점을 감안하세요.` },
-    { key:'밸런스위주', emoji:'⚖️', color:'#eab308', title:'균형 추구형', strat: calLeader,
-      comment: `칼마비율(수익÷안전) 평균순위 1위는 <b>${calLeader}</b>입니다. 수익과 안전 어느 한쪽에 치우치지 않고 위험 대비 효율이 가장 좋았던 전략이에요. 극단적인 걸 원하지 않는다면 이쪽이 무난합니다.` },
+    { key:'수익위주', emoji:'🚀', color:'#f43f5e', title:'수익 추구형', top2: cagrTop2,
+      comment: `CAGR 평균순위 1·2위는 <b>${cagrTop2[0]}</b>, <b>${cagrTop2[1]||'-'}</b>입니다. 변동성을 감내하고서라도 최대 수익을 노린다면 이쪽이 세 검증 전부에서 가장 화끈한 성적을 냈어요. 단, MDD도 함께 확인하고 감당 가능한 낙폭인지 꼭 점검하세요.` },
+    { key:'안전위주', emoji:'🛡️', color:'#3b82f6', title:'안정 추구형', top2: mddTop2,
+      comment: `MDD 평균순위 1·2위는 <b>${mddTop2[0]}</b>, <b>${mddTop2[1]||'-'}</b>입니다. 변동성을 최대한 줄이고 싶다면 이쪽이 세 검증 모두에서 가장 덜 흔들렸어요. 대신 수익률은 다소 낮아질 수 있다는 점을 감안하세요.` },
+    { key:'밸런스위주', emoji:'⚖️', color:'#eab308', title:'균형 추구형', top2: calTop2,
+      comment: `칼마비율(수익÷안전) 평균순위 1·2위는 <b>${calTop2[0]}</b>, <b>${calTop2[1]||'-'}</b>입니다. <u>1위는 위 "1. 종합 순위" 표의 1위와 동일해요</u> — 종합 순위 자체를 칼마비율 기준으로 매겼기 때문입니다. 수익과 안전 어느 한쪽에 치우치지 않고 싶다면 이쪽이 무난합니다.` },
   ];
 
   let html = '<div class="summary-grid">';
   personas.forEach(p => {
-    html += `<div class="summary-card" style="border-color:${p.color};"><div class="sc-label">${p.emoji} ${p.title}</div><div class="sc-name">${p.strat}</div><div class="sc-sub" style="line-height:1.6;margin-top:4px;">${p.comment}</div></div>`;
+    html += `<div class="summary-card" style="border-color:${p.color};"><div class="sc-label">${p.emoji} ${p.title}</div><div class="sc-name">1위 ${p.top2[0]}${p.top2[1]?`<br><span style="font-size:11px;opacity:0.7;">2위 ${p.top2[1]}</span>`:''}</div><div class="sc-sub" style="line-height:1.6;margin-top:4px;">${p.comment}</div></div>`;
   });
   html += '</div>';
 
   html += `<div class="section-title" style="margin-top:22px;">🔮 MBTI로 보는 내 투자 성향은?</div>`;
-  html += `<div class="rolling-table-desc" style="margin:0 0 14px;">재미로 보는 코너입니다 — 과학적 근거보다는 성향 참고용! 내 MBTI가 속한 그룹의 추천 전략을 확인해보세요.</div>`;
+  html += `<div class="rolling-table-desc" style="margin:0 0 14px;">재미로 보는 코너입니다 — 과학적 근거보다는 성향 참고용! 같은 성향 그룹 안에서도 P(즉흥형)는 그 카테고리의 1위(더 화끈한 쪽), J(계획형)는 2위(더 다듬어진 쪽)에 가깝게 배치했어요.</div>`;
   html += '<div class="summary-grid">';
   personas.forEach(p => {
     const types = MBTI_PERSONA[p.key];
-    let rows = Object.entries(types).map(([t, desc]) => `<div style="margin-bottom:8px;"><b style="color:#f5f7fb;">${t}</b> — ${desc}</div>`).join('');
-    html += `<div class="summary-card" style="border-color:${p.color};"><div class="sc-label">${p.emoji} ${p.title} → <b>${p.strat}</b></div><div class="sc-sub" style="margin-top:8px;line-height:1.7;">${rows}</div></div>`;
+    let rows = Object.entries(types).map(([t, desc]) => {
+      const leansP = t.includes('P');
+      const pick = leansP ? p.top2[0] : (p.top2[1] || p.top2[0]);
+      return `<div style="margin-bottom:8px;"><b style="color:#f5f7fb;">${t}</b> → <span style="color:${p.color};">${pick}</span><br><span style="opacity:0.85;">${desc}</span></div>`;
+    }).join('');
+    html += `<div class="summary-card" style="border-color:${p.color};"><div class="sc-label">${p.emoji} ${p.title}</div><div class="sc-sub" style="margin-top:8px;line-height:1.7;">${rows}</div></div>`;
   });
   html += '</div>';
   return html;
@@ -3371,14 +3394,14 @@ function downloadComboPdf() {
   const { html: rankTableHtml, sorted } = buildComboRankTableHtml(rk);
   const top1 = sorted[0], top2 = sorted[1];
 
-  let recoHtml = `<div class="rank-comment">🏆 <b>종합 1위: ${top1[0]}</b> (평균순위 ${top1[1].toFixed(2)}) — CAGR·MDD·Calmar 3개 지표를 세 검증에서 골고루 잘 받은 전략입니다. `;
+  let recoHtml = `<div class="rank-comment">🏆 <b>종합 1위: ${top1[0]}</b> (칼마비율 평균순위 ${top1[1].toFixed(2)}) — 수익과 안전을 동시에 반영하는 칼마비율(CAGR÷|MDD|) 기준으로 세 검증에서 가장 좋은 성적을 받은 전략입니다. `;
   if (top2) recoHtml += `근소한 차이의 2위는 <b>${top2[0]}</b>(평균순위 ${top2[1].toFixed(2)})입니다. `;
-  recoHtml += `표에서 CAGR 평균순위가 낮은(=좋은) 전략일수록 수익 추구형, MDD 평균순위가 낮은 전략일수록 안정 추구형에 가깝습니다.</div>`;
+  recoHtml += `옆 칸의 수익 평균순위가 낮은(=좋은) 전략일수록 수익 추구형, MDD 평균순위가 낮은 전략일수록 안정 추구형에 가깝습니다.</div>`;
 
-  const explainCombo = `롤링 백테스트(${rollR.perHorizon ? Object.keys(rollR.perHorizon).length : ''}개 보유기간) · Walk-Forward(훈련${wfR.trainYears}년/검증${wfR.testYears}년) · 블록부트스트랩(${bbR.iterations.toLocaleString()}회)에서 <b>CAGR·MDD·Calmar 3개 지표 순위를 전부 평균</b>낸 결과입니다. 세 검증은 같은 전략을 다른 방식으로 스트레스 테스트한 것이라 아래 상세 수치표의 절대값은 검증마다 다르게 나오지만(예: Walk-Forward는 검증구간이 짧아 MDD가 작게, 블록부트스트랩은 장기추세가 깨져 CAGR이 낮게 나옴), <b>순위 자체는 대체로 일관됩니다.</b> 이 리포트는 과거 데이터 기반 백테스트 결과 요약이며 투자 자문이 아닙니다.`;
+  const explainCombo = `롤링 백테스트(${rollR.perHorizon ? Object.keys(rollR.perHorizon).length : ''}개 보유기간) · Walk-Forward(훈련${wfR.trainYears}년/검증${wfR.testYears}년) · 블록부트스트랩(${bbR.iterations.toLocaleString()}회)에서 <b>칼마비율(CAGR÷|MDD|) 순위를 종합 순위로 사용</b>합니다. 칼마비율 자체가 이미 수익(CAGR)과 안전(MDD)을 함께 반영하는 지표라, CAGR·MDD를 따로 또 평균내면 같은 정보를 중복 반영하게 되기 때문입니다. CAGR·MDD·샤프지수는 참고용 보조 지표로 옆에 같이 표시합니다. 세 검증은 같은 전략을 다른 방식으로 스트레스 테스트한 것이라 아래 상세 수치표의 절대값은 검증마다 다르게 나오지만(예: Walk-Forward는 검증구간이 짧아 MDD가 작게, 블록부트스트랩은 장기추세가 깨져 CAGR이 낮게 나옴), <b>순위 자체는 대체로 일관됩니다.</b> 이 리포트는 과거 데이터 기반 백테스트 결과 요약이며 투자 자문이 아닙니다.`;
 
   let bodyHtml = '';
-  bodyHtml += `<div class="section-title">1. 종합 순위</div>`;
+  bodyHtml += `<div class="section-title">1. 종합 순위 (칼마비율 기준)</div>`;
   bodyHtml += rankTableHtml;
   bodyHtml += recoHtml;
   bodyHtml += `<div class="section-title" style="margin-top:28px;">투자 성향별 추천</div>`;
@@ -3386,7 +3409,8 @@ function downloadComboPdf() {
   bodyHtml += `<div class="section-title" style="margin-top:28px;">2. 검증별 상세 수치 (중위값)</div>`;
   bodyHtml += buildComboDetailTableHtml(rk, 'CAGR', '%', '📈 CAGR (연평균 복리 수익률, 높을수록 좋음)');
   bodyHtml += buildComboDetailTableHtml(rk, 'MDD', '%', '🛡 MDD (최대 낙폭, 0에 가까울수록 안전)');
-  bodyHtml += buildComboDetailTableHtml(rk, 'Calmar', '', '⚖️ 칼마비율 (CAGR÷|MDD|, 수익·안전 균형)');
+  bodyHtml += buildComboDetailTableHtml(rk, 'Calmar', '', '⚖️ 칼마비율 (CAGR÷|MDD|, 종합 순위 기준 지표)');
+  bodyHtml += buildComboDetailTableHtml(rk, 'Sharpe', '', '📐 샤프지수 (변동성 대비 수익, 참고용)');
 
   const html = buildDarkReportHtml({
     title: `🌟 3종 검증 종합 리포트`,
