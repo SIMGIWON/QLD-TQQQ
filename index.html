@@ -402,6 +402,38 @@ tr:last-child td { border-bottom:none; }
       <button id="tabLump"><span class="tab-title">거치식 비교_3종</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
     </div>
 
+    <div class="section">
+      <div class="field">
+        <label>시작일</label>
+        <input type="date" id="startDate">
+      </div>
+      <div class="field">
+        <label>종료일</label>
+        <input type="date" id="endDate">
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">빠른 기간 선택 (오늘 기준)</div>
+      <div class="grid2" id="quickPeriodButtons" style="grid-template-columns:repeat(4,1fr);">
+        <div class="opt-btn qp-btn" data-months="1">1개월</div>
+        <div class="opt-btn qp-btn" data-months="3">3개월</div>
+        <div class="opt-btn qp-btn" data-months="6">6개월</div>
+        <div class="opt-btn qp-btn" data-months="12">1년</div>
+        <div class="opt-btn qp-btn" data-months="24">2년</div>
+        <div class="opt-btn qp-btn" data-months="36">3년</div>
+        <div class="opt-btn qp-btn" data-months="48">4년</div>
+        <div class="opt-btn qp-btn" data-months="60">5년</div>
+        <div class="opt-btn qp-btn" data-months="72">6년</div>
+        <div class="opt-btn qp-btn" data-months="84">7년</div>
+        <div class="opt-btn qp-btn" data-months="96">8년</div>
+        <div class="opt-btn qp-btn" data-months="108">9년</div>
+        <div class="opt-btn qp-btn" data-months="120">10년</div>
+        <div class="opt-btn qp-btn" data-months="180">15년</div>
+        <div class="opt-btn qp-btn" data-months="240">20년</div>
+      </div>
+    </div>
+
     <div class="section" id="levSection" style="display:none;">
       <div class="section-title">레버리지</div>
       <div class="grid2" id="levButtons" style="grid-template-columns:1fr 1fr 1fr 1fr;">
@@ -416,6 +448,10 @@ tr:last-child td { border-bottom:none; }
       <div class="field">
         <label>총 투자예산 (원)</label>
         <input type="text" inputmode="numeric" id="initAmount" value="10,000,000">
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="feeCheck" checked>
+        <label for="feeCheck">수수료/비용 반영 (매매 시 0.05%)</label>
       </div>
     </div>
 
@@ -454,7 +490,7 @@ tr:last-child td { border-bottom:none; }
           <button class="unit-btn active" data-unit="percent">%</button>
           <button class="unit-btn" data-unit="amount">원 (하루)</button>
         </div>
-        <input type="text" inputmode="decimal" id="dcaCompareDaily" value="5">
+        <input type="text" inputmode="decimal" id="dcaCompareDaily" value="0.5">
         <div class="sub-hint" id="dcaCompareDailyWon">→ 하루 ₩500,000씩 매수</div>
         <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
       </div>
@@ -476,7 +512,7 @@ tr:last-child td { border-bottom:none; }
           <button class="unit-btn active" data-unit="percent">%</button>
           <button class="unit-btn" data-unit="amount">원 (하루)</button>
         </div>
-        <input type="text" inputmode="decimal" id="dcaCompareDailyQld" value="5">
+        <input type="text" inputmode="decimal" id="dcaCompareDailyQld" value="0.5">
         <div class="sub-hint" id="dcaCompareDailyQldWon">→ 하루 ₩500,000씩 매수</div>
         <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
       </div>
@@ -496,7 +532,7 @@ tr:last-child td { border-bottom:none; }
           <button class="unit-btn active" data-unit="percent">%</button>
           <button class="unit-btn" data-unit="amount">원 (하루)</button>
         </div>
-        <input type="text" inputmode="decimal" id="dcaCompareDailyTqqq" value="5">
+        <input type="text" inputmode="decimal" id="dcaCompareDailyTqqq" value="0.5">
         <div class="sub-hint" id="dcaCompareDailyTqqqWon">→ 하루 ₩500,000씩 매수</div>
         <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
       </div>
@@ -511,45 +547,6 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div class="field">
         <button class="detail-btn" id="openRebalDetailHybrid">⚙ 하이브리드 세부설정</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="field">
-        <label>시작일</label>
-        <input type="date" id="startDate">
-      </div>
-      <div class="field">
-        <label>종료일</label>
-        <input type="date" id="endDate">
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-title">빠른 기간 선택 (오늘 기준)</div>
-      <div class="grid2" id="quickPeriodButtons" style="grid-template-columns:repeat(4,1fr);">
-        <div class="opt-btn qp-btn" data-months="1">1개월</div>
-        <div class="opt-btn qp-btn" data-months="3">3개월</div>
-        <div class="opt-btn qp-btn" data-months="6">6개월</div>
-        <div class="opt-btn qp-btn" data-months="12">1년</div>
-        <div class="opt-btn qp-btn" data-months="24">2년</div>
-        <div class="opt-btn qp-btn" data-months="36">3년</div>
-        <div class="opt-btn qp-btn" data-months="48">4년</div>
-        <div class="opt-btn qp-btn" data-months="60">5년</div>
-        <div class="opt-btn qp-btn" data-months="72">6년</div>
-        <div class="opt-btn qp-btn" data-months="84">7년</div>
-        <div class="opt-btn qp-btn" data-months="96">8년</div>
-        <div class="opt-btn qp-btn" data-months="108">9년</div>
-        <div class="opt-btn qp-btn" data-months="120">10년</div>
-        <div class="opt-btn qp-btn" data-months="180">15년</div>
-        <div class="opt-btn qp-btn" data-months="240">20년</div>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="checkbox-row">
-        <input type="checkbox" id="feeCheck">
-        <label for="feeCheck">수수료/비용 반영 (매매 시 0.05%)</label>
       </div>
     </div>
 
@@ -859,7 +856,7 @@ const REBAL_DEFAULT_BOUNDARIES = [90, 100, 120, 130];
 const REBAL_DEFAULT_ZONES = [
   { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 130%이상
   { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130%
-  { sell:0,   deposit:0,  split:60, rate:3,  stop:40, depositCashGate:0 },     // 100~120%
+  { sell:0,   deposit:0,  split:60, rate:1,  stop:40, depositCashGate:0 },     // 100~120%
   { sell:0,   deposit:5,  split:5,  rate:2,  stop:15, depositCashGate:39.9 },  // 90~100%
   { sell:0,   deposit:40, split:5,  rate:20, stop:0,  depositCashGate:14.9 },  // 90%미만
 ];
@@ -869,11 +866,11 @@ const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z))
 const REBAL_DEFAULT_ZONES_HYBRID = [
   { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 130%이상 (QLD+TQQQ 비례매도)
   { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130% (QLD+TQQQ 비례매도)
-  { sell:0,   deposit:0,  split:60, rate:3,  stop:40, depositCashGate:0 },     // 100~120% → QLD 매수
+  { sell:0,   deposit:0,  split:60, rate:1,  stop:40, depositCashGate:0 },     // 100~120% → QLD 매수
   { sell:0,   deposit:5,  split:5,  rate:2,  stop:15, depositCashGate:39.9 },  // 90~100% → QLD 매수
   { sell:0,   deposit:40, split:5,  rate:20, stop:0,  depositCashGate:14.9 },  // 90%미만 → TQQQ 매수
 ];
-const REBAL_DEFAULT_DCA_COMPARE = 5;
+const REBAL_DEFAULT_DCA_COMPARE = 0.5;
 
 let REBAL_BOUNDARIES = REBAL_DEFAULT_BOUNDARIES.slice();
 let REBAL_ZONES = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z));
