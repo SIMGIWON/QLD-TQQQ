@@ -1708,6 +1708,11 @@ function render() {
             <span>칼마 <b>${r.stats.calmar.toFixed(2)}</b></span>
             <span>샤프 <b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></span>
           </div>
+          <div class="rank-stats" style="margin-top:4px;padding-top:4px;border-top:1px dashed var(--border);">
+            <span>세후자산 <b>${fmtWon(r.stats.afterTaxFinal)}</b></span>
+            <span>세후수익 <b class="${r.stats.afterTaxReturn>=0?'rank-pos':'rank-neg'}">${r.stats.afterTaxReturn>=0?'+':''}${r.stats.afterTaxReturn.toFixed(1)}%</b></span>
+            <span>세후CAGR <b>${isFinite(r.stats.afterTaxCagr)?(r.stats.afterTaxCagr>=0?'+':'')+r.stats.afterTaxCagr.toFixed(2)+'%':'-'}</b>${r.stats.taxModeled?' <span style="opacity:0.5;font-size:10px;" title="매도 시점마다 정밀 과세 반영">●</span>':''}</span>
+          </div>
         </div>
       </div>
     </div>`;
