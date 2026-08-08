@@ -586,7 +586,7 @@ tr:last-child td { border-bottom:none; }
       <div class="table-scroll">
       <table id="resultsTable">
         <thead>
-          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>최종자산 (세전)</th><th>총수익률</th><th>최종자산 (세후)</th><th>세후수익률</th><th>CAGR</th><th>MDD</th><th>샤프지수</th></tr>
+          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>최종자산 (세전)</th><th>총수익률</th><th>최종자산 (세후)</th><th>세후수익률</th><th>CAGR</th><th>MDD</th><th>칼마비율</th><th>샤프지수</th></tr>
         </thead>
         <tbody id="resultsBody"></tbody>
       </table>
@@ -1508,6 +1508,7 @@ function render() {
 
   const tbody = $('resultsBody');
   const bestCagr = Math.max(...results.map(r=>r.stats.cagr));
+  results.forEach(r=>{ r.stats.calmar = r.stats.cagr / Math.abs(r.stats.mdd||1); });
   tbody.innerHTML = results.map((r,idx) => `
     <tr>
       <td class="rank-td">${idx+1}${idx===0?' 🏆':''}</td>
@@ -1518,6 +1519,7 @@ function render() {
       <td class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}</td>
       <td style="font-weight:${r.stats.cagr===bestCagr?'700':'400'}">${fmtPct(r.stats.cagr)}</td>
       <td class="neg">${r.stats.mdd.toFixed(2)}%</td>
+      <td>${r.stats.calmar.toFixed(2)}</td>
       <td>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</td>
     </tr>
   `).join('');
@@ -1534,6 +1536,7 @@ function render() {
           <div class="rank-stats">
             <span>총수익 <b class="${r.stats.totalReturn>=0?'rank-pos':'rank-neg'}">${r.stats.totalReturn>=0?'+':''}${r.stats.totalReturn.toFixed(1)}%</b></span>
             <span>MDD <b>${r.stats.mdd.toFixed(1)}%</b></span>
+            <span>칼마 <b>${r.stats.calmar.toFixed(2)}</b></span>
             <span>샤프 <b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></span>
           </div>
         </div>
@@ -1546,6 +1549,7 @@ function render() {
         <div class="rc-row"><span>세후수익률</span><b class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}</b></div>
         <div class="rc-row"><span>CAGR ${r.stats.cagr===bestCagr?'⭐':''}</span><b>${fmtPct(r.stats.cagr)}</b></div>
         <div class="rc-row"><span>MDD</span><b class="neg">${r.stats.mdd.toFixed(2)}%</b></div>
+        <div class="rc-row"><span>칼마비율</span><b>${r.stats.calmar.toFixed(2)}</b></div>
         <div class="rc-row"><span>샤프지수</span><b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></div>
       </div>
     </div>`;
@@ -3275,7 +3279,19 @@ function getComboRankings() {
   // "종합" = 칼마 순위 그대로 사용합니다. 칼마 자체가 이미 CAGR÷|MDD|라서, 여기에 CAGR·MDD를
   // 또 섞어 평균내면 사실상 같은 정보를 중복으로 반영하는 셈이라(칼마 쪽에 은근히 가중치가 더 실림),
   // 종합=칼마로 명확히 통일하고 CAGR·MDD·샤프는 참고용 보조 지표로 별도 표시합니다.
-  const overallAvgRank = Object.assign({}, avgRankByMetric.Calmar);
+  // 종합 순위 = CAGR 30% + MDD 30% + Calmar 20% + Sharpe 20% 가중평균.
+  // (칼마·샤프가 CAGR·MDD의 파생 지표라 완전 균등가중하면 은근히 이중반영되지만,
+  //  이렇게 명시적으로 가중치를 정해두면 "수익·안전을 동등하게, 효율지표는 보조로" 라는 의도가 분명해짐)
+  const COMBO_WEIGHTS = { CAGR: 0.30, MDD: 0.30, Calmar: 0.20, Sharpe: 0.20 };
+  const overallAvgRank = {};
+  allNames.forEach(nm => {
+    let sum = 0, wsum = 0;
+    Object.keys(COMBO_WEIGHTS).forEach(m => {
+      const v = avgRankByMetric[m][nm];
+      if (!isNaN(v)) { sum += v * COMBO_WEIGHTS[m]; wsum += COMBO_WEIGHTS[m]; }
+    });
+    overallAvgRank[nm] = wsum ? sum / wsum : NaN;
+  });
 
   const raw = {
     '롤링백테스트': { CAGR: rollRet, MDD: rollMdd, Calmar: rollCal, Sharpe: rollShp },
@@ -3298,13 +3314,14 @@ function buildComboRankTableHtml(rk) {
   const sorted = Object.entries(rk.overallAvgRank).sort((a, b) => a[1] - b[1]);
   const cagrRanks = computeOrdinalRanks(rk.avgRankByMetric.CAGR);
   const mddRanks = computeOrdinalRanks(rk.avgRankByMetric.MDD);
+  const calRanks = computeOrdinalRanks(rk.avgRankByMetric.Calmar);
   const shpRanks = computeOrdinalRanks(rk.avgRankByMetric.Sharpe);
   let html = `<div class="rolling-table-scroll"><table class="rolling-table"><thead><tr>
-    <th>순위</th><th>전략</th><th class="best-col">칼마(종합) 순위</th><th>수익 순위</th><th>MDD 순위</th><th>샤프 순위</th>
+    <th>순위</th><th>전략</th><th class="best-col">종합 순위</th><th>CAGR 순위<br><span style="opacity:0.6;font-weight:400;">(30%)</span></th><th>MDD 순위<br><span style="opacity:0.6;font-weight:400;">(30%)</span></th><th>Calmar 순위<br><span style="opacity:0.6;font-weight:400;">(20%)</span></th><th>샤프 순위<br><span style="opacity:0.6;font-weight:400;">(20%)</span></th>
   </tr></thead><tbody>`;
   sorted.forEach(([nm, v], i) => {
     html += `<tr><td>${i + 1}${i === 0 ? ' 🏆' : ''}</td><td>${nm}</td><td class="best-col">${i + 1}위</td>` +
-      `<td>${cagrRanks[nm]}위</td><td>${mddRanks[nm]}위</td><td>${shpRanks[nm]}위</td></tr>`;
+      `<td>${cagrRanks[nm]}위</td><td>${mddRanks[nm]}위</td><td>${calRanks[nm]}위</td><td>${shpRanks[nm]}위</td></tr>`;
   });
   html += '</tbody></table></div>';
   return { html, sorted };
@@ -3344,7 +3361,7 @@ function buildComboPersonaSection(rk) {
     { key:'안전위주', emoji:'🛡️', color:'#3b82f6', title:'안정 추구형', top2: mddTop2,
       comment: `MDD 평균순위 1·2위는 <b>${mddTop2[0]}</b>, <b>${mddTop2[1]||'-'}</b>입니다. 변동성을 최대한 줄이고 싶다면 이쪽이 세 검증 모두에서 가장 덜 흔들렸어요. 대신 수익률은 다소 낮아질 수 있다는 점을 감안하세요.` },
     { key:'밸런스위주', emoji:'⚖️', color:'#eab308', title:'균형 추구형', top2: calTop2,
-      comment: `칼마비율(수익÷안전) 평균순위 1·2위는 <b>${calTop2[0]}</b>, <b>${calTop2[1]||'-'}</b>입니다. <u>1위는 위 "1. 종합 순위" 표의 1위와 동일해요</u> — 종합 순위 자체를 칼마비율 기준으로 매겼기 때문입니다. 수익과 안전 어느 한쪽에 치우치지 않고 싶다면 이쪽이 무난합니다.` },
+      comment: `칼마비율(수익÷안전) 평균순위 1·2위는 <b>${calTop2[0]}</b>, <b>${calTop2[1]||'-'}</b>입니다. 수익과 안전 어느 한쪽에 치우치지 않고 싶다면 이쪽이 무난합니다. (위 "1. 종합 순위"는 칼마 단독이 아니라 CAGR·MDD·Calmar·Sharpe를 30/30/20/20 가중평균한 결과라, 이 카드와 순위가 조금 다를 수 있어요.)` },
   ];
 
   let html = '<div class="summary-grid">';
@@ -3394,14 +3411,14 @@ function downloadComboPdf() {
   const { html: rankTableHtml, sorted } = buildComboRankTableHtml(rk);
   const top1 = sorted[0], top2 = sorted[1];
 
-  let recoHtml = `<div class="rank-comment">🏆 <b>종합 1위: ${top1[0]}</b> (칼마비율 평균순위 ${top1[1].toFixed(2)}) — 수익과 안전을 동시에 반영하는 칼마비율(CAGR÷|MDD|) 기준으로 세 검증에서 가장 좋은 성적을 받은 전략입니다. `;
-  if (top2) recoHtml += `근소한 차이의 2위는 <b>${top2[0]}</b>(평균순위 ${top2[1].toFixed(2)})입니다. `;
-  recoHtml += `옆 칸의 수익 평균순위가 낮은(=좋은) 전략일수록 수익 추구형, MDD 평균순위가 낮은 전략일수록 안정 추구형에 가깝습니다.</div>`;
+  let recoHtml = `<div class="rank-comment">🏆 <b>종합 1위: ${top1[0]}</b> (가중평균 순위 ${top1[1].toFixed(2)}) — CAGR 30% + MDD 30% + Calmar 20% + Sharpe 20% 가중치로 종합한 결과입니다. `;
+  if (top2) recoHtml += `근소한 차이의 2위는 <b>${top2[0]}</b>(가중평균 순위 ${top2[1].toFixed(2)})입니다. `;
+  recoHtml += `CAGR 순위가 낮은(=좋은) 전략일수록 수익 추구형, MDD 순위가 낮은 전략일수록 안정 추구형에 가깝습니다.</div>`;
 
-  const explainCombo = `롤링 백테스트(${rollR.perHorizon ? Object.keys(rollR.perHorizon).length : ''}개 보유기간) · Walk-Forward(훈련${wfR.trainYears}년/검증${wfR.testYears}년) · 블록부트스트랩(${bbR.iterations.toLocaleString()}회)에서 <b>칼마비율(CAGR÷|MDD|) 순위를 종합 순위로 사용</b>합니다. 칼마비율 자체가 이미 수익(CAGR)과 안전(MDD)을 함께 반영하는 지표라, CAGR·MDD를 따로 또 평균내면 같은 정보를 중복 반영하게 되기 때문입니다. CAGR·MDD·샤프지수는 참고용 보조 지표로 옆에 같이 표시합니다. 세 검증은 같은 전략을 다른 방식으로 스트레스 테스트한 것이라 아래 상세 수치표의 절대값은 검증마다 다르게 나오지만(예: Walk-Forward는 검증구간이 짧아 MDD가 작게, 블록부트스트랩은 장기추세가 깨져 CAGR이 낮게 나옴), <b>순위 자체는 대체로 일관됩니다.</b> 이 리포트는 과거 데이터 기반 백테스트 결과 요약이며 투자 자문이 아닙니다.`;
+  const explainCombo = `롤링 백테스트(${rollR.perHorizon ? Object.keys(rollR.perHorizon).length : ''}개 보유기간) · Walk-Forward(훈련${wfR.trainYears}년/검증${wfR.testYears}년) · 블록부트스트랩(${bbR.iterations.toLocaleString()}회)에서 4개 지표를 <b>CAGR 30% + MDD 30% + Calmar 20% + Sharpe 20%</b> 가중치로 종합한 순위입니다. 칼마·샤프는 CAGR·MDD의 파생 지표라 넷을 그냥 똑같이 평균내면 은근히 이중 반영되는데, 그래서 원재료 지표(수익·안전)에 각 30%씩 더 실어주고 효율지표(칼마·샤프)는 20%씩 보조로 반영했습니다. 세 검증은 같은 전략을 다른 방식으로 스트레스 테스트한 것이라 아래 상세 수치표의 절대값은 검증마다 다르게 나오지만(예: Walk-Forward는 검증구간이 짧아 MDD가 작게, 블록부트스트랩은 장기추세가 깨져 CAGR이 낮게 나옴), <b>순위 자체는 대체로 일관됩니다.</b> 이 리포트는 과거 데이터 기반 백테스트 결과 요약이며 투자 자문이 아닙니다.`;
 
   let bodyHtml = '';
-  bodyHtml += `<div class="section-title">1. 종합 순위 (칼마비율 기준)</div>`;
+  bodyHtml += `<div class="section-title">1. 종합 순위 (CAGR30%+MDD30%+Calmar20%+Sharpe20%)</div>`;
   bodyHtml += rankTableHtml;
   bodyHtml += recoHtml;
   bodyHtml += `<div class="section-title" style="margin-top:28px;">투자 성향별 추천</div>`;
@@ -3409,7 +3426,7 @@ function downloadComboPdf() {
   bodyHtml += `<div class="section-title" style="margin-top:28px;">2. 검증별 상세 수치 (중위값)</div>`;
   bodyHtml += buildComboDetailTableHtml(rk, 'CAGR', '%', '📈 CAGR (연평균 복리 수익률, 높을수록 좋음)');
   bodyHtml += buildComboDetailTableHtml(rk, 'MDD', '%', '🛡 MDD (최대 낙폭, 0에 가까울수록 안전)');
-  bodyHtml += buildComboDetailTableHtml(rk, 'Calmar', '', '⚖️ 칼마비율 (CAGR÷|MDD|, 종합 순위 기준 지표)');
+  bodyHtml += buildComboDetailTableHtml(rk, 'Calmar', '', '⚖️ 칼마비율 (CAGR÷|MDD|, 수익·안전 효율)');
   bodyHtml += buildComboDetailTableHtml(rk, 'Sharpe', '', '📐 샤프지수 (변동성 대비 수익, 참고용)');
 
   const html = buildDarkReportHtml({
