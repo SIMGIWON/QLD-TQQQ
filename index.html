@@ -55,7 +55,7 @@ body.dark-mode {
 }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
-.app { display:flex; min-height:calc(100vh - 60px); transform-origin: top left; }
+.app { display:grid; grid-template-columns:300px 1fr; grid-template-areas:"sideTop main" "sideBottom main"; align-items:start; min-height:calc(100vh - 60px); transform-origin: top left; }
 .top-toolbar {
   display:flex; flex-wrap:wrap; align-items:center; gap:14px;
   background:var(--panel); border-bottom:1px solid var(--border); padding:10px 16px;
@@ -118,8 +118,8 @@ body { margin:0; background:var(--bg); color:var(--text); font-family:var(--sans
 .result-card .rc-row { display:flex; justify-content:space-between; font-size:12.5px; padding:5px 0; border-top:1px solid #f1f5f9; }
 .result-card .rc-row span { color:var(--sub); }
 .result-card .rc-row b { font-family:var(--mono); }
-body.mobile-mode .app { flex-direction:column !important; }
-body.mobile-mode .sidebar { width:100% !important; height:auto !important; position:static !important; border-right:none; border-bottom:2px solid var(--border); }
+body.mobile-mode .app { display:flex !important; flex-direction:column !important; }
+body.mobile-mode .sidebar-top, body.mobile-mode .sidebar-bottom { width:100% !important; height:auto !important; position:static !important; border-right:none; border-bottom:2px solid var(--border); }
 body.mobile-mode .main { padding:12px 10px; }
 body.mobile-mode table#resultsTable { display:none; }
 body.mobile-mode .results-cards { display:flex; }
@@ -130,11 +130,13 @@ body.mobile-mode .dev-toggle-btn, body.mobile-mode .mini-btn { font-size:11px; p
 body.mobile-mode .log-toggle { font-size:11px; padding:6px 2px; }
 body.mobile-mode .rebal-table { min-width:640px; }
 body.mobile-mode .top-toolbar { gap:10px; padding:8px 10px; }
-.sidebar {
+.sidebar-top, .sidebar-bottom {
   width: 300px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--border);
-  padding: 18px 16px; overflow-y:auto; height:100vh; position:sticky; top:0;
+  padding: 18px 16px; overflow-y:visible;
 }
-.main { flex:1; padding: 18px 20px; min-width:0; }
+.sidebar-top { grid-area:sideTop; }
+.sidebar-bottom { grid-area:sideBottom; padding-top:0; }
+.main { grid-area:main; flex:1; padding: 18px 20px; min-width:0; }
 h2 { font-size:14px; font-weight:700; margin:0 0 12px 0; }
 .tabbar { display:grid; grid-template-columns: repeat(3, 1fr); background:var(--panel2); border-radius:8px; padding:3px; margin-bottom:16px; gap:4px; }
 .tabbar button {
@@ -172,15 +174,25 @@ h2 { font-size:14px; font-weight:700; margin:0 0 12px 0; }
 .rolling-explain { font-size:11px; color:var(--sub); line-height:1.6; margin-bottom:10px; background:var(--panel2); border-radius:8px; padding:10px 12px; }
 .rank-period { font-size:12px; color:var(--sub); margin-bottom:14px; font-family:var(--mono); }
 .rank-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
-.rank-item { display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+.rank-item { background:var(--panel); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
 .rank-item-1 { border-color:#eab308; background:rgba(234,179,8,0.08); }
+.rank-head { display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer; user-select:none; }
 .rank-num { font-family:var(--mono); font-weight:800; font-size:18px; color:var(--sub); width:28px; flex-shrink:0; text-align:center; }
 .rank-item-1 .rank-num { color:#eab308; }
 .rank-body { flex:1; min-width:0; }
+.rank-final { font-family:var(--mono); font-size:12px; color:var(--sub); margin-bottom:5px; }
 .rank-name { font-weight:700; font-size:13.5px; margin-bottom:2px; }
 .rank-final { font-family:var(--mono); font-size:12px; color:var(--sub); margin-bottom:5px; }
 .rank-stats { display:flex; gap:14px; font-size:11.5px; color:var(--sub); flex-wrap:wrap; }
 .rank-stats b { font-family:var(--mono); color:var(--text); }
+.rank-chevron { flex-shrink:0; font-size:11px; color:var(--text-faint); transition:transform 0.15s; }
+.rank-item.open .rank-chevron { transform:rotate(180deg); }
+.rank-detail { display:none; border-top:1px solid var(--border); padding:12px 14px; background:var(--panel3); }
+.rank-item.open .rank-detail { display:block; }
+.rank-detail .rc-row { display:flex; justify-content:space-between; font-size:12.5px; padding:5px 0; border-top:1px solid var(--border); }
+.rank-detail .rc-row:first-child { border-top:none; }
+.rank-detail .rc-row span { color:var(--sub); }
+.rank-detail .rc-row b { font-family:var(--mono); }
 .rank-pos { color:var(--pos) !important; }
 .rank-neg { color:var(--neg) !important; }
 .rank-comment { background:var(--panel3); border:1px solid var(--border); border-radius:10px; padding:14px 16px; font-size:12.5px; line-height:1.7; }
@@ -354,8 +366,8 @@ tr:last-child td { border-bottom:none; }
   .glossary-grid { grid-template-columns:1fr; }
 }
 @media (max-width: 860px) {
-  .app { flex-direction:column; }
-  .sidebar { width:100%; height:auto; position:relative; border-right:none; border-bottom:1px solid var(--border); }
+  .app { display:flex; flex-direction:column; }
+  .sidebar-top, .sidebar-bottom { width:100%; height:auto; position:relative; border-right:none; border-bottom:1px solid var(--border); }
 }
 </style>
 </head>
@@ -382,7 +394,7 @@ tr:last-child td { border-bottom:none; }
   </div>
 </div>
 <div class="app">
-  <div class="sidebar">
+  <div class="sidebar-top">
     <h2>투자 조건 설정</h2>
     <div class="tabbar">
       <button id="tabV2" class="active"><span class="tab-title">리밸런싱 비교_7종</span><span class="tab-sub">QLD/TQQQ 외 7종</span></button>
@@ -546,87 +558,7 @@ tr:last-child td { border-bottom:none; }
 
     <div class="sidebar-divider"></div>
 
-    <div class="section">
-      <div class="section-title">📊 롤링 백테스트</div>
-      <div class="rolling-explain">
-        특정 한 구간만 보면 "우연히 잘 맞은 시점"일 수 있어요. <b>아래 시작일부터 매월 시작점을 옮겨가며</b>, 1년부터 (오늘−시작일) 최대 보유기간까지 <b>1년 단위로 전부</b> 돌려서 수익률·MDD·칼마비율을 냅니다. (2010년 이전 QLD·TQQQ는 보정합성 데이터)
       </div>
-      <div class="field" style="margin-bottom:10px;">
-        <label style="font-size:11px;">롤링 시작일 (이 날짜부터 최신 데이터까지 매년 늘려가며 검증)</label>
-        <input type="date" id="rollingStartDate" value="2003-01-01">
-        <div class="sub-hint" id="rollingHorizonPreview" style="color:var(--text-faint);"></div>
-      </div>
-      <button class="run-btn" id="rollingRunBtn" style="background:#7c3aed;">📊 롤링 백테스트 실행</button>
-      <div id="rollingProgress" style="display:none;margin-top:10px;">
-        <div class="rolling-progress-bar"><div class="rolling-progress-fill" id="rollingProgressFill"></div></div>
-        <div class="rolling-progress-text" id="rollingProgressText">시작 중...</div>
-      </div>
-      <div id="rollingResults" style="display:none;margin-top:12px;">
-        <div id="rollingStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
-        <div id="rollingResultsBody"></div>
-        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">개별 리포트 대신, 3개 검증을 모두 실행하면 아래 블록부트스트랩 섹션 맨 밑에서 종합 리포트를 받을 수 있어요</div>
-      </div>
-    </div>
-
-    <div class="sidebar-divider"></div>
-
-    <div class="section">
-      <div class="section-title">🔬 Walk-Forward 검증</div>
-      <div class="rolling-explain">
-        지금까지 찾은 세부값은 "전체 기간을 다 보고" 찾은 값이라, 미래에도 통할지는 검증이 안 됐어요. <b>훈련 구간에서만 최적값을 다시 찾고, 그 값을 바로 다음 검증 구간(못 본 데이터)에 적용</b>해서 실전처럼 시험합니다. 이걸 데이터 끝까지 반복해서, "재최적화"가 그냥 "지금 설정 고정"보다 나은지 비교합니다.
-      </div>
-      <div class="wf-grid-row">
-        <div class="field"><label style="font-size:11px;">훈련 기간(년)</label><input type="number" id="wfTrainYears" value="5" min="2" max="15" step="1"></div>
-        <div class="field"><label style="font-size:11px;">검증 기간(년)</label><input type="number" id="wfTestYears" value="2" min="1" max="10" step="1"></div>
-      </div>
-      <div class="sub-hint" id="wfFoldPreview" style="color:var(--text-faint);margin-bottom:10px;"></div>
-      <button class="run-btn" id="wfRunBtn" style="background:#0ea5e9;">🔬 Walk-Forward 실행</button>
-      <div id="wfProgress" style="display:none;margin-top:10px;">
-        <div class="rolling-progress-bar"><div class="rolling-progress-fill" id="wfProgressFill" style="background:#0ea5e9;"></div></div>
-        <div class="rolling-progress-text" id="wfProgressText">시작 중...</div>
-      </div>
-      <div id="wfResults" style="display:none;margin-top:12px;">
-        <div id="wfStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
-        <div id="wfResultsBody"></div>
-        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">개별 리포트 대신, 3개 검증을 모두 실행하면 아래 블록부트스트랩 섹션 맨 밑에서 종합 리포트를 받을 수 있어요</div>
-      </div>
-    </div>
-
-    <div class="sidebar-divider"></div>
-
-    <div class="section">
-      <div class="section-title">🎲 블록 부트스트랩 검증</div>
-      <div class="rolling-explain">
-        지금 설정으로 실제 있었던 매일의 수익률 흐름을, <b>N일짜리 블록으로 잘라서 무작위로 다시 이어붙여</b> "일어나지 않았을 수도 있는 대체 역사"를 수백~수천 개 만들어 테스트합니다. 결과가 넓게 퍼지면 "운이 크게 작용한다"는 뜻이고, 좁게 모이면 "우연이 아니라 안정적인 결과"라는 뜻이에요.
-      </div>
-      <div class="wf-grid-row">
-        <div class="field"><label style="font-size:11px;">블록 길이(거래일)</label>
-          <select id="bbBlockDays"><option value="20">20일</option><option value="60" selected>60일</option><option value="120">120일</option></select>
-        </div>
-        <div class="field"><label style="font-size:11px;">보유기간(년)</label><input type="number" id="bbHoldYears" value="5" min="1" max="20" step="1"></div>
-      </div>
-      <div class="field" style="margin-bottom:10px;">
-        <label style="font-size:11px;">반복 횟수</label>
-        <select id="bbIterations"><option value="300">300회 (빠름)</option><option value="1000" selected>1,000회 (권장)</option><option value="3000">3,000회 (느림, 정밀)</option></select>
-      </div>
-      <button class="run-btn" id="bbRunBtn" style="background:#db2777;">🎲 블록 부트스트랩 실행</button>
-      <div id="bbProgress" style="display:none;margin-top:10px;">
-        <div class="rolling-progress-bar"><div class="rolling-progress-fill" id="bbProgressFill" style="background:#db2777;"></div></div>
-        <div class="rolling-progress-text" id="bbProgressText">시작 중...</div>
-      </div>
-      <div id="bbResults" style="display:none;margin-top:12px;">
-        <div id="bbStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
-        <div id="bbResultsBody"></div>
-      </div>
-
-      <div class="sidebar-divider"></div>
-      <div class="section-title">🌟 종합 리포트</div>
-      <div class="rolling-explain">롤링 백테스트 · Walk-Forward · 블록 부트스트랩, 3가지를 모두 실행하면 세 결과를 종합한 순위와 전략 제안이 담긴 리포트를 받을 수 있어요.</div>
-      <div id="comboStatus" style="font-size:11.5px;color:var(--text-faint);margin-bottom:10px;line-height:1.6;">아직 준비 안 됨</div>
-      <button class="run-btn" id="comboPdfBtn" disabled style="background:#374151;cursor:not-allowed;">🌟 종합 리포트 다운로드 (다크)</button>
-      <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">파일 다운로드 후 열면, 그 안에서 PDF로 저장할 수 있어요</div>
-    </div>
-  </div>
 
   <div class="main">
     <div class="card" id="rankCard" style="display:none;">
@@ -709,6 +641,89 @@ tr:last-child td { border-bottom:none; }
       </ul>
     </div>
   </div>
+
+  <div class="sidebar-bottom">
+    <div class="section">
+      <div class="section-title">📊 롤링 백테스트</div>
+      <div class="rolling-explain">
+        특정 한 구간만 보면 "우연히 잘 맞은 시점"일 수 있어요. <b>아래 시작일부터 매월 시작점을 옮겨가며</b>, 1년부터 (오늘−시작일) 최대 보유기간까지 <b>1년 단위로 전부</b> 돌려서 수익률·MDD·칼마비율을 냅니다. (2010년 이전 QLD·TQQQ는 보정합성 데이터)
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label style="font-size:11px;">롤링 시작일 (이 날짜부터 최신 데이터까지 매년 늘려가며 검증)</label>
+        <input type="date" id="rollingStartDate" value="2003-01-01">
+        <div class="sub-hint" id="rollingHorizonPreview" style="color:var(--text-faint);"></div>
+      </div>
+      <button class="run-btn" id="rollingRunBtn" style="background:#7c3aed;">📊 롤링 백테스트 실행</button>
+      <div id="rollingProgress" style="display:none;margin-top:10px;">
+        <div class="rolling-progress-bar"><div class="rolling-progress-fill" id="rollingProgressFill"></div></div>
+        <div class="rolling-progress-text" id="rollingProgressText">시작 중...</div>
+      </div>
+      <div id="rollingResults" style="display:none;margin-top:12px;">
+        <div id="rollingStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
+        <div id="rollingResultsBody"></div>
+        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">개별 리포트 대신, 3개 검증을 모두 실행하면 아래 블록부트스트랩 섹션 맨 밑에서 종합 리포트를 받을 수 있어요</div>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="section">
+      <div class="section-title">🔬 Walk-Forward 검증</div>
+      <div class="rolling-explain">
+        지금까지 찾은 세부값은 "전체 기간을 다 보고" 찾은 값이라, 미래에도 통할지는 검증이 안 됐어요. <b>훈련 구간에서만 최적값을 다시 찾고, 그 값을 바로 다음 검증 구간(못 본 데이터)에 적용</b>해서 실전처럼 시험합니다. 이걸 데이터 끝까지 반복해서, "재최적화"가 그냥 "지금 설정 고정"보다 나은지 비교합니다.
+      </div>
+      <div class="wf-grid-row">
+        <div class="field"><label style="font-size:11px;">훈련 기간(년)</label><input type="number" id="wfTrainYears" value="5" min="2" max="15" step="1"></div>
+        <div class="field"><label style="font-size:11px;">검증 기간(년)</label><input type="number" id="wfTestYears" value="2" min="1" max="10" step="1"></div>
+      </div>
+      <div class="sub-hint" id="wfFoldPreview" style="color:var(--text-faint);margin-bottom:10px;"></div>
+      <button class="run-btn" id="wfRunBtn" style="background:#0ea5e9;">🔬 Walk-Forward 실행</button>
+      <div id="wfProgress" style="display:none;margin-top:10px;">
+        <div class="rolling-progress-bar"><div class="rolling-progress-fill" id="wfProgressFill" style="background:#0ea5e9;"></div></div>
+        <div class="rolling-progress-text" id="wfProgressText">시작 중...</div>
+      </div>
+      <div id="wfResults" style="display:none;margin-top:12px;">
+        <div id="wfStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
+        <div id="wfResultsBody"></div>
+        <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">개별 리포트 대신, 3개 검증을 모두 실행하면 아래 블록부트스트랩 섹션 맨 밑에서 종합 리포트를 받을 수 있어요</div>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="section">
+      <div class="section-title">🎲 블록 부트스트랩 검증</div>
+      <div class="rolling-explain">
+        지금 설정으로 실제 있었던 매일의 수익률 흐름을, <b>N일짜리 블록으로 잘라서 무작위로 다시 이어붙여</b> "일어나지 않았을 수도 있는 대체 역사"를 수백~수천 개 만들어 테스트합니다. 결과가 넓게 퍼지면 "운이 크게 작용한다"는 뜻이고, 좁게 모이면 "우연이 아니라 안정적인 결과"라는 뜻이에요.
+      </div>
+      <div class="wf-grid-row">
+        <div class="field"><label style="font-size:11px;">블록 길이(거래일)</label>
+          <select id="bbBlockDays"><option value="20">20일</option><option value="60" selected>60일</option><option value="120">120일</option></select>
+        </div>
+        <div class="field"><label style="font-size:11px;">보유기간(년)</label><input type="number" id="bbHoldYears" value="5" min="1" max="20" step="1"></div>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label style="font-size:11px;">반복 횟수</label>
+        <select id="bbIterations"><option value="300">300회 (빠름)</option><option value="1000" selected>1,000회 (권장)</option><option value="3000">3,000회 (느림, 정밀)</option></select>
+      </div>
+      <button class="run-btn" id="bbRunBtn" style="background:#db2777;">🎲 블록 부트스트랩 실행</button>
+      <div id="bbProgress" style="display:none;margin-top:10px;">
+        <div class="rolling-progress-bar"><div class="rolling-progress-fill" id="bbProgressFill" style="background:#db2777;"></div></div>
+        <div class="rolling-progress-text" id="bbProgressText">시작 중...</div>
+      </div>
+      <div id="bbResults" style="display:none;margin-top:12px;">
+        <div id="bbStaleBanner" style="display:none;">⚠️ 설정이 변경됐어요 — 아래는 <b>예전 조건 기준</b> 결과입니다. 다시 실행해서 최신 결과로 갱신하세요.</div>
+        <div id="bbResultsBody"></div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="section-title">🌟 종합 리포트</div>
+      <div class="rolling-explain">롤링 백테스트 · Walk-Forward · 블록 부트스트랩, 3가지를 모두 실행하면 세 결과를 종합한 순위와 전략 제안이 담긴 리포트를 받을 수 있어요.</div>
+      <div id="comboStatus" style="font-size:11.5px;color:var(--text-faint);margin-bottom:10px;line-height:1.6;">아직 준비 안 됨</div>
+      <button class="run-btn" id="comboPdfBtn" disabled style="background:#374151;cursor:not-allowed;">🌟 종합 리포트 다운로드 (다크)</button>
+      <div style="font-size:10px;color:var(--text-faint);text-align:center;margin-top:6px;">파일 다운로드 후 열면, 그 안에서 PDF로 저장할 수 있어요</div>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="rebalModalOverlay" style="display:none;">
@@ -733,7 +748,7 @@ tr:last-child td { border-bottom:none; }
 
       <div class="section-title" style="margin-top:14px;">참고: 기간 내 실제 이격도 흐름 (현재 설정한 경계값 표시)</div>
       <div class="rolling-explain" style="margin-bottom:8px;">메인 화면의 시작일~종료일 구간 동안 QQQ 이격도가 실제로 어떻게 움직였는지 보여줍니다. 점선은 지금 입력한 경계값이에요 — 이 선을 얼마나 자주 넘나드는지 보면서 경계값을 잡아보세요.</div>
-      <canvas id="zoneRefChart" width="900" height="180" style="width:100%;display:block;border-radius:8px;"></canvas>
+      <canvas id="zoneRefChart" width="900" height="420" style="width:100%;display:block;border-radius:8px;"></canvas>
 
       <div class="section-title" style="margin-top:16px;">구간 경계값 (%) — 100%는 200일선 자체라 고정</div>
       <div class="boundary-chip-row" id="boundaryChipRow"></div>
@@ -1578,6 +1593,7 @@ function drawChart(results, dates, hoverIdx) {
     ctx.fillText(label, 4, y+4);
   }
   ctx.fillText(dates[0], padL, H-12);
+  ctx.textAlign='center'; ctx.fillText(dates[Math.floor((dates.length-1)/2)], padL+plotW/2, H-12);
   ctx.textAlign='right'; ctx.fillText(dates[dates.length-1], W-padR, H-12); ctx.textAlign='left';
 
   results.forEach(r=>{
@@ -1644,12 +1660,12 @@ function fmtWonShort(v) {
     return frac;
   }
 
-  canvas.addEventListener('mousemove', (e)=>{
+  function showTooltipAt(clientX, clientY) {
     if (!__lastEquityChart || showDevChart) return; // 이격도 차트일 땐 이 툴팁 로직 미적용
     const { results, dates } = __lastEquityChart;
     const n = dates.length;
-    const frac = indexFromClientX(e.clientX);
-    if (frac < -0.02 || frac > 1.02) { tooltip.style.display='none'; drawChart(results, dates); return; }
+    const frac = indexFromClientX(clientX);
+    if (frac < -0.02 || frac > 1.02) { hideTooltip(); return; }
     const idx = Math.max(0, Math.min(n-1, Math.round(frac*(n-1))));
 
     drawChart(results, dates, idx);
@@ -1663,19 +1679,37 @@ function fmtWonShort(v) {
     tooltip.style.display = 'block';
 
     const wrapRect = wrap.getBoundingClientRect();
-    let left = e.clientX - wrapRect.left + 14;
-    let top = e.clientY - wrapRect.top + 14;
+    let left = clientX - wrapRect.left + 14;
+    let top = clientY - wrapRect.top + 14;
     // 툴팁이 오른쪽/아래로 넘치면 반대쪽에 표시
-    if (left + 240 > wrapRect.width) left = e.clientX - wrapRect.left - 250;
-    if (top + 140 > wrapRect.height) top = e.clientY - wrapRect.top - 150;
+    if (left + 240 > wrapRect.width) left = clientX - wrapRect.left - 250;
+    if (top + 140 > wrapRect.height) top = clientY - wrapRect.top - 150;
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
-  });
+  }
 
-  canvas.addEventListener('mouseleave', ()=>{
+  function hideTooltip() {
     tooltip.style.display = 'none';
     if (__lastEquityChart && !showDevChart) drawChart(__lastEquityChart.results, __lastEquityChart.dates);
-  });
+  }
+
+  // 마우스(PC)
+  canvas.addEventListener('mousemove', (e)=> showTooltipAt(e.clientX, e.clientY));
+  canvas.addEventListener('mouseleave', hideTooltip);
+
+  // 터치(모바일) — 손가락 떼면(touchend/touchcancel) 반드시 사라지도록
+  canvas.addEventListener('touchstart', (e)=>{
+    if (!e.touches.length) return;
+    showTooltipAt(e.touches[0].clientX, e.touches[0].clientY);
+    e.preventDefault(); // 차트 위에서 스크럽하는 동안 페이지 스크롤 방지
+  }, { passive:false });
+  canvas.addEventListener('touchmove', (e)=>{
+    if (!e.touches.length) return;
+    showTooltipAt(e.touches[0].clientX, e.touches[0].clientY);
+    e.preventDefault();
+  }, { passive:false });
+  canvas.addEventListener('touchend', hideTooltip);
+  canvas.addEventListener('touchcancel', hideTooltip);
 })();
 
 // ---------- UI wiring ----------
@@ -1946,7 +1980,7 @@ function drawZoneRefChart() {
   const gridColor = isDark ? '#2d3548' : '#e5e7eb';
   const textColor = isDark ? '#94a3b8' : '#6b7280';
   const lineColor = isDark ? '#60a5fa' : '#2563eb';
-  const padL=52, padR=14, padT=14, padB=26;
+  const padL=58, padR=54, padT=18, padB=30;
   const plotW=W-padL-padR, plotH=H-padT-padB;
 
   const startVal = $('startDate').value, endVal = $('endDate').value;
@@ -1975,15 +2009,16 @@ function drawZoneRefChart() {
   function xToPix(i){ return padL+i/(n-1)*plotW; }
 
   // 격자 + y축 라벨
-  ctx.strokeStyle=gridColor; ctx.lineWidth=1; ctx.font='10px monospace'; ctx.fillStyle=textColor;
+  ctx.strokeStyle=gridColor; ctx.lineWidth=1; ctx.font='12px monospace'; ctx.fillStyle=textColor;
   for (let t=0;t<=4;t++){
     const frac=t/4;
     const v=minV+frac*(maxV-minV);
     const y=padT+plotH-frac*plotH;
     ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
-    ctx.fillText(v.toFixed(0)+'%', 4, y+3);
+    ctx.fillText(v.toFixed(0)+'%', 4, y+4);
   }
   ctx.fillText(PRICE.dates[iStart], padL, H-8);
+  ctx.textAlign='center'; ctx.fillText(PRICE.dates[iStart + Math.floor((iEnd-iStart)/2)], padL+plotW/2, H-8);
   ctx.textAlign='right'; ctx.fillText(PRICE.dates[iEnd], W-padR, H-8); ctx.textAlign='left';
 
   // 경계값 점선 (현재 입력값 기준)
@@ -1996,8 +2031,8 @@ function drawZoneRefChart() {
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W-padR, y); ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = ctx.strokeStyle;
-    ctx.font = '10px monospace';
-    ctx.fillText(b+'%', W-padR-30, y-3);
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(b+'%', W-padR+6, y+4);
     ctx.restore();
   });
 
@@ -2161,6 +2196,7 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
     ctx.fillText(v.toFixed(0), 4, y+4);
   }
   ctx.fillText(dates[iStart], padL, H-12);
+  ctx.textAlign='center'; ctx.fillText(dates[iStart + Math.floor((iEnd-iStart)/2)], padL+plotW/2, H-12);
   ctx.textAlign='right'; ctx.fillText(dates[iEnd], W-padR, H-12); ctx.textAlign='left';
 
   // boundary lines (100%=200일선 자체는 굵은 검정 점선으로 확실히 구분)
@@ -2346,20 +2382,33 @@ function renderRankView() {
   const byMdd = results.slice().sort((a,b)=>b.stats.mdd-a.stats.mdd);
   const byCalmar = results.slice().sort((a,b)=>b.stats.calmar-a.stats.calmar);
 
-  let html = `<div class="rank-period">${$('startDate').value} ~ ${$('endDate').value} 기준, 총수익률 순 정렬</div>`;
+  let html = `<div class="rank-period">${$('startDate').value} ~ ${$('endDate').value} 기준, 총수익률 순 정렬 — 항목을 탭하면 상세 지표가 펼쳐져요</div>`;
   html += '<div class="rank-list">';
   byReturn.forEach((r,idx)=>{
     const rank = idx+1;
     html += `<div class="rank-item${rank===1?' rank-item-1':''}">
-      <div class="rank-num">${rank}</div>
-      <div class="rank-body">
-        <div class="rank-name">${r.meta.name}</div>
-        <div class="rank-final">${fmtWon(r.stats.finalVal)}</div>
-        <div class="rank-stats">
-          <span>총수익 <b class="${r.stats.totalReturn>=0?'rank-pos':'rank-neg'}">${r.stats.totalReturn>=0?'+':''}${r.stats.totalReturn.toFixed(1)}%</b></span>
-          <span>MDD <b>${r.stats.mdd.toFixed(1)}%</b></span>
-          <span>칼마 <b>${r.stats.calmar.toFixed(2)}</b></span>
+      <div class="rank-head" data-rank-toggle>
+        <div class="rank-num">${rank}</div>
+        <div class="rank-body">
+          <div class="rank-name">${r.meta.name}</div>
+          <div class="rank-final">${fmtWon(r.stats.finalVal)}</div>
+          <div class="rank-stats">
+            <span>총수익 <b class="${r.stats.totalReturn>=0?'rank-pos':'rank-neg'}">${r.stats.totalReturn>=0?'+':''}${r.stats.totalReturn.toFixed(1)}%</b></span>
+            <span>MDD <b>${r.stats.mdd.toFixed(1)}%</b></span>
+            <span>칼마 <b>${r.stats.calmar.toFixed(2)}</b></span>
+          </div>
         </div>
+        <div class="rank-chevron">▼</div>
+      </div>
+      <div class="rank-detail">
+        <div class="rc-row"><span>최종자산 (세전)</span><b>${fmtWon(r.stats.finalVal)}</b></div>
+        <div class="rc-row"><span>총수익률</span><b class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</b></div>
+        <div class="rc-row"><span>최종자산 (세후)</span><b>${fmtWon(r.stats.afterTaxFinal)}</b></div>
+        <div class="rc-row"><span>세후수익률</span><b class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}</b></div>
+        <div class="rc-row"><span>CAGR</span><b>${fmtPct(r.stats.cagr)}</b></div>
+        <div class="rc-row"><span>MDD</span><b class="neg">${r.stats.mdd.toFixed(2)}%</b></div>
+        <div class="rc-row"><span>칼마비율</span><b>${r.stats.calmar.toFixed(2)}</b></div>
+        <div class="rc-row"><span>샤프지수</span><b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></div>
       </div>
     </div>`;
   });
@@ -2381,6 +2430,12 @@ function renderRankView() {
   html += `<div class="rank-comment">🤖 <b>AI 한줄평</b><br>${comment}<div class="rank-note">※ 이건 지금 선택한 기간 "한 번"만 본 결과예요. 우연히 잘 맞은 시점일 수 있으니, 더 신뢰도 높은 판단은 위쪽 "📊 롤링 백테스트"를 참고하세요.</div></div>`;
 
   $('rankContent').innerHTML = html;
+  const rankItems = $('rankContent').querySelectorAll('.rank-item');
+  if (rankItems.length) rankItems[0].classList.add('open'); // 1위는 기본으로 펼쳐서 보여줌
+  rankItems.forEach(item=>{
+    const head = item.querySelector('[data-rank-toggle]');
+    head.addEventListener('click', ()=> item.classList.toggle('open'));
+  });
 }
 
 // ============================================================
