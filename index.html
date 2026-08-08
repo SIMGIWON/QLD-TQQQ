@@ -185,6 +185,14 @@ h2 { font-size:14px; font-weight:700; margin:0 0 12px 0; }
 .rank-final { font-family:var(--mono); font-size:12px; color:var(--sub); margin-bottom:5px; }
 .rank-stats { display:flex; gap:14px; font-size:11.5px; color:var(--sub); flex-wrap:wrap; }
 .rank-stats b { font-family:var(--mono); color:var(--text); }
+.rank-name-line { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:3px; flex-wrap:wrap; }
+.rank-name-line .rank-name { font-weight:700; font-size:12.5px; margin-bottom:0; }
+.rank-score-badge { font-size:10.5px; font-weight:700; color:var(--purple); background:rgba(124,58,237,0.1); padding:1px 7px; border-radius:10px; white-space:nowrap; flex-shrink:0; }
+.rank-compact-line { font-size:10.5px; color:var(--sub); line-height:1.6; white-space:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.rank-compact-line b { font-family:var(--mono); color:var(--text); font-weight:700; }
+.rank-compact-line .rc-label { font-weight:600; color:var(--text-faint); }
+.rank-compact-line .rc-won { font-family:var(--mono); }
+.rank-compact-line .rc-sep { margin-left:6px; padding-left:6px; border-left:1px solid var(--border); }
 .rank-chevron { flex-shrink:0; font-size:11px; color:var(--text-faint); transition:transform 0.15s; }
 .rank-item.open .rank-chevron { transform:rotate(180deg); }
 .rank-detail { display:none; border-top:1px solid var(--border); padding:12px 14px; background:var(--panel3); }
@@ -1701,18 +1709,19 @@ function render() {
       <div class="rank-head">
         <div class="rank-num">${rank}</div>
         <div class="rank-body">
-          <div class="rank-name">${r.meta.name}</div>
-          <div class="rank-final">${fmtWon(r.stats.finalVal)} <span style="opacity:0.6;font-weight:400;">(종합 ${r.stats.score.toFixed(1)}점)</span></div>
-          <div class="rank-stats">
-            <span>총수익 <b class="${r.stats.totalReturn>=0?'rank-pos':'rank-neg'}">${r.stats.totalReturn>=0?'+':''}${r.stats.totalReturn.toFixed(1)}%</b></span>
-            <span>MDD <b>${r.stats.mdd.toFixed(1)}%</b></span>
-            <span>칼마 <b>${r.stats.calmar.toFixed(2)}</b></span>
-            <span>샤프 <b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></span>
+          <div class="rank-name-line">
+            <span class="rank-name">${r.meta.name}</span>
+            <span class="rank-score-badge">종합 ${r.stats.score.toFixed(1)}점</span>
           </div>
-          <div class="rank-stats" style="margin-top:4px;padding-top:4px;border-top:1px dashed var(--border);">
-            <span>세후자산 <b>${fmtWon(r.stats.afterTaxFinal)}</b></span>
-            <span>세후수익 <b class="${r.stats.afterTaxReturn>=0?'rank-pos':'rank-neg'}">${r.stats.afterTaxReturn>=0?'+':''}${r.stats.afterTaxReturn.toFixed(1)}%</b></span>
-            <span>세후CAGR <b>${isFinite(r.stats.afterTaxCagr)?(r.stats.afterTaxCagr>=0?'+':'')+r.stats.afterTaxCagr.toFixed(2)+'%':'-'}</b>${r.stats.taxModeled?' <span style="opacity:0.5;font-size:10px;" title="매도 시점마다 정밀 과세 반영">●</span>':''}</span>
+          <div class="rank-compact-line">
+            <span class="rc-label">세전</span> <b class="${r.stats.totalReturn>=0?'rank-pos':'rank-neg'}">${r.stats.totalReturn>=0?'+':''}${r.stats.totalReturn.toFixed(1)}%</b> <span class="rc-won">${fmtWon(r.stats.finalVal)}</span>
+            <span class="rc-sep">CAGR <b>${fmtPct(r.stats.cagr,1)}</b></span>
+            <span class="rc-sep">MDD <b>${r.stats.mdd.toFixed(1)}%</b></span>
+            <span class="rc-sep">칼마 <b>${r.stats.calmar.toFixed(2)}</b></span>
+            <span class="rc-sep">샤프 <b>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</b></span>
+          </div>
+          <div class="rank-compact-line">
+            <span class="rc-label">세후</span> <b class="${r.stats.afterTaxReturn>=0?'rank-pos':'rank-neg'}">${r.stats.afterTaxReturn>=0?'+':''}${r.stats.afterTaxReturn.toFixed(1)}%</b> <span class="rc-won">${fmtWon(r.stats.afterTaxFinal)}</span>${r.stats.taxModeled?' <span style="opacity:0.5;font-size:9.5px;" title="매도 시점마다 정밀 과세 반영">●</span>':''}
           </div>
         </div>
       </div>
