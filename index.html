@@ -406,6 +406,7 @@ tr:last-child td { border-bottom:none; }
       <div class="field">
         <label>시작일</label>
         <input type="date" id="startDate">
+        <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전은 선택 불가 — QQQ 가격 데이터 자체가 이때부터 존재해요 (QLD·TQQQ는 각각 2006-06-19·2010-02-09 실제 상장 전까지는 QQQ 수익률 기반 합성 데이터로 그 이전까지 확장됨)</div>
       </div>
       <div class="field">
         <label>종료일</label>
@@ -3706,6 +3707,10 @@ const debouncedRender = debounce(render, 500);
 });
 ['startDate','endDate'].forEach(id=>{
   $(id).addEventListener('change', ()=>{
+    // 수동 입력으로 데이터 범위(2000-01-03 ~ 최신일) 밖의 날짜를 넣었을 때 자동으로 되돌림
+    const el = $(id);
+    if (el.value < PRICE.dates[0]) el.value = PRICE.dates[0];
+    if (el.value > PRICE.dates[PRICE.dates.length-1]) el.value = PRICE.dates[PRICE.dates.length-1];
     clearDateSelectionActive(); // 수동으로 날짜를 바꾸면 특정 프리셋 선택 상태는 해제
     if (id === 'startDate') syncRollingStartDate($('startDate').value); // ★ 롤링 시작일도 같이 연동
     render();
@@ -4163,6 +4168,8 @@ $('modalZoomReset').addEventListener('click', () => {
 // init
 $('startDate').value = PRICE.dates[0];
 $('endDate').value = PRICE.dates[PRICE.dates.length-1];
+$('startDate').min = PRICE.dates[0]; $('startDate').max = PRICE.dates[PRICE.dates.length-1];
+$('endDate').min = PRICE.dates[0]; $('endDate').max = PRICE.dates[PRICE.dates.length-1];
 setViewMode(window.innerWidth < 720 ? 'mobile' : 'pc');
 
   } catch (err) {
