@@ -1075,7 +1075,7 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
   const p1 = PRICE.p1;
   const ma = getMA200();
   const nZones = zoneConfigs.length;
-  const zones = new Array(iEnd+1); // 0-based zone index per day, -1 = not tradable yet
+  const zones = new Array(iEnd+1); 
   for (let i=0;i<=iEnd;i++){
     if (isNaN(ma[i])) { zones[i]=-1; continue; }
     const dev = p1[i]/ma[i]*100;
@@ -1086,12 +1086,13 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
   const investStart = Math.max(iStartSel, firstTradable);
 
   let curZone = null;
-  let w1 = 0; // ★ 선택한 시작일부터 진짜 0%(현금)에서 새로 시작 (이전 이력 이어받지 않음)
-  const bought = new Array(nZones).fill(0); // cumulative % of total assets bought in the CURRENT episode of that zone
+  let w1 = 0; 
+  const bought = new Array(nZones).fill(0); 
   const w1arr = new Array(iEnd+1).fill(0);
-  const actionArr = new Array(iEnd+1).fill(null); // 'deposit' | 'split' | 'sell' | null
-  const lastDepositDay = new Array(nZones).fill(-Infinity); // 거치매수 쿨다운 추적 (구간별로 개별 추적)
-  let lastSellDay = -Infinity; // 매도 쿨다운 추적 (전체 구간 공통 — 짧은 기간에 구간을 왔다갔다해도 중복매도 방지)
+  const actionArr = new Array(iEnd+1).fill(null); 
+  const lastDepositDay = new Array(nZones).fill(-Infinity); 
+  let lastSellDay = -Infinity; 
+  let lastSellZone = null; // ★ 추가: 마지막으로 매도한 구간을 기억하는 변수
 
   for (let i=investStart;i<=iEnd;i++){
     const z = zones[i];
@@ -1104,16 +1105,21 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
       const { sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0 } = cfg;
       let action = null;
 
-      // ★ 매도: 구간 진입 여부와 무관하게, 마지막 매도 후 쿨다운(기본 30일)이 지나야만 재발동 (짧은 기간 내 구간 왕복으로 인한 중복매도 방지)
+      // ★ 매도 로직 수정: 쿨타임이 지났거나 OR 다른 매도 구간(z)에 진입했을 때는 쿨타임 무시
       if (sell > 0) {
         const daysSinceLastSell = i - lastSellDay;
-        if (daysSinceLastSell > sellCooldownDays) {
+        if (daysSinceLastSell > sellCooldownDays || z !== lastSellZone) { 
           const w1BeforeSell = w1;
           w1 = w1 * (1 - sell/100);
-          if (w1 < w1BeforeSell - 0.001) { action = 'sell'; lastSellDay = i; }
+          if (w1 < w1BeforeSell - 0.001) { 
+            action = 'sell'; 
+            lastSellDay = i; 
+            lastSellZone = z; // ★ 매도 성공 시 구간 갱신
+          }
         }
       }
-      // ★ 거치매수: "새 구간 진입" 대신 "예수금이 이 구간의 게이트% 이상 남아있는지" + "이 구간에서 마지막 거치매수 후 쿨다운 지났는지"로 판단
+      
+      // ★ 거치매수 로직 (기존 유지)
       if (deposit > 0) {
         const cash = 100 - w1;
         const daysSinceLastDeposit = i - lastDepositDay[z];
@@ -1179,9 +1185,10 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
   let curZone=null, wQld=0, wTqqq=0;
   const bought = {};
   const wQldArr=new Array(iEnd+1).fill(0), wTqqqArr=new Array(iEnd+1).fill(0);
-  const actionArr = new Array(iEnd+1).fill(null); // 'deposit-qld' | 'split-qld' | 'deposit-tqqq' | 'split-tqqq' | 'sell' | null
+  const actionArr = new Array(iEnd+1).fill(null); 
   const lastDepositDay = {};
-  let lastSellDay = -Infinity; // 매도 쿨다운 추적 (전체 구간 공통)
+  let lastSellDay = -Infinity; 
+  let lastSellZone = null; // ★ 추가: 마지막으로 매도한 구간을 기억하는 변수
   const nZones = zoneConfigs.length;
 
   for (let i=investStart;i<=iEnd;i++){
@@ -1191,19 +1198,24 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
       if (curZone===null || z!==curZone){ isNewEpisode=true; curZone=z; bought[z]=0; }
       const cfg = zoneConfigs[z] || {sell:0,deposit:0,split:0,rate:0,stop:0,depositCashGate:0};
       const {sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0} = cfg;
-      // 마지막 구간(가장 낮은/저평가 구간)만 TQQQ, 그 외 매수구간은 QLD
       const targetAsset = (z === nZones-1) ? 'tqqq' : 'qld';
       let action = null;
 
-      // ★ 매도: 마지막 매도 후 쿨다운(기본 30일)이 지나야만 재발동 (짧은 기간 내 구간 왕복/연속매도 방지)
+      // ★ 매도 로직 수정: 쿨타임이 지났거나 OR 다른 매도 구간(z)에 진입했을 때는 쿨타임 무시
       if (sell>0){
         const daysSinceLastSell = i - lastSellDay;
-        if (daysSinceLastSell > sellCooldownDays) {
+        if (daysSinceLastSell > sellCooldownDays || z !== lastSellZone) {
           const wQldBefore=wQld, wTqqqBefore=wTqqq;
           wQld = wQld*(1-sell/100); wTqqq = wTqqq*(1-sell/100);
-          if (wQld<wQldBefore-0.001 || wTqqq<wTqqqBefore-0.001) { action = 'sell'; lastSellDay = i; }
+          if (wQld<wQldBefore-0.001 || wTqqq<wTqqqBefore-0.001) { 
+            action = 'sell'; 
+            lastSellDay = i; 
+            lastSellZone = z; // ★ 매도 성공 시 구간 갱신
+          }
         }
       }
+      
+      // ★ 거치매수 및 분할매수 로직 (기존 유지)
       if (deposit>0){
         const cash = 100-wQld-wTqqq;
         const daysSince = i-(lastDepositDay[z]===undefined?-Infinity:lastDepositDay[z]);
