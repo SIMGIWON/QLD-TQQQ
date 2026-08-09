@@ -890,10 +890,10 @@ const REBAL_DEFAULT_BOUNDARIES = [90, 100, 110, 120, 130];
 const REBAL_DEFAULT_ZONES = [
   { minStock:0,  sell:100, deposit:0,  depositGate:0,  splitBudget:0,  dailyRate:0,   stopCash:0  }, // 130%이상
   { minStock:0,  sell:80,  deposit:0,  depositGate:0,  splitBudget:0,  dailyRate:0,   stopCash:0  }, // 120~130%
-  { minStock:60, sell:0,   deposit:0,  depositGate:0,  splitBudget:60, dailyRate:0.5, stopCash:40 }, // 110~120%
-  { minStock:60, sell:0,   deposit:0,  depositGate:0,  splitBudget:60, dailyRate:1.5, stopCash:40 }, // 100~110%
-  { minStock:60, sell:0,   deposit:5,  depositGate:40, splitBudget:5,  dailyRate:2,   stopCash:30 }, // 90~100%
-  { minStock:70, sell:0,   deposit:20, depositGate:30, splitBudget:10, dailyRate:1,   stopCash:0  }, // 90%미만
+  { minStock:50, sell:0,   deposit:0,  depositGate:0,  splitBudget:50, dailyRate:1.3, stopCash:50 }, // 110~120%
+  { minStock:50, sell:0,   deposit:0,  depositGate:0,  splitBudget:50, dailyRate:3, stopCash:50 }, // 100~110%
+  { minStock:50, sell:0,   deposit:0,  depositGate:49.9, splitBudget:16,  dailyRate:5,   stopCash:34 }, // 90~100%
+  { minStock:66, sell:0,   deposit:35, depositGate:33.9, splitBudget:5, dailyRate:0.5,   stopCash:0  }, // 90%미만
 ];
 // TQQQ 기본값도 동일하게 통일
 const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z));
@@ -901,10 +901,10 @@ const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z))
 const REBAL_DEFAULT_ZONES_HYBRID = [
   { minStock:0,  sell:100, deposit:0,  depositGate:0,  splitBudget:0,  dailyRate:0,   stopCash:0  }, // 130%이상
   { minStock:0,  sell:80,  deposit:0,  depositGate:0,  splitBudget:0,  dailyRate:0,   stopCash:0  }, // 120~130%
-  { minStock:60, sell:0,   deposit:0,  depositGate:0,  splitBudget:60, dailyRate:0.5, stopCash:40 }, // 110~120% → QLD 매수
-  { minStock:60, sell:0,   deposit:0,  depositGate:0,  splitBudget:60, dailyRate:1.5, stopCash:40 }, // 100~110% → QLD 매수
-  { minStock:60, sell:0,   deposit:5,  depositGate:40, splitBudget:5,  dailyRate:2,   stopCash:30 }, // 90~100% → QLD 매수
-  { minStock:70, sell:0,   deposit:20, depositGate:30, splitBudget:10, dailyRate:1,   stopCash:0  }, // 90%미만 → TQQQ 매수
+  { minStock:50, sell:0,   deposit:0,  depositGate:0,  splitBudget:50, dailyRate:1.3, stopCash:50 }, // 110~120% → QLD 매수
+  { minStock:50, sell:0,   deposit:0,  depositGate:0,  splitBudget:50, dailyRate:3, stopCash:50 }, // 100~110% → QLD 매수
+  { minStock:50, sell:0,   deposit:0,  depositGate:49.9, splitBudget:16,  dailyRate:5,   stopCash:34 }, // 90~100% → QLD 매수
+  { minStock:66, sell:0,   deposit:35, depositGate:33.9, splitBudget:5, dailyRate:0.5,   stopCash:0  }, // 90%미만 → TQQQ 매수
 ];
 const REBAL_DEFAULT_DCA_COMPARE = 0.5;
 
