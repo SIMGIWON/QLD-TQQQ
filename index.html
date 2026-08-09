@@ -1715,7 +1715,7 @@ function render() {
     $('strategyHeader').textContent = '전략';
     $('chartTitle').textContent = showDevChart
       ? `${devChartTarget==='tqqq'?'TQQQ':devChartTarget==='hybrid'?'하이브리드':'QLD'} 200일 이격도 + 매수/매도 시점 검증`
-      : 'QLD/TQQQ 리밸런싱 7종 비교';
+      : '리밸런싱 7종 비교(적립/거치/리밸런싱)';
     $('devToggleBtn').style.display = 'none';
     $('devToggleBtnQld').style.display = 'inline-block';
     $('devToggleBtnTqqq').style.display = 'inline-block';
@@ -1738,7 +1738,7 @@ function render() {
       results.push({ meta, stats, equity: sim.equity });
     });
     $('strategyHeader').textContent = '레버리지';
-    $('chartTitle').textContent = `QQQ 투자 시뮬레이션 (${mode==='lump'?'거치식':'적립식'})`;
+    $('chartTitle').textContent = `적립식 비교(QQQ/QLD/TQQQ) (${mode==='lump'?'거치식':'적립식'})`;
     $('devToggleBtn').style.display = 'none';
     $('devToggleBtnQld').style.display = 'none';
     $('devToggleBtnTqqq').style.display = 'none';
