@@ -430,11 +430,18 @@ tr:last-child td { border-bottom:none; }
       <div class="field">
         <label>시작일</label>
         <input type="date" id="startDate">
-        <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전 선택불가(Google Finace)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전 선택불가(Google Finance)</div>
       </div>
       <div class="field">
         <label>종료일</label>
         <input type="date" id="endDate">
+        <div class="sub-hint" style="color:var(--text-faint);">※ 역사적 QQQ 주요 하락 순위</div>
+        <div class="sub-hint" style="color:var(--text-faint);">→ 1위:닷컴버블 2000-03-24 ~ 2002-10-09 (-82.9%)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">→ 2위:금융위기 2007-07-31 ~ 2009-03-09 (-54.7%)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">→ 3위:2022긴축 2021-11-19 ~ 2022-11-03 (-35.6%)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">→ 4위:코로나19 2020-02-19 ~ 2020-03-23 (-30.0%)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">→ 5위:미중무역 2018-10-01 ~ 2018-12-24 (-22.9%)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">→ 6위:관세충격 2025-02-19 ~ 2025-04-08 (-22.8%)</div>
       </div>
     </div>
 
@@ -699,7 +706,7 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div class="field" style="margin-bottom:10px;">
         <label style="font-size:11px;">롤링 백테스트 시작일</label>
-        <input type="date" id="rollingStartDate" value="2003-01-01">
+        <input type="date" id="rollingStartDate" value="2000-01-03">
         <div class="sub-hint" id="rollingHorizonPreview" style="color:var(--text-faint);"></div>
       </div>
       <button class="run-btn" id="rollingRunBtn" style="background:#7c3aed;">📊 롤링 백테스트 실행</button>
