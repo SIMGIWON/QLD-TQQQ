@@ -421,20 +421,27 @@ tr:last-child td { border-bottom:none; }
   <div class="sidebar-top">
     <h2>투자 조건 설정</h2>
     <div class="tabbar">
-      <button id="tabV2" class="active"><span class="tab-title">리밸런싱 비교_7종</span><span class="tab-sub">QLD/TQQQ 외 7종</span></button>
-      <button id="tabDca"><span class="tab-title">적립식 비교_3종</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
-      <button id="tabLump"><span class="tab-title">거치식 비교_3종</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
+      <button id="tabV2" class="active"><span class="tab-title">리밸런싱 7종</span><span class="tab-sub">적립/거치/리밸런싱</span></button>
+      <button id="tabDca"><span class="tab-title">적립식 비교</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
+      <button id="tabLump"><span class="tab-title">거치식 비교</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
     </div>
 
     <div class="section">
       <div class="field">
         <label>시작일</label>
         <input type="date" id="startDate">
-        <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전은 선택 불가 — QQQ 가격 데이터 자체가 이때부터 존재해요 (QLD·TQQQ는 각각 2006-06-19·2010-02-09 실제 상장 전까지는 QQQ 수익률 기반 합성 데이터로 그 이전까지 확장됨)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전 선택불가(Google Finance)</div>
       </div>
       <div class="field">
         <label>종료일</label>
         <input type="date" id="endDate">
+        <div class="sub-hint" style="color:var(--text-faint);">※ 🏆 순위 : 역사적QQQ 주요하락 Event</div>
+        <div class="sub-hint" style="color:var(--text-faint);">1위:닷컴버블 2000-03-24~2002-10-09 -82.9% •929일(2년6개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">2위:금융위기 2007-07-31~2009-03-09 -54.7% •587일(1년7개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">3위:22년긴축 2021-11-19~2022-11-03 -35.6% •349일(11.5개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">4위:코로나19 2020-02-19~2020-03-23 -30.0% •33일(1.1개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">5위:미중무역 2018-10-01~2018-12-24 -22.9% •84일(2.8개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">6위:관세충격 2025-02-19~2025-04-08 -22.8% •48일(1.6개월)</div>
       </div>
     </div>
 
@@ -576,7 +583,7 @@ tr:last-child td { border-bottom:none; }
     </div>
 
     <button class="run-btn" id="runBtn">🔄 업데이트 (새로고침)</button>
-    <div style="font-size:10.5px;color:var(--text-faint);text-align:center;margin-top:6px;line-height:1.5;">값을 바꾸면 자동 반영돼요. 대기 없이 바로 보고 싶을 때만 누르세요.</div>
+    <div style="font-size:10.5px;color:var(--text-faint);text-align:center;margin-top:6px;line-height:1.5;">•기본적으로 값 변경 시 자동 반영되며, 미반영 시 버튼 클릭.</div>
 
     <div class="sidebar-divider"></div>
 
