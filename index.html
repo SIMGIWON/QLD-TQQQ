@@ -157,6 +157,10 @@ h2 { font-size:14px; font-weight:700; margin:0 0 12px 0; }
 .opt-btn.disabled { opacity:.4; cursor:not-allowed; }
 .qp-btn { font-size:11px; padding:8px 2px; }
 .field { margin-bottom:10px; }
+.date-keyboard-input { font-family:var(--mono); letter-spacing:.2px; }
+.date-keyboard-input::placeholder { color:var(--text-faint); opacity:1; }
+.date-keyboard-input.date-invalid { border-color:#ef4444 !important; box-shadow:0 0 0 2px rgba(239,68,68,.10); }
+
 .field label { display:block; font-size:11.5px; color:var(--sub); margin-bottom:4px; font-weight:600; }
 .field input, .field select {
   width:100%; border:1.5px solid var(--border); border-radius:7px; padding:8px 10px;
@@ -415,12 +419,12 @@ tr:last-child td { border-bottom:none; }
     <div class="section">
       <div class="field">
         <label>시작일</label>
-        <input type="date" id="startDate">
+        <input type="text" id="startDate" class="date-keyboard-input" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD">
         <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전 선택불가(Google Finance 기준)</div>
       </div>
       <div class="field">
         <label>종료일</label>
-        <input type="date" id="endDate">
+        <input type="text" id="endDate" class="date-keyboard-input" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD">
         <div class="sub-hint" style="color:var(--text-faint);">※ 🏆 순위 : 역사적QQQ 주요하락 Event</div>
         <div class="sub-hint" style="color:var(--text-faint);">1위:닷컴버블 2000-03-24~2002-10-09 -82.9% •929일(2년6개월)</div>
         <div class="sub-hint" style="color:var(--text-faint);">2위:금융위기 2007-07-31~2009-03-09 -54.7% •587일(1년7개월)</div>
@@ -694,7 +698,7 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div class="field" style="margin-bottom:10px;">
         <label style="font-size:11px;">롤링 시작일 (이 날짜부터 최신 데이터까지 매년 늘려가며 검증)</label>
-        <input type="date" id="rollingStartDate" value="2000-01-03">
+        <input type="text" id="rollingStartDate" class="date-keyboard-input" value="2000-01-03" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD">
         <div class="sub-hint" id="rollingHorizonPreview" style="color:var(--text-faint);"></div>
       </div>
       <button class="run-btn" id="rollingRunBtn" style="background:#7c3aed;">📊 롤링 백테스트 실행</button>
@@ -1190,9 +1194,9 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
   const wQldArr=new Array(iEnd+1).fill(0), wTqqqArr=new Array(iEnd+1).fill(0);
   const actionArr = new Array(iEnd+1).fill(null); // 'deposit-qld' | 'split-qld' | 'deposit-tqqq' | 'split-tqqq' | 'sell' | null
   const lastDepositDay = {};
+  const nZones = zoneConfigs.length;
   // 매도 쿨다운은 구간별로 독립 관리.
   const lastSellDayByZone = new Array(nZones).fill(-Infinity);
-  const nZones = zoneConfigs.length;
 
   for (let i=investStart;i<=iEnd;i++){
     const z = zones[i];
@@ -2642,9 +2646,21 @@ function markRollingStale() {
   $('rollingResultsBody').classList.add('is-stale');
   updateComboButtonState();
 }
-$('rollingStartDate').addEventListener('change', ()=>{ updateRollingHorizonPreview(); markRollingStale(); });
-$('rollingStartDate').min = PRICE.dates[0];
-$('rollingStartDate').max = PRICE.dates[PRICE.dates.length-1];
+$('rollingStartDate').addEventListener('input', ()=> $('rollingStartDate').classList.remove('date-invalid'));
+$('rollingStartDate').addEventListener('change', ()=>{
+  const el = $('rollingStartDate');
+  if (!normalizeKeyboardDate(el)) {
+    el.value = PRICE.dates[0];
+    el.classList.remove('date-invalid');
+  }
+  updateRollingHorizonPreview();
+  markRollingStale();
+});
+$('rollingStartDate').addEventListener('blur', ()=>{
+  const el = $('rollingStartDate');
+  if (el.value) normalizeKeyboardDate(el);
+});
+
 updateRollingHorizonPreview();
 
 async function runRollingBacktest() {
@@ -3743,15 +3759,35 @@ const debouncedRender = debounce(render, 500);
   $(id).addEventListener('change', render);
   if ($(id).type !== 'checkbox') $(id).addEventListener('input', debouncedRender);
 });
+function normalizeKeyboardDate(el) {
+  let v = (el.value || '').trim();
+  // 20200103처럼 숫자 8자리로 입력해도 YYYY-MM-DD로 자동 변환
+  if (/^\d{8}$/.test(v)) v = v.slice(0,4)+'-'+v.slice(4,6)+'-'+v.slice(6,8);
+  el.value = v;
+  el.classList.remove('date-invalid');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) { el.classList.add('date-invalid'); return false; }
+  const d = new Date(v+'T00:00:00');
+  if (isNaN(d.getTime()) || d.toISOString().slice(0,10) !== v) { el.classList.add('date-invalid'); return false; }
+  if (v < PRICE.dates[0] || v > PRICE.dates[PRICE.dates.length-1]) { el.classList.add('date-invalid'); return false; }
+  return true;
+}
 ['startDate','endDate'].forEach(id=>{
-  $(id).addEventListener('change', ()=>{
-    // 수동 입력으로 데이터 범위(2000-01-03 ~ 최신일) 밖의 날짜를 넣었을 때 자동으로 되돌림
-    const el = $(id);
-    if (el.value < PRICE.dates[0]) el.value = PRICE.dates[0];
-    if (el.value > PRICE.dates[PRICE.dates.length-1]) el.value = PRICE.dates[PRICE.dates.length-1];
-    clearDateSelectionActive(); // 수동으로 날짜를 바꾸면 특정 프리셋 선택 상태는 해제
-    if (id === 'startDate') syncRollingStartDate($('startDate').value); // ★ 롤링 시작일도 같이 연동
+  const el = $(id);
+  el.addEventListener('input', ()=> el.classList.remove('date-invalid'));
+  el.addEventListener('change', ()=>{
+    if (!normalizeKeyboardDate(el)) {
+      el.value = id === 'startDate' ? PRICE.dates[0] : PRICE.dates[PRICE.dates.length-1];
+      el.classList.remove('date-invalid');
+    }
+    // 수동으로 날짜를 바꾸면 프리셋 선택 상태를 해제
+    clearDateSelectionActive();
+    if (id === 'startDate') syncRollingStartDate($('startDate').value);
     render();
+  });
+  el.addEventListener('blur', ()=>{
+    if (el.value && !normalizeKeyboardDate(el)) {
+      // 잘못된 값은 즉시 강제 변경하지 않고 빨간 테두리로 알려줌
+    }
   });
 });
 $('dcaCompareDaily').addEventListener('input', ()=>{ updateRebalSidebarDisplays(); debouncedRender(); });
@@ -4206,8 +4242,9 @@ $('modalZoomReset').addEventListener('click', () => {
 // init
 $('startDate').value = PRICE.dates[0];
 $('endDate').value = PRICE.dates[PRICE.dates.length-1];
-$('startDate').min = PRICE.dates[0]; $('startDate').max = PRICE.dates[PRICE.dates.length-1];
-$('endDate').min = PRICE.dates[0]; $('endDate').max = PRICE.dates[PRICE.dates.length-1];
+$('startDate').setAttribute('title', `입력 가능 범위: ${PRICE.dates[0]} ~ ${PRICE.dates[PRICE.dates.length-1]}`);
+$('endDate').setAttribute('title', `입력 가능 범위: ${PRICE.dates[0]} ~ ${PRICE.dates[PRICE.dates.length-1]}`);
+$('rollingStartDate').setAttribute('title', `입력 가능 범위: ${PRICE.dates[0]} ~ ${PRICE.dates[PRICE.dates.length-1]}`);
 setViewMode(window.innerWidth < 720 ? 'mobile' : 'pc');
 
   } catch (err) {
