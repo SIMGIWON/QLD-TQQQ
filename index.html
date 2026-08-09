@@ -793,31 +793,30 @@ tr:last-child td { border-bottom:none; }
     </div>
     <div class="modal-body">
       <div class="modal-note">
-        QQQ 200일 이격도(현재가가 200일 이동평균선 대비 몇 %인지)를 기준으로 6개 구간을 나누고, 구간별로 <b>매도 / 거치매수 / 분할매수</b> 규칙을 다르게 적용합니다.
-        값을 바꾸면 아래 예시 금액이 실시간으로 바뀌니 참고해서 나만의 전략을 만들어보세요.
+        QQQ 200일 이격도를 기준으로 6개 구간을 나누고, 구간별로 <b>매도 / 거치매수 / 분할매수</b> 규칙을 다르게 적용합니다.
       </div>
 
       <div class="section-title" style="margin-top:14px;">참고: 기간 내 실제 이격도 흐름 (현재 설정한 경계값 표시)</div>
-      <div class="rolling-explain" style="margin-bottom:8px;">메인 화면의 시작일~종료일 구간 동안 QQQ 이격도가 실제로 어떻게 움직였는지 보여줍니다. 점선은 지금 입력한 경계값이에요 — 이 선을 얼마나 자주 넘나드는지 보면서 경계값을 잡아보세요.</div>
+      <div class="rolling-explain" style="margin-bottom:8px;">•메인 화면의 시작~종료일 기준 QQQ 200일 이격도가 실제로 어떻게 움직였는지 실시간 차트화.</div>
       <canvas id="zoneRefChart" width="900" height="420" style="width:100%;display:block;border-radius:8px;"></canvas>
 
-      <div class="section-title" style="margin-top:16px;">구간 경계값 (%) — 100%는 200일선 자체라 고정</div>
+      <div class="section-title" style="margin-top:16px;">■ 구간 경계값(%) ※100%는 200일선 자체라 고정</div>
       <div class="boundary-chip-row" id="boundaryChipRow"></div>
 
-      <div class="section-title" style="margin-top:16px;">거치매수 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
+      <div class="section-title" style="margin-top:16px;">■ 거치매수 재발동 대기일 수(전체 구간 공통)</div>
       <div class="field" style="max-width:220px;">
         <input type="number" id="depositCooldownDays" value="30" step="1">
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
-        구간에 새로 진입할 때마다(①캐치업+④조건 만족 시 ③) 거치매수가 발동하는데, 같은 구간을 짧은 기간에 왕복하며 반복 발동하지 않도록 <b>마지막 거치매수 후 이 대기일수가 지나야만 재발동</b>합니다. 단, ①캐치업 직후 같은 흐름에서 ④조건을 확인해 ③을 추가로 실행하는 건 하나로 묶인 동작이라 그 사이엔 쿨다운이 끼어들지 않아요 (쿨다운 통과 여부는 캐치업+③ 전체 묶음 단위로 판단).
+        ※ 같은 구간을 짧은 기간에 왕복 시 반복 거치매수 제약 목적으로, <b>마지막 거치매수 후 이 대기일수가 지나야만 재발동.</b> ※이전 구간 분할 미소진으로 인한 거치 매수는 제외.
       </div>
 
-      <div class="section-title">주식매도 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
+      <div class="section-title">■ 주식매도 재발동 대기일 수(전체 구간 공통)</div>
       <div class="field" style="max-width:220px;">
         <input type="number" id="sellCooldownDays" value="30" step="1">
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
-        120%·130%이상 구간에 진입할 때마다 매도하는 게 아니라, <b>마지막 매도 후 이 대기일수가 지나야만</b> 재발동합니다. 짧은 기간에 구간 경계를 왔다갔다(왕복)해도 매도가 여러 번 겹쳐 발동하지 않도록 막아줍니다.
+        ※ 같은 구간을 짧은 기간에 왕복 시 반복 거치매도 제약 목적으로, <b>마지막 매도 후 이 대기일수가 지나야만 재발동.</b>
       </div>
 
       <div class="table-scroll rebal-table-desktop-only">
@@ -825,13 +824,13 @@ tr:last-child td { border-bottom:none; }
         <thead>
           <tr>
             <th>No</th><th>구간</th>
-            <th>①최소 주식 보유 기준<br>(주식% / 예수금%)</th>
-            <th>②매도비중<br>(주식비중 %)</th>
-            <th>③거치매수<br>(전체자산 %)</th>
-            <th>④거치매수 발동<br>예수금 조건(%)</th>
-            <th>⑤분할매수 예수금<br>(전체자산 %)</th>
-            <th>⑥일일 분할매수<br>(분할매수금 기준 %)</th>
-            <th>⑦분할매수 중단기준<br>(전체자산 예수금 %)</th>
+            <th>① 총 주식 보유비중(%)<br>(주식 / 예수금)</th>
+            <th>② 매도비중(%)<br>(총 자산기준)</th>
+            <th>③ 거치매수(%)<br>(총 자산기준)</th>
+            <th>④ 거치매수조건(%)<br>(총 자산기준)</th>
+            <th>⑤ 분할매수(%)<br>(총 자산기준)</th>
+            <th>⑥ 일일 분할매수(%)<br>(⑤분할매수금 기준)</th>
+            <th>⑦ 분할 중단기준(%)<br>(총 자산기준)</th>
           </tr>
         </thead>
         <tbody id="rebalTableBody"></tbody>
@@ -839,20 +838,19 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div class="rebal-mobile-cards" id="rebalMobileCards"></div>
       <div style="font-size:10.5px;color:var(--text-faint);margin:-6px 0 14px;line-height:1.7;">
-        1) ①최소 주식 보유 기준은 100%를 기준으로 예수금이 자동 계산됩니다. 이 구간에 진입했을 때 주식비중이 이 값 미만이면(=이전 구간에서 다 못 채운 목표가 있으면) 그 차액만큼 즉시 거치매수합니다.<br>
-        2) ③④는 ①번 캐치업 이후, 예수금이 ④조건 이상이면 ③만큼 추가로 즉시 거치매수합니다 (①②③ 모두 구간 진입 즉시 1회, 쿨다운 미적용).<br>
-        3) ⑤⑥은 그 이후 매일 정액(⑥%×⑤분할매수예수금)씩 채워나가는 분할매수이며, ⑦(현금 비율)에 도달하면 중단합니다. ③거치매수가 0인 구간(예: 110~120%·100~110%)은 ①최소 주식 보유 기준 자체가 목표가 되어, 구간이 바뀌어도 못 채운 만큼이 그대로 이월됩니다.<br>
-        4) 값을 0으로 두면 그 항목은 작동하지 않습니다.
+        1) 값을 0으로 두면 해당 규칙은 그 구간에서 작동하지 않습니다.
+        2) <br>[① 총 주식 보유비중]<br> 기준으로 이전 구간에서 못 채운 예수금이 있으면 그 비중(%)만큼 즉시 거치 매수.<br>
+        3) <br>구간 변동 후 [④거치매수 발동예수금 조건]<br> 을 확인 후 남은 예수 비중이 전체 자산 대비 해당 비중(%) 이상이면, [③거치매수]만큼 추가로 즉시 거치 매수.<br>
       </div>
       <div class="table-footer-row">
         <button class="reset-btn" id="resetDefaultBtn">↺ 처음 기본값으로 초기화</button>
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:10px 0 16px 0;line-height:1.6;">
-        모든 칸을 자유롭게 입력할 수 있어요. 값을 0으로 두면 해당 규칙은 그 구간에서 작동하지 않습니다. "+ 구간 추가"는 지금 가장 넓은 구간을 반으로 나눕니다 — 나눈 뒤 경계값과 규칙을 원하는 대로 다시 조정하세요. <b>값을 바꾸면 아래 예시와 뒤의 차트·표가 실시간으로 같이 바뀝니다.</b>
+        ※ 모든 칸을 자유롭게 입력할 수 있으며, 값을 바꾸면 아래 예시와 뒤의 차트·표가 실시간으로 같이 바뀝니다.</b>
       </div>
 
       <div class="example-box">
-        <div class="ex-title">📐 지금 입력한 값으로 계산한 실제 예시 (투자금 기준)</div>
+        <div class="ex-title">📐 실시간 입력한 값 기준 계산 된 실제 예시 (총 투자예산 기준)</div>
         <div id="rebalExampleBox"></div>
       </div>
     </div>
@@ -2239,11 +2237,11 @@ function updateExampleBox() {
   const items = EDIT_ZONES.map((z, i) => {
     const label = zoneLabel(i, B);
     const parts = [];
-    if (z.sell > 0) parts.push(`보유 주식의 <b>${z.sell}%</b>를 매도 (매도 후 쿨다운 지날 때까지 재발동 안 함)`);
+    if (z.sell > 0) parts.push(`전체자산 기준 보유 주식 <b>${z.sell}%</b>를 매도 (매도 후 쿨다운 지날 때까지 재발동 안 함)`);
     if (z.deposit > 0) {
       // 캐치업형 구간 (90~100%, 90%미만 등): 진입 즉시 최소기준까지 캐치업 → 게이트 충족 시 추가 거치매수 → 이후 분할매수예수금만큼 드립
-      if (z.minStock > 0) parts.push(`구간 진입 시 주식비중이 <b>${z.minStock}%</b> 미만이면 그 차액을 즉시 거치매수 (이전 구간 미달성분 캐치업, 쿨다운 없음)`);
-      const gateText = z.depositGate > 0 ? `그 결과 예수금이 <b>${z.depositGate}%</b> 이상 남아있으면` : `이 구간에 진입하면`;
+      if (z.minStock > 0) parts.push(`구간 진입 시 주식비중이 <b>${z.minStock}%</b> 미만이면 그 차액을 즉시 거치매수 (이전 구간 미달성분 실행)`);
+      const gateText = z.depositGate > 0 ? `예수금이 <b>${z.depositGate}%</b> 이상 남아있으면` : `이 구간에 진입하면`;
       parts.push(`${gateText} 추가로 <b>${fmt(total*z.deposit/100)}</b>(전체 ${z.deposit}%p) 거치매수 (쿨다운 없음)`);
       if (z.splitBudget > 0 && z.dailyRate > 0) {
         const budget = total*z.splitBudget/100, daily = budget*z.dailyRate/100;
@@ -2254,7 +2252,7 @@ function updateExampleBox() {
     } else if (z.minStock > 0 && z.dailyRate > 0) {
       // 순수 드립형 구간 (110~120%, 100~110% 등): 즉시 캐치업 없이, 목표(minStock)까지 매일 정액
       const daily = total*z.minStock/100*z.dailyRate/100;
-      parts.push(`즉시 캐치업 없이, 목표 주식비중 <b>${z.minStock}%</b>까지 매일 <b>${fmt(daily)}</b>(목표금액의 ${z.dailyRate}%)씩 정액 드립매수 — 다 못 채우고 다른 구간으로 넘어가도 이 목표(${z.minStock}%)가 유지되어 이월됨`);
+      parts.push(`최소주식비중 <b>${z.minStock}%</b>까지 매일 <b>${fmt(daily)}</b>(주식비중 ${z.dailyRate}%)씩 일일분할매수`);
     }
     if (parts.length === 0) parts.push('설정된 매매 규칙이 없습니다 (모든 값 0)');
     return `<b>${i+1}) ${label}:</b> ${parts.join(', ')}`;
