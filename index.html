@@ -875,8 +875,8 @@ const REBAL_DEFAULT_ZONES = [
   { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130%
   { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0 },     // 110~120%
   { sell:0,   deposit:50,  split:60, rate:0,  stop:0, depositCashGate:50 },     // 100~110%
-  { sell:0,   deposit:10,  split:50,  rate:10,  stop:10, depositCashGate:30 },  // 90~100%
-  { sell:0,   deposit:20, split:29.9,  rate:10, stop:10,  depositCashGate:0 },  // 90%미만
+  { sell:0,   deposit:10,  split:30,  rate:10,  stop:10, depositCashGate:30 },  // 90~100%
+  { sell:0,   deposit:20, split:29.9,  rate:10, stop:10,  depositCashGate:29.9 },  // 90%미만
 ];
 // TQQQ 기본값도 동일하게 통일
 const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z));
@@ -886,8 +886,8 @@ const REBAL_DEFAULT_ZONES_HYBRID = [
   { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130%
   { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0 },     // 110~120%
   { sell:0,   deposit:50,  split:60, rate:0,  stop:0, depositCashGate:50 },     // 100~110% → QLD매수
-  { sell:0,   deposit:10,  split:50,  rate:10,  stop:10, depositCashGate:30 },  // 90~100% → QLD매수
-  { sell:0,   deposit:20, split:29.9,  rate:10, stop:10,  depositCashGate:0 },  // 90%미만 → TQQQ매수
+  { sell:0,   deposit:10,  split:30,  rate:10,  stop:10, depositCashGate:30 },  // 90~100% → QLD매수
+  { sell:0,   deposit:20, split:29.9,  rate:10, stop:10,  depositCashGate:29.9 },  // 90%미만 → TQQQ매수
 ];
 const REBAL_DEFAULT_DCA_COMPARE = 0.5;
 
