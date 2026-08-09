@@ -1104,10 +1104,14 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
       const { sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0 } = cfg;
       let action = null;
 
-      // ★ 매도: 구간 진입 여부와 무관하게, 마지막 매도 후 쿨다운(기본 30일)이 지나야만 재발동 (짧은 기간 내 구간 왕복으로 인한 중복매도 방지)
+      // ★ 매도: 같은 구간에서 반복 매도할 때는 쿨다운 적용.
+      //    단, 구간이 변경되어 새로운 매도구간에 진입한 경우에는 쿨다운을 무시하고 즉시 매도.
+      //    예: 120~130%에서 80% 매도 후 130% 이상으로 진입하면 30일 이내라도 100% 매도.
       if (sell > 0) {
         const daysSinceLastSell = i - lastSellDay;
-        if (daysSinceLastSell > sellCooldownDays) {
+        const canSellByCooldown = daysSinceLastSell > sellCooldownDays;
+        const canSellByZoneChange = isNewEpisode;
+        if (canSellByCooldown || canSellByZoneChange) {
           const w1BeforeSell = w1;
           w1 = w1 * (1 - sell/100);
           if (w1 < w1BeforeSell - 0.001) { action = 'sell'; lastSellDay = i; }
@@ -1195,10 +1199,14 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
       const targetAsset = (z === nZones-1) ? 'tqqq' : 'qld';
       let action = null;
 
-      // ★ 매도: 마지막 매도 후 쿨다운(기본 30일)이 지나야만 재발동 (짧은 기간 내 구간 왕복/연속매도 방지)
+      // ★ 매도: 같은 구간에서 반복 매도할 때는 쿨다운 적용.
+      //    단, 구간이 변경되어 새로운 매도구간에 진입한 경우에는 쿨다운을 무시하고 즉시 매도.
+      //    예: 120~130%에서 80% 매도 후 130% 이상으로 진입하면 30일 이내라도 100% 매도.
       if (sell>0){
         const daysSinceLastSell = i - lastSellDay;
-        if (daysSinceLastSell > sellCooldownDays) {
+        const canSellByCooldown = daysSinceLastSell > sellCooldownDays;
+        const canSellByZoneChange = isNewEpisode;
+        if (canSellByCooldown || canSellByZoneChange) {
           const wQldBefore=wQld, wTqqqBefore=wTqqq;
           wQld = wQld*(1-sell/100); wTqqq = wTqqq*(1-sell/100);
           if (wQld<wQldBefore-0.001 || wTqqq<wTqqqBefore-0.001) { action = 'sell'; lastSellDay = i; }
