@@ -407,20 +407,27 @@ tr:last-child td { border-bottom:none; }
   <div class="sidebar-top">
     <h2>투자 조건 설정</h2>
     <div class="tabbar">
-      <button id="tabV2" class="active"><span class="tab-title">리밸런싱 비교_7종</span><span class="tab-sub">QLD/TQQQ 외 7종</span></button>
-      <button id="tabDca"><span class="tab-title">적립식 비교_3종</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
-      <button id="tabLump"><span class="tab-title">거치식 비교_3종</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
+      <button id="tabV2" class="active"><span class="tab-title">리밸런싱 7종</span><span class="tab-sub">적립/거치/리밸런싱</span></button>
+      <button id="tabDca"><span class="tab-title">적립식 비교</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
+      <button id="tabLump"><span class="tab-title">거치식 비교</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
     </div>
 
     <div class="section">
       <div class="field">
         <label>시작일</label>
         <input type="date" id="startDate">
-        <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전은 선택 불가 — QQQ 가격 데이터 자체가 이때부터 존재해요 (QLD·TQQQ는 각각 2006-06-19·2010-02-09 실제 상장 전까지는 QQQ 수익률 기반 합성 데이터로 그 이전까지 확장됨)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전 선택불가(Google Finance 기준)</div>
       </div>
       <div class="field">
         <label>종료일</label>
         <input type="date" id="endDate">
+        <div class="sub-hint" style="color:var(--text-faint);">※ 🏆 순위 : 역사적QQQ 주요하락 Event</div>
+        <div class="sub-hint" style="color:var(--text-faint);">1위:닷컴버블 2000-03-24~2002-10-09 -82.9% •929일(2년6개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">2위:금융위기 2007-07-31~2009-03-09 -54.7% •587일(1년7개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">3위:22년긴축 2021-11-19~2022-11-03 -35.6% •349일(11.5개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">4위:코로나19 2020-02-19~2020-03-23 -30.0% •33일(1.1개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">5위:미중무역 2018-10-01~2018-12-24 -22.9% •84일(2.8개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">6위:관세충격 2025-02-19~2025-04-08 -22.8% •48일(1.6개월)</div>
       </div>
     </div>
 
@@ -779,31 +786,30 @@ tr:last-child td { border-bottom:none; }
     </div>
     <div class="modal-body">
       <div class="modal-note">
-        QQQ 200일 이격도(현재가가 200일 이동평균선 대비 몇 %인지)를 기준으로 5개 구간을 나누고, 구간별로 <b>매도 / 거치매수 / 분할매수</b> 규칙을 다르게 적용합니다.
-        값을 바꾸면 아래 예시 금액이 실시간으로 바뀌니 참고해서 나만의 전략을 만들어보세요.
+        QQQ 200일 이격도를 기준으로 6개 구간을 나누고, 구간별로 <b>매도 / 거치매수 / 분할매수</b> 규칙을 다르게 적용합니다.
       </div>
 
-      <div class="section-title" style="margin-top:14px;">참고: 기간 내 실제 이격도 흐름 (현재 설정한 경계값 표시)</div>
+      <div class="section-title" style="margin-top:14px;">■ 200일 이격도 차트 (경계값 표시)</div>
       <div class="rolling-explain" style="margin-bottom:8px;">메인 화면의 시작일~종료일 구간 동안 QQQ 이격도가 실제로 어떻게 움직였는지 보여줍니다. 점선은 지금 입력한 경계값이에요 — 이 선을 얼마나 자주 넘나드는지 보면서 경계값을 잡아보세요.</div>
       <canvas id="zoneRefChart" width="900" height="420" style="width:100%;display:block;border-radius:8px;"></canvas>
 
-      <div class="section-title" style="margin-top:16px;">구간 경계값 (%) — 100%는 200일선 자체라 고정</div>
+      <div class="section-title" style="margin-top:16px;">■ 구간 경계값 (200일선 기준 값 : 100%)</div>
       <div class="boundary-chip-row" id="boundaryChipRow"></div>
 
-      <div class="section-title" style="margin-top:16px;">거치매수 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
+      <div class="section-title" style="margin-top:16px;">■ 거치매수 재발동 대기일 수 (전체 구간 공통)</div>
       <div class="field" style="max-width:220px;">
         <input type="number" id="depositCooldownDays" value="30" step="1">
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
-        구간에 "새로 진입"할 때마다 거치매수하는 게 아니라, <b>아래 표에서 구간별로 설정한 예수금 비율 이상 남아있을 때만</b> 발동합니다. 한 번 발동하면 그 뒤로는 조건을 다시 만족해도 <b>이 대기일수가 지나기 전엔(같은 구간 기준) 재발동하지 않고</b>, 그 사이엔 분할매수만 계속됩니다.
+        ※ 같은 구간을 짧은 기간에 진입/이탈 반복 시 거치매수가 진행되는 상황을 제약하는 목적으로, <b>마지막 거치매수 후 입력한 최소 일이 지나야만 재발동.</b> <b>※이전 구간 분할 미소진으로 인한 거치 매수는 제외.</b>
       </div>
 
-      <div class="section-title">주식매도 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
+      <div class="section-title">■ 주식매도 재발동 대기일 수 (전체 구간 공통)</div>
       <div class="field" style="max-width:220px;">
         <input type="number" id="sellCooldownDays" value="30" step="1">
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
-        120%·130%이상 구간에 진입할 때마다 매도하는 게 아니라, <b>마지막 매도 후 이 대기일수가 지나야만</b> 재발동합니다. 짧은 기간에 구간 경계를 왔다갔다(왕복)해도 매도가 여러 번 겹쳐 발동하지 않도록 막아줍니다.
+         ※ 같은 구간을 짧은 기간에 진입/이탈 반복 시 주식매도가 진행되는 상황을 제약하는 목적으로, <b>마지막 매도 후 이 입력한 최소 일이 지나야만 재발동.</b>
       </div>
 
       <div class="table-scroll">
