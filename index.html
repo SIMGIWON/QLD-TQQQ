@@ -2240,12 +2240,12 @@ function updateExampleBox() {
     if (z.sell > 0) parts.push(`전체자산 기준 보유 주식 <b>${z.sell}%</b>를 매도 (매도 후 쿨다운 지날 때까지 재발동 안 함)`);
     if (z.deposit > 0) {
       // 캐치업형 구간 (90~100%, 90%미만 등): 진입 즉시 최소기준까지 캐치업 → 게이트 충족 시 추가 거치매수 → 이후 분할매수예수금만큼 드립
-      if (z.minStock > 0) parts.push(`구간 진입 시 주식비중이 <b>${z.minStock}%</b> 미만이면 그 차액을 즉시 거치매수 (이전 구간 미달성분 실행)`);
+      if (z.minStock > 0) parts.push(`구간 진입 시 주식비중이 <b>${z.minStock}%</b> 미만이면 못채운 비중을 즉시 거치매수 (이전 구간 미달성분 실행)`);
       const gateText = z.depositGate > 0 ? `예수금이 <b>${z.depositGate}%</b> 이상 남아있으면` : `이 구간에 진입하면`;
-      parts.push(`${gateText} 추가로 <b>${fmt(total*z.deposit/100)}</b>(전체 ${z.deposit}%p) 거치매수 (쿨다운 없음)`);
+      parts.push(`${gateText} 추가로 <b>${fmt(total*z.deposit/100)}</b>(전체 ${z.deposit}%p) 거치매수`);
       if (z.splitBudget > 0 && z.dailyRate > 0) {
         const budget = total*z.splitBudget/100, daily = budget*z.dailyRate/100;
-        let s = `이후 매일 <b>${fmt(daily)}</b>(분할매수예수금 ${z.splitBudget}%의 ${z.dailyRate}%)씩 정액매수로 <b>+${z.splitBudget}%p</b> 더 채움`;
+        let s = `이후 매일 <b>${fmt(daily)}</b>(분할매수예수금 ${z.splitBudget}%의 ${z.dailyRate}%)씩 일일 분할매수로 <b>+${z.splitBudget}%p</b> 를 진행`;
         s += z.stopCash > 0 ? ` (현금 ${z.stopCash}%↓ 에서 중단)` : ` (현금 소진까지)`;
         parts.push(s);
       }
