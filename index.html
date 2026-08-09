@@ -694,7 +694,7 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div class="field" style="margin-bottom:10px;">
         <label style="font-size:11px;">롤링 시작일 (이 날짜부터 최신 데이터까지 매년 늘려가며 검증)</label>
-        <input type="date" id="rollingStartDate" value="2003-01-01">
+        <input type="date" id="rollingStartDate" value="2000-01-03">
         <div class="sub-hint" id="rollingHorizonPreview" style="color:var(--text-faint);"></div>
       </div>
       <button class="run-btn" id="rollingRunBtn" style="background:#7c3aed;">📊 롤링 백테스트 실행</button>
@@ -866,26 +866,28 @@ let showDevChart = false;
 let devChartTarget = 'qld'; // V2 탭에서 이격도 볼 때 어떤 자산 기준인지 ('qld' | 'tqqq')
 
 // 200일 이격도 경계값들 (오름차순 정렬, 100은 200일선 그 자체라서 항상 고정 포함)
-const REBAL_DEFAULT_BOUNDARIES = [90, 100, 120, 130];
+const REBAL_DEFAULT_BOUNDARIES = [90, 100, 110, 120, 130];
 // 구간 규칙 (배열 index 0 = 맨 위(가장 과열) ... 마지막 = 맨 아래(가장 저평가))
 // depositCashGate: 거치매수는 예수금(현금비중)이 이 값(%) 이상일 때만 발동 (구간별로 다르게 설정 가능)
 // 아래 값은 하이브리드 전용 그리드서치(1,548개 조합, 최대 147구간 롤링)에서 찾은 최적 조합과 동일하게 통일
 const REBAL_DEFAULT_ZONES = [
   { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 130%이상
   { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130%
-  { sell:0,   deposit:0,  split:60, rate:1,  stop:40, depositCashGate:0 },     // 100~120%
-  { sell:0,   deposit:5,  split:5,  rate:2,  stop:15, depositCashGate:39.9 },  // 90~100%
-  { sell:0,   deposit:40, split:5,  rate:20, stop:0,  depositCashGate:14.9 },  // 90%미만
+  { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0 },     // 110~120%
+  { sell:0,   deposit:50,  split:60, rate:0,  stop:0, depositCashGate:50 },     // 100~110%
+  { sell:0,   deposit:10,  split:50,  rate:10,  stop:10, depositCashGate:30 },  // 90~100%
+  { sell:0,   deposit:20, split:29.9,  rate:10, stop:10,  depositCashGate:0 },  // 90%미만
 ];
 // TQQQ 기본값도 동일하게 통일
 const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z));
 // 하이브리드 전용 기본값: 100~120%/90~100%는 QLD로 매수, 90%미만만 TQQQ로 매수 (검증된 최적 조합)
 const REBAL_DEFAULT_ZONES_HYBRID = [
-  { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 130%이상 (QLD+TQQQ 비례매도)
-  { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130% (QLD+TQQQ 비례매도)
-  { sell:0,   deposit:0,  split:60, rate:1,  stop:40, depositCashGate:0 },     // 100~120% → QLD 매수
-  { sell:0,   deposit:5,  split:5,  rate:2,  stop:15, depositCashGate:39.9 },  // 90~100% → QLD 매수
-  { sell:0,   deposit:40, split:5,  rate:20, stop:0,  depositCashGate:14.9 },  // 90%미만 → TQQQ 매수
+  { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 130%이상
+  { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130%
+  { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0 },     // 110~120%
+  { sell:0,   deposit:50,  split:60, rate:0,  stop:0, depositCashGate:50 },     // 100~110% → QLD매수
+  { sell:0,   deposit:10,  split:50,  rate:10,  stop:10, depositCashGate:30 },  // 90~100% → QLD매수
+  { sell:0,   deposit:20, split:29.9,  rate:10, stop:10,  depositCashGate:0 },  // 90%미만 → TQQQ매수
 ];
 const REBAL_DEFAULT_DCA_COMPARE = 0.5;
 
