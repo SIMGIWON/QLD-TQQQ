@@ -421,32 +421,25 @@ tr:last-child td { border-bottom:none; }
   <div class="sidebar-top">
     <h2>투자 조건 설정</h2>
     <div class="tabbar">
-      <button id="tabV2" class="active"><span class="tab-title">리밸런싱 7종</span><span class="tab-sub">적립/거치/리밸</span></button>
-      <button id="tabDca"><span class="tab-title">적립식 비교</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
-      <button id="tabLump"><span class="tab-title">거치식 비교</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
+      <button id="tabV2" class="active"><span class="tab-title">리밸런싱 비교_7종</span><span class="tab-sub">QLD/TQQQ 외 7종</span></button>
+      <button id="tabDca"><span class="tab-title">적립식 비교_3종</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
+      <button id="tabLump"><span class="tab-title">거치식 비교_3종</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
     </div>
 
     <div class="section">
       <div class="field">
         <label>시작일</label>
         <input type="date" id="startDate">
-        <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전 선택불가(Google Finance)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전은 선택 불가 — QQQ 가격 데이터 자체가 이때부터 존재해요 (QLD·TQQQ는 각각 2006-06-19·2010-02-09 실제 상장 전까지는 QQQ 수익률 기반 합성 데이터로 그 이전까지 확장됨)</div>
       </div>
       <div class="field">
         <label>종료일</label>
         <input type="date" id="endDate">
-        <div class="sub-hint" style="color:var(--text-faint);">※ 🏆 순위 : 역사적QQQ 주요하락 Event</div>
-        <div class="sub-hint" style="color:var(--text-faint);">1위:닷컴버블 2000-03-24~2002-10-09 -82.9% •929일(2년6개월)</div>
-        <div class="sub-hint" style="color:var(--text-faint);">2위:금융위기 2007-07-31~2009-03-09 -54.7% •587일(1년7개월)</div>
-        <div class="sub-hint" style="color:var(--text-faint);">3위:22년긴축 2021-11-19~2022-11-03 -35.6% •349일(11.5개월)</div>
-        <div class="sub-hint" style="color:var(--text-faint);">4위:코로나19 2020-02-19~2020-03-23 -30.0% •33일(1.1개월)</div>
-        <div class="sub-hint" style="color:var(--text-faint);">5위:미중무역 2018-10-01~2018-12-24 -22.9% •84일(2.8개월)</div>
-        <div class="sub-hint" style="color:var(--text-faint);">6위:관세충격 2025-02-19~2025-04-08 -22.8% •48일(1.6개월)</div>
       </div>
     </div>
 
     <div class="section">
-      <div class="section-title">빠른 기간선택 (오늘 기준)</div>
+      <div class="section-title">빠른 기간 선택 (오늘 기준)</div>
       <div class="grid2" id="quickPeriodButtons" style="grid-template-columns:repeat(4,1fr);">
         <div class="opt-btn qp-btn" data-months="1">1개월</div>
         <div class="opt-btn qp-btn" data-months="3">3개월</div>
@@ -483,7 +476,7 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div class="checkbox-row">
         <input type="checkbox" id="feeCheck" checked>
-        <label for="feeCheck">수수료 비용 반영 (매매 시 0.05%)</label>
+        <label for="feeCheck">수수료/비용 반영 (매매 시 0.05%)</label>
       </div>
     </div>
 
@@ -573,9 +566,9 @@ tr:last-child td { border-bottom:none; }
         <button class="detail-btn" id="openRebalDetailTqqq">⚙ TQQQ 세부설정</button>
       </div>
 
-      <div class="section-title" style="color:#ca8a04; margin-top:16px;">⑦ 하이브리드 (QLD+TQQQ)</div>
+      <div class="section-title" style="color:#ca8a04; margin-top:16px;">⑦ 하이브리드 (QLD주력+90%미만만 TQQQ)</div>
       <div style="font-size:10px;color:var(--sub);line-height:1.5;margin-bottom:8px;">
-        90~120% : QLD 매수.<b>90%미만 : TQQQ 매수.</b>위기 구간 대응 목적.
+        평소(100~120%/90~100%)엔 QLD로 매수하고, <b>90%미만(급락)에서만 TQQQ로 매수</b>해서 낙폭은 QLD 수준으로 억제하면서 수익은 더 확보하는 전략입니다.
       </div>
       <div class="field">
         <button class="detail-btn" id="openRebalDetailHybrid">⚙ 하이브리드 세부설정</button>
@@ -583,7 +576,7 @@ tr:last-child td { border-bottom:none; }
     </div>
 
     <button class="run-btn" id="runBtn">🔄 업데이트 (새로고침)</button>
-    <div style="font-size:10.5px;color:var(--text-faint);text-align:center;margin-top:6px;line-height:1.5;">•기본적으로 값 변경 시 자동 반영되며, 미반영 시 버튼 클릭.</div>
+    <div style="font-size:10.5px;color:var(--text-faint);text-align:center;margin-top:6px;line-height:1.5;">값을 바꾸면 자동 반영돼요. 대기 없이 바로 보고 싶을 때만 누르세요.</div>
 
     <div class="sidebar-divider"></div>
 
@@ -592,7 +585,7 @@ tr:last-child td { border-bottom:none; }
   <div class="main">
     <div class="card" id="chartCard">
       <div class="chart-top">
-        <div class="chart-title" id="chartTitle">적립식 비교 (1배 / 2배 / 3배)</div>
+        <div class="chart-title" id="chartTitle">QQQ 투자 시뮬레이션</div>
         <div class="chart-actions">
           <button class="dev-toggle-btn" id="devToggleBtn" style="display:none;">200일 이격도 보기</button>
           <button class="dev-toggle-btn" id="devToggleBtnQld" style="display:none;">QLD 200일 이격도</button>
@@ -612,12 +605,12 @@ tr:last-child td { border-bottom:none; }
 
     <div class="card" id="resultsCard">
       <div class="chart-title" style="margin-bottom:10px;">🏆 순위 (종합점수 기준, 현재 선택 기간)</div>
-      <div class="rolling-table-desc" style="margin:0 0 4px;">•종합점수·CAGR·MDD·칼마·샤프: 세전 기준</div>
-      <div class="rolling-table-desc" style="margin:0 0 10px;">•세후수익률·세후CAGR</b>은 정밀 계산 — 리밸런싱 전략(<span style="opacity:0.5;">●</span> 표시)은 매도 시 그 해 250만원 공제/22% 과세하고 세금을 낸 만큼 재투자자본을 줄여서 계산, 거치식·적립식은 종료 시점에 한 번에 매도한다고 가정해 과세</div>
+      <div class="rolling-table-desc" style="margin:0 0 4px;">종합점수·CAGR·MDD·칼마·샤프는 <b>세전 기준</b>입니다 (계좌 종류마다 세율·공제가 달라서, 순수 전략 성과 비교는 세전으로 통일). 백테스트/롤링/Walk-Forward/부트스트랩도 전부 동일하게 세전 기준이에요.</div>
+      <div class="rolling-table-desc" style="margin:0 0 10px;">대신 <b>세후수익률·세후CAGR</b>은 정밀하게 계산됩니다 — 리밸런싱 전략(<span style="opacity:0.5;">●</span> 표시)은 매도할 때마다 그 해 250만원 공제 후 22% 과세하고 세금 낸 만큼 재투자자본을 줄여서 계산하고, 거치식·적립식은 종료 시점에 한 번에 매도한다고 가정해 과세합니다.</div>
       <div class="table-scroll">
       <table id="resultsTable">
         <thead>
-          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>종합점수</th><th>최종자산</th><th>총수익률</th><th>최종자산(세후)</th><th>총수익률(세후)</th><th>CAGR(세후)</th><th>CAGR</th><th>MDD</th><th>칼마비율</th><th>샤프지수</th></tr>
+          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>종합점수<br><span style="font-weight:400;opacity:0.7;">(세전)</span></th><th>최종자산 (세전)</th><th>총수익률</th><th>최종자산 (세후)</th><th>세후수익률</th><th>세후CAGR</th><th>CAGR<br><span style="font-weight:400;opacity:0.7;">(세전)</span></th><th>MDD<br><span style="font-weight:400;opacity:0.7;">(세전)</span></th><th>칼마비율<br><span style="font-weight:400;opacity:0.7;">(세전)</span></th><th>샤프지수<br><span style="font-weight:400;opacity:0.7;">(세전)</span></th></tr>
         </thead>
         <tbody id="resultsBody"></tbody>
       </table>
@@ -634,28 +627,28 @@ tr:last-child td { border-bottom:none; }
             <div class="glossary-badge" style="background:#2563eb;">%</div>
             <div class="glossary-name">CAGR (연평균 복리 성장률)</div>
           </div>
-          <div class="glossary-desc">매년 몇 %씩 복리로 불어난 셈인지를 나타내는 값. 예를 들어 10년간 총수익률 +300%는 매년 약 15%씩 복리로 늘어난 것과 같습니다. 기간이 다른 투자끼리 비교할 때 유용 합니다.</div>
+          <div class="glossary-desc">매년 몇 %씩 복리로 불어난 셈인지를 나타내는 값. 예를 들어 10년간 총수익률 +300%는 매년 약 15%씩 복리로 늘어난 것과 같습니다. 기간이 다른 투자끼리 비교할 때 유용해요.</div>
         </div>
         <div class="glossary-item">
           <div class="glossary-head">
             <div class="glossary-badge" style="background:#dc2626;">▼</div>
             <div class="glossary-name">MDD (최대낙폭)</div>
           </div>
-          <div class="glossary-desc">역대 최고점에서 얼마나 크게 떨어졌는지 나타낸 값으로, MDD -50%는 어느 시점에 자산이 고점 대비 반토막 났었다는 뜻입니다. 레버리지 상품일수록 이 값이 훨씬 커지는 경향이 있습니다.</div>
+          <div class="glossary-desc">역대 최고점에서 얼마나 크게 떨어져봤는지. MDD -50%는 어느 시점에 자산이 고점 대비 반토막 났었다는 뜻. 레버리지 상품일수록 이 값이 훨씬 커지는 경향이 있어요.</div>
         </div>
         <div class="glossary-item">
           <div class="glossary-head">
             <div class="glossary-badge" style="background:#16a34a;">⚖</div>
             <div class="glossary-name">샤프지수</div>
           </div>
-          <div class="glossary-desc">위험(변동성) 대비 얼마나 효율적으로 벌었는지, 숫자가 클수록 적게 흔들리면서 많이 번 것을 나타냅니다. 보통 1.0 이상이면 양호, 2.0 이상이면 상당히 우수한 수준으로 봅니다.</div>
+          <div class="glossary-desc">위험(변동성) 대비 얼마나 효율적으로 벌었는지. 숫자가 클수록 적게 흔들리면서 많이 번 것. 보통 1.0 이상이면 양호, 2.0 이상이면 상당히 우수한 수준으로 봅니다.</div>
         </div>
         <div class="glossary-item">
           <div class="glossary-head">
             <div class="glossary-badge" style="background:#eab308;">🏆</div>
             <div class="glossary-name">칼마비율</div>
           </div>
-          <div class="glossary-desc">CAGR ÷ |MDD|. "최악의 낙폭 대비 얼마나 벌었나"를 보는 지표예요. 샤프지수가 일상적인 등락 전체를 위험으로 보는 반면, 칼마비율은 딱 한 번 있었던 최악의 순간(MDD)만 기준으로 삼아서 레버리지 상품처럼 급락 리스크가 핵심인 경우에 특히 유용해요. 1.0 이상이면 양호한 편입니다.</div>
+          <div class="glossary-desc">CAGR ÷ |MDD|. "감수한 최악의 낙폭 대비 얼마나 벌었나"를 보는 지표예요. 샤프지수가 일상적인 등락 전체를 위험으로 보는 반면, 칼마비율은 딱 한 번 있었던 최악의 순간(MDD)만 기준으로 삼아서 레버리지 상품처럼 급락 리스크가 핵심인 경우에 특히 유용해요. 1.0 이상이면 양호한 편입니다.</div>
         </div>
       </div>
     </div>
@@ -690,10 +683,12 @@ tr:last-child td { border-bottom:none; }
     <div class="note-card">
       <div class="note-title">ℹ️ 참고 사항</div>
       <ul class="note-list">
-        <li>데이터: QQQ 실제 종가(2000.1.3~) 기준. 2배/3배는 일일 리밸런싱 레버리지 가정. (실제 QLD/TQQQ 상장 이후 구간은 실제 종가로 보정)</li>
-        <li><b>종합점수·CAGR·MDD·칼마비율·샤프지수는 세전 기준으로 통일.</b> (단일기간 결과표·롤링 백테스트·Walk-Forward·블록 부트스트랩 전부 동일) </li>
-        <li>수수료/세금 외 <b>슬리피지</b>(매수·매도 버튼을 누른 시점의 가격과 실제로 체결되는 가격 사이의 차이)는 미반영 · 과거 성과가 미래 수익을 보장하지 않음.</li>
-        <li>본 시뮬레이션은 과거 데이터를 기반으로한 검증용 시뮬레이션 으로, 미래에 대한 수익을 100% 확정하지 않음. 투자 시 데이터 참고용으로 활용 할 것. </li>
+        <li>데이터: QQQ 실제 종가(2000.1.3~) 기준. 2배/3배는 일일 리밸런싱 레버리지 가정 (실제 QLD/TQQQ 상장 이후 구간은 실제 종가로 보정)</li>
+        <li><b>종합점수·CAGR·MDD·칼마비율·샤프지수는 세전 기준으로 통일</b>했습니다 (단일기간 결과표·롤링 백테스트·Walk-Forward·블록 부트스트랩 전부 동일) — 계좌 종류(일반/ISA/연금저축 등)마다 세율·공제가 달라서, 순수 전략 성과를 비교할 땐 세금이라는 외부 변수를 빼는 게 표준입니다. 세금으로 빠져나간 잔고를 MDD 같은 리스크 지표에 섞으면 "시장 하락 리스크"와 "세금 이벤트"가 뒤섞여버리는 문제도 있고요.</li>
+        <li><b>세후수익률·세후CAGR은 정밀 계산</b>합니다 — 리밸런싱(QLD/TQQQ/하이브리드, 표에 <span style="opacity:0.5;">●</span> 표시)은 실제 매도할 때마다 그 해 누적 실현손익 기준으로 250만원 공제 후 22%를 즉시 원천징수하고, 그만큼 재투자 자본이 줄어든 채로 계속 굴러가는 방식으로 계산합니다(평균단가법). 거치식/적립식은 중간에 매도가 없다고 보고, 종료시점에 한 번에 판다는 가정으로 250만원 공제 후 22%를 계산합니다.</li>
+        <li>같은 해 안에서 나중에 손실이 나도 이미 원천징수한 세금을 돌려받는 건 반영 안 함(실제로는 다음해 확정신고에서 연간 순손익으로 정산되므로 실제 세금 부담은 이보다 살짝 낮을 수 있음) — 보수적으로 계산됨</li>
+        <li>적립식 CAGR은 단순연환산 근사치 (자금흐름을 고려한 정밀 IRR 아님)</li>
+        <li>수수료/세금 외 <b>슬리피지</b>(매수·매도 버튼을 누른 시점의 가격과 실제로 체결되는 가격 사이의 차이 — 거래량이 적거나 가격이 급하게 움직일 때 원하던 가격보다 불리하게 체결되는 것)는 미반영 · 과거 성과가 미래 수익을 보장하지 않음</li>
       </ul>
     </div>
   </div>
@@ -705,8 +700,8 @@ tr:last-child td { border-bottom:none; }
         특정 한 구간만 보면 "우연히 잘 맞은 시점"일 수 있어요. <b>아래 시작일부터 매월 시작점을 옮겨가며</b>, 1년부터 (오늘−시작일) 최대 보유기간까지 <b>1년 단위로 전부</b> 돌려서 수익률·MDD·칼마비율을 냅니다. (2010년 이전 QLD·TQQQ는 보정합성 데이터)
       </div>
       <div class="field" style="margin-bottom:10px;">
-        <label style="font-size:11px;">롤링 백테스트 시작일</label>
-        <input type="date" id="rollingStartDate" value="2000-01-03">
+        <label style="font-size:11px;">롤링 시작일 (이 날짜부터 최신 데이터까지 매년 늘려가며 검증)</label>
+        <input type="date" id="rollingStartDate" value="2003-01-01">
         <div class="sub-hint" id="rollingHorizonPreview" style="color:var(--text-faint);"></div>
       </div>
       <button class="run-btn" id="rollingRunBtn" style="background:#7c3aed;">📊 롤링 백테스트 실행</button>
@@ -798,30 +793,31 @@ tr:last-child td { border-bottom:none; }
     </div>
     <div class="modal-body">
       <div class="modal-note">
-        QQQ 200일 이격도를 기준으로 6개 구간을 나누고, 구간별로 <b>매도 / 거치매수 / 분할매수</b> 규칙을 다르게 적용합니다.
+        QQQ 200일 이격도(현재가가 200일 이동평균선 대비 몇 %인지)를 기준으로 6개 구간을 나누고, 구간별로 <b>매도 / 거치매수 / 분할매수</b> 규칙을 다르게 적용합니다.
+        값을 바꾸면 아래 예시 금액이 실시간으로 바뀌니 참고해서 나만의 전략을 만들어보세요.
       </div>
 
-      <div class="section-title" style="margin-top:14px;">■ 200일 이격도 차트 (경계값 표시)</div>
-      <div class="rolling-explain" style="margin-bottom:8px;">※ 메인 화면의 시작~종료일 기준 QQQ 200일 이격도가 실제로 어떻게 움직였는지 실시간 차트로 표현.</div>
+      <div class="section-title" style="margin-top:14px;">참고: 기간 내 실제 이격도 흐름 (현재 설정한 경계값 표시)</div>
+      <div class="rolling-explain" style="margin-bottom:8px;">메인 화면의 시작일~종료일 구간 동안 QQQ 이격도가 실제로 어떻게 움직였는지 보여줍니다. 점선은 지금 입력한 경계값이에요 — 이 선을 얼마나 자주 넘나드는지 보면서 경계값을 잡아보세요.</div>
       <canvas id="zoneRefChart" width="900" height="420" style="width:100%;display:block;border-radius:8px;"></canvas>
 
-      <div class="section-title" style="margin-top:16px;">■ 구간 경계값 (200일선 기준 값 : 100%)</div>
+      <div class="section-title" style="margin-top:16px;">구간 경계값 (%) — 100%는 200일선 자체라 고정</div>
       <div class="boundary-chip-row" id="boundaryChipRow"></div>
 
-      <div class="section-title" style="margin-top:16px;">■ 거치매수 재발동 대기일 수 (전체 구간 공통)</div>
+      <div class="section-title" style="margin-top:16px;">거치매수 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
       <div class="field" style="max-width:220px;">
         <input type="number" id="depositCooldownDays" value="30" step="1">
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
-        ※ 같은 구간을 짧은 기간에 진입/이탈 반복 시 거치매수가 진행되는 상황을 제약하는 목적으로, <b>마지막 거치매수 후 입력한 최소 일이 지나야만 재발동.</b> <b>※이전 구간 분할 미소진으로 인한 거치 매수는 제외.</b>
+        구간에 새로 진입할 때마다(①캐치업+④조건 만족 시 ③) 거치매수가 발동하는데, 같은 구간을 짧은 기간에 왕복하며 반복 발동하지 않도록 <b>마지막 거치매수 후 이 대기일수가 지나야만 재발동</b>합니다. 단, ①캐치업 직후 같은 흐름에서 ④조건을 확인해 ③을 추가로 실행하는 건 하나로 묶인 동작이라 그 사이엔 쿨다운이 끼어들지 않아요 (쿨다운 통과 여부는 캐치업+③ 전체 묶음 단위로 판단).
       </div>
 
-      <div class="section-title">■ 주식매도 재발동 대기일 수 (전체 구간 공통)</div>
+      <div class="section-title">주식매도 재발동 대기일수 (쿨다운, 전체 구간 공통)</div>
       <div class="field" style="max-width:220px;">
         <input type="number" id="sellCooldownDays" value="30" step="1">
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
-        ※ 같은 구간을 짧은 기간에 진입/이탈 반복 시 주식매도가 진행되는 상황을 제약하는 목적으로, <b>마지막 매도 후 이 입력한 최소 일이 지나야만 재발동.</b>
+        120%·130%이상 구간에 진입할 때마다 매도하는 게 아니라, <b>마지막 매도 후 이 대기일수가 지나야만</b> 재발동합니다. 짧은 기간에 구간 경계를 왔다갔다(왕복)해도 매도가 여러 번 겹쳐 발동하지 않도록 막아줍니다.
       </div>
 
       <div class="table-scroll rebal-table-desktop-only">
@@ -829,13 +825,13 @@ tr:last-child td { border-bottom:none; }
         <thead>
           <tr>
             <th>No</th><th>구간</th>
-            <th>① 총 주식 보유비중(%)<br>(주식/예수금)</th>
-            <th>② 매도비중(%)<br>(총 자산기준)</th>
-            <th>③ 거치매수(%)<br>(총 자산기준)</th>
-            <th>④ 거치매수조건(%)<br>(총 자산기준)</th>
-            <th>⑤ 분할매수(%)<br>(총 자산기준)</th>
-            <th>⑥ 일일 분할매수(%)<br>(⑤분할매수금 기준)</th>
-            <th>⑦ 분할 중단기준(%)<br>(총 자산기준)</th>
+            <th>①최소 주식 보유 기준<br>(주식% / 예수금%)</th>
+            <th>②매도비중<br>(주식비중 %)</th>
+            <th>③거치매수<br>(전체자산 %)</th>
+            <th>④거치매수 발동<br>예수금 조건(%)</th>
+            <th>⑤분할매수 예수금<br>(전체자산 %)</th>
+            <th>⑥일일 분할매수<br>(분할매수금 기준 %)</th>
+            <th>⑦분할매수 중단기준<br>(전체자산 예수금 %)</th>
           </tr>
         </thead>
         <tbody id="rebalTableBody"></tbody>
@@ -843,19 +839,20 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div class="rebal-mobile-cards" id="rebalMobileCards"></div>
       <div style="font-size:10.5px;color:var(--text-faint);margin:-6px 0 14px;line-height:1.7;">
-        1) 값을 0으로 두면 해당 규칙은 그 구간에서 미 작동.<br>
-        2) [① 총 주식 보유비중]기준으로 이전 구간에서 못 채운 예수금이 있으면 그 비중(%)만큼 즉시 거치 매수.<br>
-        3) 구간 변동 후 [④거치매수 발동예수금 조건]을 확인 후 남은 예수 비중이 전체 자산 대비 해당 비중(%) 이상이면, [③거치매수]만큼 추가로 즉시 거치 매수.<br>
+        1) ①최소 주식 보유 기준은 100%를 기준으로 예수금이 자동 계산됩니다. 이 구간에 진입했을 때 주식비중이 이 값 미만이면(=이전 구간에서 다 못 채운 목표가 있으면) 그 차액만큼 즉시 거치매수합니다.<br>
+        2) ③④는 ①번 캐치업 이후, 예수금이 ④조건 이상이면 ③만큼 추가로 즉시 거치매수합니다 (①②③ 모두 구간 진입 즉시 1회, 쿨다운 미적용).<br>
+        3) ⑤⑥은 그 이후 매일 정액(⑥%×⑤분할매수예수금)씩 채워나가는 분할매수이며, ⑦(현금 비율)에 도달하면 중단합니다. ③거치매수가 0인 구간(예: 110~120%·100~110%)은 ①최소 주식 보유 기준 자체가 목표가 되어, 구간이 바뀌어도 못 채운 만큼이 그대로 이월됩니다.<br>
+        4) 값을 0으로 두면 그 항목은 작동하지 않습니다.
       </div>
       <div class="table-footer-row">
         <button class="reset-btn" id="resetDefaultBtn">↺ 처음 기본값으로 초기화</button>
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:10px 0 16px 0;line-height:1.6;">
-        ※ 모든 칸을 자유롭게 입력할 수 있으며, 값을 바꾸면 아래 예시와 뒤의 차트·표가 실시간으로 연동됨.</b>
+        모든 칸을 자유롭게 입력할 수 있어요. 값을 0으로 두면 해당 규칙은 그 구간에서 작동하지 않습니다. "+ 구간 추가"는 지금 가장 넓은 구간을 반으로 나눕니다 — 나눈 뒤 경계값과 규칙을 원하는 대로 다시 조정하세요. <b>값을 바꾸면 아래 예시와 뒤의 차트·표가 실시간으로 같이 바뀝니다.</b>
       </div>
 
       <div class="example-box">
-        <div class="ex-title">📐 실시간 입력한 값을 기준으로 계산 된 실제 예시 (총 투자예산 기준으로 금액 반영)</div>
+        <div class="ex-title">📐 지금 입력한 값으로 계산한 실제 예시 (투자금 기준)</div>
         <div id="rebalExampleBox"></div>
       </div>
     </div>
@@ -897,10 +894,10 @@ const REBAL_DEFAULT_BOUNDARIES = [90, 100, 110, 120, 130];
 const REBAL_DEFAULT_ZONES = [
   { minStock:0,  sell:100, deposit:0,  depositGate:0,  splitBudget:0,  dailyRate:0,   stopCash:0  }, // 130%이상
   { minStock:0,  sell:80,  deposit:0,  depositGate:0,  splitBudget:0,  dailyRate:0,   stopCash:0  }, // 120~130%
-  { minStock:50, sell:0,   deposit:0,  depositGate:0,  splitBudget:50, dailyRate:1.3, stopCash:50 }, // 110~120%
-  { minStock:50, sell:0,   deposit:0,  depositGate:0,  splitBudget:50, dailyRate:3, stopCash:50 }, // 100~110%
-  { minStock:50, sell:0,   deposit:0,  depositGate:49.9, splitBudget:16,  dailyRate:5,   stopCash:34 }, // 90~100%
-  { minStock:66, sell:0,   deposit:35, depositGate:33.9, splitBudget:5, dailyRate:0.5,   stopCash:0  }, // 90%미만
+  { minStock:60, sell:0,   deposit:0,  depositGate:0,  splitBudget:60, dailyRate:0.5, stopCash:40 }, // 110~120%
+  { minStock:60, sell:0,   deposit:0,  depositGate:0,  splitBudget:60, dailyRate:1.5, stopCash:40 }, // 100~110%
+  { minStock:60, sell:0,   deposit:5,  depositGate:40, splitBudget:5,  dailyRate:2,   stopCash:30 }, // 90~100%
+  { minStock:70, sell:0,   deposit:20, depositGate:30, splitBudget:10, dailyRate:1,   stopCash:0  }, // 90%미만
 ];
 // TQQQ 기본값도 동일하게 통일
 const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z));
@@ -908,10 +905,10 @@ const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z))
 const REBAL_DEFAULT_ZONES_HYBRID = [
   { minStock:0,  sell:100, deposit:0,  depositGate:0,  splitBudget:0,  dailyRate:0,   stopCash:0  }, // 130%이상
   { minStock:0,  sell:80,  deposit:0,  depositGate:0,  splitBudget:0,  dailyRate:0,   stopCash:0  }, // 120~130%
-  { minStock:50, sell:0,   deposit:0,  depositGate:0,  splitBudget:50, dailyRate:1.3, stopCash:50 }, // 110~120% → QLD 매수
-  { minStock:50, sell:0,   deposit:0,  depositGate:0,  splitBudget:50, dailyRate:3, stopCash:50 }, // 100~110% → QLD 매수
-  { minStock:50, sell:0,   deposit:0,  depositGate:49.9, splitBudget:16,  dailyRate:5,   stopCash:34 }, // 90~100% → QLD 매수
-  { minStock:66, sell:0,   deposit:35, depositGate:33.9, splitBudget:5, dailyRate:0.5,   stopCash:0  }, // 90%미만 → TQQQ 매수
+  { minStock:60, sell:0,   deposit:0,  depositGate:0,  splitBudget:60, dailyRate:0.5, stopCash:40 }, // 110~120% → QLD 매수
+  { minStock:60, sell:0,   deposit:0,  depositGate:0,  splitBudget:60, dailyRate:1.5, stopCash:40 }, // 100~110% → QLD 매수
+  { minStock:60, sell:0,   deposit:5,  depositGate:40, splitBudget:5,  dailyRate:2,   stopCash:30 }, // 90~100% → QLD 매수
+  { minStock:70, sell:0,   deposit:20, depositGate:30, splitBudget:10, dailyRate:1,   stopCash:0  }, // 90%미만 → TQQQ 매수
 ];
 const REBAL_DEFAULT_DCA_COMPARE = 0.5;
 
@@ -1718,7 +1715,7 @@ function render() {
     $('strategyHeader').textContent = '전략';
     $('chartTitle').textContent = showDevChart
       ? `${devChartTarget==='tqqq'?'TQQQ':devChartTarget==='hybrid'?'하이브리드':'QLD'} 200일 이격도 + 매수/매도 시점 검증`
-      : '리밸런싱 7종 비교(적립/거치/리밸런싱)';
+      : 'QLD/TQQQ 리밸런싱 7종 비교';
     $('devToggleBtn').style.display = 'none';
     $('devToggleBtnQld').style.display = 'inline-block';
     $('devToggleBtnTqqq').style.display = 'inline-block';
@@ -1741,7 +1738,7 @@ function render() {
       results.push({ meta, stats, equity: sim.equity });
     });
     $('strategyHeader').textContent = '레버리지';
-    $('chartTitle').textContent = `적립식 비교(QQQ/QLD/TQQQ) (${mode==='lump'?'거치식':'적립식'})`;
+    $('chartTitle').textContent = `QQQ 투자 시뮬레이션 (${mode==='lump'?'거치식':'적립식'})`;
     $('devToggleBtn').style.display = 'none';
     $('devToggleBtnQld').style.display = 'none';
     $('devToggleBtnTqqq').style.display = 'none';
@@ -2242,22 +2239,22 @@ function updateExampleBox() {
   const items = EDIT_ZONES.map((z, i) => {
     const label = zoneLabel(i, B);
     const parts = [];
-    if (z.sell > 0) parts.push(`전체자산 기준 보유 주식 <b>${z.sell}%</b>를 매도 (매도 후 쿨다운 지날 때까지 재발동 안 함)`);
+    if (z.sell > 0) parts.push(`보유 주식의 <b>${z.sell}%</b>를 매도 (매도 후 쿨다운 지날 때까지 재발동 안 함)`);
     if (z.deposit > 0) {
       // 캐치업형 구간 (90~100%, 90%미만 등): 진입 즉시 최소기준까지 캐치업 → 게이트 충족 시 추가 거치매수 → 이후 분할매수예수금만큼 드립
-      if (z.minStock > 0) parts.push(`구간 진입 시 주식비중이 <b>${z.minStock}%</b> 미만이면 못채운 비중을 즉시 거치매수 (이전 구간 미달성분 실행)`);
-      const gateText = z.depositGate > 0 ? `예수금이 <b>${z.depositGate}%</b> 이상 남아있으면` : `이 구간에 진입하면`;
-      parts.push(`${gateText} 추가로 <b>${fmt(total*z.deposit/100)}</b>(전체 ${z.deposit}%p) 거치매수`);
+      if (z.minStock > 0) parts.push(`구간 진입 시 주식비중이 <b>${z.minStock}%</b> 미만이면 그 차액을 즉시 거치매수 (이전 구간 미달성분 캐치업, 쿨다운 없음)`);
+      const gateText = z.depositGate > 0 ? `그 결과 예수금이 <b>${z.depositGate}%</b> 이상 남아있으면` : `이 구간에 진입하면`;
+      parts.push(`${gateText} 추가로 <b>${fmt(total*z.deposit/100)}</b>(전체 ${z.deposit}%p) 거치매수 (쿨다운 없음)`);
       if (z.splitBudget > 0 && z.dailyRate > 0) {
         const budget = total*z.splitBudget/100, daily = budget*z.dailyRate/100;
-        let s = `이후 매일 <b>${fmt(daily)}</b>(분할매수예수금 ${z.splitBudget}%의 ${z.dailyRate}%)씩 일일 분할매수로 <b>+${z.splitBudget}%p</b> 를 진행`;
+        let s = `이후 매일 <b>${fmt(daily)}</b>(분할매수예수금 ${z.splitBudget}%의 ${z.dailyRate}%)씩 정액매수로 <b>+${z.splitBudget}%p</b> 더 채움`;
         s += z.stopCash > 0 ? ` (현금 ${z.stopCash}%↓ 에서 중단)` : ` (현금 소진까지)`;
         parts.push(s);
       }
     } else if (z.minStock > 0 && z.dailyRate > 0) {
       // 순수 드립형 구간 (110~120%, 100~110% 등): 즉시 캐치업 없이, 목표(minStock)까지 매일 정액
       const daily = total*z.minStock/100*z.dailyRate/100;
-      parts.push(`최소주식비중 <b>${z.minStock}%</b>까지 매일 <b>${fmt(daily)}</b>(주식비중 ${z.dailyRate}%)씩 일일분할매수`);
+      parts.push(`즉시 캐치업 없이, 목표 주식비중 <b>${z.minStock}%</b>까지 매일 <b>${fmt(daily)}</b>(목표금액의 ${z.dailyRate}%)씩 정액 드립매수 — 다 못 채우고 다른 구간으로 넘어가도 이 목표(${z.minStock}%)가 유지되어 이월됨`);
     }
     if (parts.length === 0) parts.push('설정된 매매 규칙이 없습니다 (모든 값 0)');
     return `<b>${i+1}) ${label}:</b> ${parts.join(', ')}`;
