@@ -576,7 +576,7 @@ tr:last-child td { border-bottom:none; }
     </div>
 
     <button class="run-btn" id="runBtn">🔄 업데이트 (새로고침)</button>
-    <div style="font-size:10.5px;color:var(--text-faint);text-align:center;margin-top:6px;line-height:1.5;">값을 바꾸면 자동 반영돼요. 대기 없이 바로 보고 싶을 때만 누르세요.</div>
+    <div style="font-size:10.5px;color:var(--text-faint);text-align:center;margin-top:6px;line-height:1.5;">•기본적으로 값 변경 시 자동 반영되며, 미반영 시 버튼 클릭.</div>
 
     <div class="sidebar-divider"></div>
 
@@ -605,12 +605,12 @@ tr:last-child td { border-bottom:none; }
 
     <div class="card" id="resultsCard">
       <div class="chart-title" style="margin-bottom:10px;">🏆 순위 (종합점수 기준, 현재 선택 기간)</div>
-      <div class="rolling-table-desc" style="margin:0 0 4px;">종합점수·CAGR·MDD·칼마·샤프: 세전 기준</div>
-      <div class="rolling-table-desc" style="margin:0 0 10px;">세후수익률·세후CAGR</b>은 정밀 계산 — 리밸런싱 전략(<span style="opacity:0.5;">●</span> 표시)은 매도 시 그 해 250만원 공제/22% 과세하고 세금을 낸 만큼 재투자자본을 줄여서 계산, 거치식·적립식은 종료 시점에 한 번에 매도한다고 가정해 과세</div>
+      <div class="rolling-table-desc" style="margin:0 0 4px;">•종합점수·CAGR·MDD·칼마·샤프: 세전 기준</div>
+      <div class="rolling-table-desc" style="margin:0 0 10px;">•세후수익률·세후CAGR</b>은 정밀 계산 — 리밸런싱 전략(<span style="opacity:0.5;">●</span> 표시)은 매도 시 그 해 250만원 공제/22% 과세하고 세금을 낸 만큼 재투자자본을 줄여서 계산, 거치식·적립식은 종료 시점에 한 번에 매도한다고 가정해 과세</div>
       <div class="table-scroll">
       <table id="resultsTable">
         <thead>
-          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>종합점수</th><th>최종자산(세전)</th><th>총수익률(세전)</th><th>최종자산(세후)</th><th>총수익률(세후)</th><th>세후CAGR</th><th>CAGR</th><th>MDD</th><th>칼마비율</th><th>샤프지수</th></tr>
+          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>종합점수</th><th>최종자산</th><th>총수익률</th><th>최종자산(세후)</th><th>총수익률(세후)</th><th>CAGR(세후)</th><th>CAGR</th><th>MDD</th><th>칼마비율</th><th>샤프지수</th></tr>
         </thead>
         <tbody id="resultsBody"></tbody>
       </table>
@@ -700,7 +700,7 @@ tr:last-child td { border-bottom:none; }
         특정 한 구간만 보면 "우연히 잘 맞은 시점"일 수 있어요. <b>아래 시작일부터 매월 시작점을 옮겨가며</b>, 1년부터 (오늘−시작일) 최대 보유기간까지 <b>1년 단위로 전부</b> 돌려서 수익률·MDD·칼마비율을 냅니다. (2010년 이전 QLD·TQQQ는 보정합성 데이터)
       </div>
       <div class="field" style="margin-bottom:10px;">
-        <label style="font-size:11px;">롤링 시작일 (이 날짜부터 최신 데이터까지 매년 늘려가며 검증)</label>
+        <label style="font-size:11px;">롤링 백테스트 시작일</label>
         <input type="date" id="rollingStartDate" value="2003-01-01">
         <div class="sub-hint" id="rollingHorizonPreview" style="color:var(--text-faint);"></div>
       </div>
