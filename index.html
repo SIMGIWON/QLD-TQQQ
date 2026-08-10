@@ -524,18 +524,14 @@ tr:last-child td { border-bottom:none; }
         <label>① QLD 거치식</label>
         <div class="readonly-box" id="lumpDisplayQld">₩10,000,000</div>
       </div>
-<div class="field">
+      <div class="field">
         <label>② QLD 적립식 — 일일 매수</label>
         <div class="unit-toggle-row" data-target="dcaCompareDailyQld">
-          <button class="unit-btn" data-unit="percent">%</button>
-          <button class="unit-btn active" data-unit="amount">원 (하루)</button>
+          <button class="unit-btn active" data-unit="percent">%</button>
+          <button class="unit-btn" data-unit="amount">원 (하루)</button>
         </div>
-        <!-- ID를 qldDcaInput으로 변경하고 적용 버튼 추가 -->
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="qldDcaInput" value="5,000,000" style="flex: 1;">
-          <button type="button" id="btnApplyQldDca" class="detail-btn" style="width: auto; padding: 0 12px;">적용</button>
-        </div>
-        <div class="sub-hint">→ 하루 <span id="qldDcaRateText">0.50%</span>씩 매수</div>
+        <input type="text" inputmode="decimal" id="dcaCompareDailyQld" value="0.5">
+        <div class="sub-hint" id="dcaCompareDailyQldWon">→ 하루 ₩500,000씩 매수</div>
         <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
       </div>
       <div class="field">
@@ -548,18 +544,14 @@ tr:last-child td { border-bottom:none; }
         <label>④ TQQQ 거치식</label>
         <div class="readonly-box" id="lumpDisplayTqqq">₩10,000,000</div>
       </div>
-<div class="field">
+      <div class="field">
         <label>⑤ TQQQ 적립식 — 일일 매수</label>
         <div class="unit-toggle-row" data-target="dcaCompareDailyTqqq">
-          <button class="unit-btn" data-unit="percent">%</button>
-          <button class="unit-btn active" data-unit="amount">원 (하루)</button>
+          <button class="unit-btn active" data-unit="percent">%</button>
+          <button class="unit-btn" data-unit="amount">원 (하루)</button>
         </div>
-        <!-- ID를 tqqqDcaInput으로 변경하고 적용 버튼 추가 -->
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="tqqqDcaInput" value="3,000,000" style="flex: 1;">
-          <button type="button" id="btnApplyTqqqDca" class="detail-btn" style="width: auto; padding: 0 12px;">적용</button>
-        </div>
-        <div class="sub-hint">→ 하루 <span id="tqqqDcaRateText">0.30%</span>씩 매수</div>
+        <input type="text" inputmode="decimal" id="dcaCompareDailyTqqq" value="0.5">
+        <div class="sub-hint" id="dcaCompareDailyTqqqWon">→ 하루 ₩500,000씩 매수</div>
         <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
       </div>
         <label>⑥ TQQQ 200일 이격도 리밸런싱</label>
