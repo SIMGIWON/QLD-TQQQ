@@ -1060,7 +1060,85 @@ function getMA200() {
   MA200_CACHE = ma;
   return ma;
 }
+// =========================================================================
+// [여기에 추가 1] 구간별 단계(Level) 정의
+// =========================================================================
+const ZONE_LEVELS = {
+  '130%이상': 6,
+  '120~130%': 5,
+  '110~120%': 4,
+  '100~110%': 3,
+  '90~100%': 2,
+  '90%미만': 1
+};
+// =========================================================================
+// [여기에 추가 2] 쿨타임 해제 및 주문 실행 제어 함수
+// =========================================================================
+function checkAndExecuteLumpSumBuy(
+  currentZone,
+  targetStockRatio,
+  minCashCondition,
+  lastActionZone,
+  lastActionDate,
+  currentDate,
+  cooldownDays = 360
+) {
+  const totalAsset = stockValue + cash;
+  const currentStockRatio = (stockValue / totalAsset) * 100;
+  const currentCashRatio = (cash / totalAsset) * 100;
 
+  // [원칙 2] 이미 목표 주식비중 이상이거나, 최소 현금비중 조건을 미달하면 실행 불가
+  if (currentStockRatio >= targetStockRatio || currentCashRatio < minCashCondition) {
+    return;
+  }
+
+  // [원칙 1] 쿨타임 검사 및 2단계 이상 상승/하락 예외 판별
+  let canExecute = false;
+
+  if (!lastActionDate) {
+    canExecute = true; // 최초 진입 시 실행
+  } else {
+    const daysPassed = Math.floor((new Date(currentDate) - new Date(lastActionDate)) / (1000 * 60 * 60 * 24));
+    // 기본 쿨타임(360일) 충족 시
+    if (daysPassed >= cooldownDays) {
+      canExecute = true;
+    } else if (lastActionZone) {
+      // 2단계 이상 상승 또는 2단계 이상 하락 시 쿨타임 해제
+      const currentLevel = ZONE_LEVELS[currentZone] || 0;
+      const lastLevel = ZONE_LEVELS[lastActionZone] || 0;
+      const levelDiff = Math.abs(currentLevel - lastLevel);
+
+      if (levelDiff >= 2) {
+        canExecute = true; // 쿨타임 조건 해제
+      }
+    }
+  }
+
+  // [원칙 2 반영] 목표 비중까지 부족한 비중만 계산해서 채움
+  if (canExecute) {
+    const neededRatio = targetStockRatio - currentStockRatio;
+    let buyAmount = totalAsset * (neededRatio / 100);
+    buyAmount = Math.min(buyAmount, cash); // 실제 보유 현금 한도 내 매수
+
+    if (buyAmount > 0) {
+      stockValue += buyAmount;
+      cash -= buyAmount;
+
+      // 액션 상태 기록
+      lastActionDate = currentDate;
+      lastActionZone = currentZone;
+    }
+  }
+}
+
+function classifyZoneIdx(dev, boundaries) {
+  const m = boundaries.length;
+  for (let i=0;i<m;i++){
+    if (dev >= boundaries[m-1-i]) return i;
+  }
+  return m;
+}
+    
 function classifyZoneIdx(dev, boundaries) {
   const m = boundaries.length;
   for (let i=0;i<m;i++){
