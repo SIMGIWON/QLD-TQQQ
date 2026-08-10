@@ -412,24 +412,24 @@ tr:last-child td { border-bottom:none; }
       <button id="tabLump"><span class="tab-title">거치식 비교</span><span class="tab-sub">QQQ/QLD/TQQQ</span></button>
     </div>
 
-<div class="section">
-  <div class="field">
-    <label for="startDate">시작일</label>
-    <input type="date" id="startDate" class="date-input" min="2000-01-03">
-    <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전 선택불가(Google Finance 기준)</div>
-  </div>
-  <div class="field">
-    <label for="endDate">종료일</label>
-    <input type="date" id="endDate" class="date-input" min="2000-01-03">
-    <div class="sub-hint" style="color:var(--text-faint);">※ 🏆 순위 : 역사적QQQ 주요하락 Event</div>
-    <div class="sub-hint" style="color:var(--text-faint);">1위:닷컴버블 2000-03-24~2002-10-09 -82.9% •929일(2년6개월)</div>
-    <div class="sub-hint" style="color:var(--text-faint);">2위:금융위기 2007-07-31~2009-03-09 -54.7% •587일(1년7개월)</div>
-    <div class="sub-hint" style="color:var(--text-faint);">3위:22년긴축 2021-11-19~2022-11-03 -35.6% •349일(11.5개월)</div>
-    <div class="sub-hint" style="color:var(--text-faint);">4위:코로나19 2020-02-19~2020-03-23 -30.0% •33일(1.1개월)</div>
-    <div class="sub-hint" style="color:var(--text-faint);">5위:미중무역 2018-10-01~2018-12-24 -22.9% •84일(2.8개월)</div>
-    <div class="sub-hint" style="color:var(--text-faint);">6위:관세충격 2025-02-19~2025-04-08 -22.8% •48일(1.6개월)</div>
-  </div>
-</div>
+    <div class="section">
+      <div class="field">
+        <label>시작일</label>
+        <input type="date" id="startDate">
+        <div class="sub-hint" style="color:var(--text-faint);">※ 2000-01-03 이전 선택불가(Google Finance 기준)</div>
+      </div>
+      <div class="field">
+        <label>종료일</label>
+        <input type="date" id="endDate">
+        <div class="sub-hint" style="color:var(--text-faint);">※ 🏆 순위 : 역사적QQQ 주요하락 Event</div>
+        <div class="sub-hint" style="color:var(--text-faint);">1위:닷컴버블 2000-03-24~2002-10-09 -82.9% •929일(2년6개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">2위:금융위기 2007-07-31~2009-03-09 -54.7% •587일(1년7개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">3위:22년긴축 2021-11-19~2022-11-03 -35.6% •349일(11.5개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">4위:코로나19 2020-02-19~2020-03-23 -30.0% •33일(1.1개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">5위:미중무역 2018-10-01~2018-12-24 -22.9% •84일(2.8개월)</div>
+        <div class="sub-hint" style="color:var(--text-faint);">6위:관세충격 2025-02-19~2025-04-08 -22.8% •48일(1.6개월)</div>
+      </div>
+    </div>
 
     <div class="section">
       <div class="section-title">빠른 기간 선택 (오늘 기준)</div>
@@ -524,18 +524,14 @@ tr:last-child td { border-bottom:none; }
         <label>① QLD 거치식</label>
         <div class="readonly-box" id="lumpDisplayQld">₩10,000,000</div>
       </div>
-<div class="field">
+      <div class="field">
         <label>② QLD 적립식 — 일일 매수</label>
         <div class="unit-toggle-row" data-target="dcaCompareDailyQld">
-          <button class="unit-btn" data-unit="percent">%</button>
-          <button class="unit-btn active" data-unit="amount">원 (하루)</button>
+          <button class="unit-btn active" data-unit="percent">%</button>
+          <button class="unit-btn" data-unit="amount">원 (하루)</button>
         </div>
-        <!-- ID를 qldDcaInput으로 변경하고 적용 버튼 추가 -->
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="qldDcaInput" value="5,000,000" style="flex: 1;">
-          <button type="button" id="btnApplyQldDca" class="detail-btn" style="width: auto; padding: 0 12px;">적용</button>
-        </div>
-        <div class="sub-hint">→ 하루 <span id="qldDcaRateText">0.50%</span>씩 매수</div>
+        <input type="text" inputmode="decimal" id="dcaCompareDailyQld" value="0.5">
+        <div class="sub-hint" id="dcaCompareDailyQldWon">→ 하루 ₩500,000씩 매수</div>
         <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
       </div>
       <div class="field">
@@ -548,18 +544,14 @@ tr:last-child td { border-bottom:none; }
         <label>④ TQQQ 거치식</label>
         <div class="readonly-box" id="lumpDisplayTqqq">₩10,000,000</div>
       </div>
-<div class="field">
-        <label>② QLD 적립식 — 일일 매수</label>
-        <div class="unit-toggle-row" data-target="dcaCompareDailyQld">
-          <button class="unit-btn" data-unit="percent">%</button>
-          <button class="unit-btn active" data-unit="amount">원 (하루)</button>
+      <div class="field">
+        <label>⑤ TQQQ 적립식 — 일일 매수</label>
+        <div class="unit-toggle-row" data-target="dcaCompareDailyTqqq">
+          <button class="unit-btn active" data-unit="percent">%</button>
+          <button class="unit-btn" data-unit="amount">원 (하루)</button>
         </div>
-        <!-- ID를 qldDcaInput으로 변경하고 적용 버튼 추가 -->
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="qldDcaInput" value="5,000,000" style="flex: 1;">
-          <button type="button" id="btnApplyQldDca" class="detail-btn" style="width: auto; padding: 0 12px;">적용</button>
-        </div>
-        <div class="sub-hint">→ 하루 <span id="qldDcaRateText">0.50%</span>씩 매수</div>
+        <input type="text" inputmode="decimal" id="dcaCompareDailyTqqq" value="0.5">
+        <div class="sub-hint" id="dcaCompareDailyTqqqWon">→ 하루 ₩500,000씩 매수</div>
         <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
       </div>
       <div class="field">
@@ -1068,85 +1060,7 @@ function getMA200() {
   MA200_CACHE = ma;
   return ma;
 }
-// =========================================================================
-// [여기에 추가 1] 구간별 단계(Level) 정의
-// =========================================================================
-const ZONE_LEVELS = {
-  '130%이상': 6,
-  '120~130%': 5,
-  '110~120%': 4,
-  '100~110%': 3,
-  '90~100%': 2,
-  '90%미만': 1
-};
-// =========================================================================
-// [여기에 추가 2] 쿨타임 해제 및 주문 실행 제어 함수
-// =========================================================================
-function checkAndExecuteLumpSumBuy(
-  currentZone,
-  targetStockRatio,
-  minCashCondition,
-  lastActionZone,
-  lastActionDate,
-  currentDate,
-  cooldownDays = 360
-) {
-  const totalAsset = stockValue + cash;
-  const currentStockRatio = (stockValue / totalAsset) * 100;
-  const currentCashRatio = (cash / totalAsset) * 100;
 
-  // [원칙 2] 이미 목표 주식비중 이상이거나, 최소 현금비중 조건을 미달하면 실행 불가
-  if (currentStockRatio >= targetStockRatio || currentCashRatio < minCashCondition) {
-    return;
-  }
-
-  // [원칙 1] 쿨타임 검사 및 2단계 이상 상승/하락 예외 판별
-  let canExecute = false;
-
-  if (!lastActionDate) {
-    canExecute = true; // 최초 진입 시 실행
-  } else {
-    const daysPassed = Math.floor((new Date(currentDate) - new Date(lastActionDate)) / (1000 * 60 * 60 * 24));
-    // 기본 쿨타임(360일) 충족 시
-    if (daysPassed >= cooldownDays) {
-      canExecute = true;
-    } else if (lastActionZone) {
-      // 2단계 이상 상승 또는 2단계 이상 하락 시 쿨타임 해제
-      const currentLevel = ZONE_LEVELS[currentZone] || 0;
-      const lastLevel = ZONE_LEVELS[lastActionZone] || 0;
-      const levelDiff = Math.abs(currentLevel - lastLevel);
-
-      if (levelDiff >= 2) {
-        canExecute = true; // 쿨타임 조건 해제
-      }
-    }
-  }
-
-  // [원칙 2 반영] 목표 비중까지 부족한 비중만 계산해서 채움
-  if (canExecute) {
-    const neededRatio = targetStockRatio - currentStockRatio;
-    let buyAmount = totalAsset * (neededRatio / 100);
-    buyAmount = Math.min(buyAmount, cash); // 실제 보유 현금 한도 내 매수
-
-    if (buyAmount > 0) {
-      stockValue += buyAmount;
-      cash -= buyAmount;
-
-      // 액션 상태 기록
-      lastActionDate = currentDate;
-      lastActionZone = currentZone;
-    }
-  }
-}
-
-function classifyZoneIdx(dev, boundaries) {
-  const m = boundaries.length;
-  for (let i=0;i<m;i++){
-    if (dev >= boundaries[m-1-i]) return i;
-  }
-  return m;
-}
-    
 function classifyZoneIdx(dev, boundaries) {
   const m = boundaries.length;
   for (let i=0;i<m;i++){
@@ -1161,7 +1075,7 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
   const p1 = PRICE.p1;
   const ma = getMA200();
   const nZones = zoneConfigs.length;
-  const zones = new Array(iEnd+1); 
+  const zones = new Array(iEnd+1); // 0-based zone index per day, -1 = not tradable yet
   for (let i=0;i<=iEnd;i++){
     if (isNaN(ma[i])) { zones[i]=-1; continue; }
     const dev = p1[i]/ma[i]*100;
@@ -1172,13 +1086,12 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
   const investStart = Math.max(iStartSel, firstTradable);
 
   let curZone = null;
-  let w1 = 0; 
-  const bought = new Array(nZones).fill(0); 
+  let w1 = 0; // ★ 선택한 시작일부터 진짜 0%(현금)에서 새로 시작 (이전 이력 이어받지 않음)
+  const bought = new Array(nZones).fill(0); // cumulative % of total assets bought in the CURRENT episode of that zone
   const w1arr = new Array(iEnd+1).fill(0);
-  const actionArr = new Array(iEnd+1).fill(null); 
-  const lastDepositDay = new Array(nZones).fill(-Infinity); 
-  let lastSellDay = -Infinity; 
-  let lastSellZone = null; // ★ 추가: 마지막으로 매도한 구간을 기억하는 변수
+  const actionArr = new Array(iEnd+1).fill(null); // 'deposit' | 'split' | 'sell' | null
+  const lastDepositDay = new Array(nZones).fill(-Infinity); // 거치매수 쿨다운 추적 (구간별로 개별 추적)
+  let lastSellDay = -Infinity; // 매도 쿨다운 추적 (전체 구간 공통 — 짧은 기간에 구간을 왔다갔다해도 중복매도 방지)
 
   for (let i=investStart;i<=iEnd;i++){
     const z = zones[i];
@@ -1191,21 +1104,16 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
       const { sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0 } = cfg;
       let action = null;
 
-      // ★ 매도 로직 수정: 쿨타임이 지났거나 OR 다른 매도 구간(z)에 진입했을 때는 쿨타임 무시
+      // ★ 매도: 구간 진입 여부와 무관하게, 마지막 매도 후 쿨다운(기본 30일)이 지나야만 재발동 (짧은 기간 내 구간 왕복으로 인한 중복매도 방지)
       if (sell > 0) {
         const daysSinceLastSell = i - lastSellDay;
-        if (daysSinceLastSell > sellCooldownDays || z !== lastSellZone) { 
+        if (daysSinceLastSell > sellCooldownDays) {
           const w1BeforeSell = w1;
           w1 = w1 * (1 - sell/100);
-          if (w1 < w1BeforeSell - 0.001) { 
-            action = 'sell'; 
-            lastSellDay = i; 
-            lastSellZone = z; // ★ 매도 성공 시 구간 갱신
-          }
+          if (w1 < w1BeforeSell - 0.001) { action = 'sell'; lastSellDay = i; }
         }
       }
-      
-      // ★ 거치매수 로직 (기존 유지)
+      // ★ 거치매수: "새 구간 진입" 대신 "예수금이 이 구간의 게이트% 이상 남아있는지" + "이 구간에서 마지막 거치매수 후 쿨다운 지났는지"로 판단
       if (deposit > 0) {
         const cash = 100 - w1;
         const daysSinceLastDeposit = i - lastDepositDay[z];
@@ -1271,10 +1179,9 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
   let curZone=null, wQld=0, wTqqq=0;
   const bought = {};
   const wQldArr=new Array(iEnd+1).fill(0), wTqqqArr=new Array(iEnd+1).fill(0);
-  const actionArr = new Array(iEnd+1).fill(null); 
+  const actionArr = new Array(iEnd+1).fill(null); // 'deposit-qld' | 'split-qld' | 'deposit-tqqq' | 'split-tqqq' | 'sell' | null
   const lastDepositDay = {};
-  let lastSellDay = -Infinity; 
-  let lastSellZone = null; // ★ 추가: 마지막으로 매도한 구간을 기억하는 변수
+  let lastSellDay = -Infinity; // 매도 쿨다운 추적 (전체 구간 공통)
   const nZones = zoneConfigs.length;
 
   for (let i=investStart;i<=iEnd;i++){
@@ -1284,24 +1191,19 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
       if (curZone===null || z!==curZone){ isNewEpisode=true; curZone=z; bought[z]=0; }
       const cfg = zoneConfigs[z] || {sell:0,deposit:0,split:0,rate:0,stop:0,depositCashGate:0};
       const {sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0} = cfg;
+      // 마지막 구간(가장 낮은/저평가 구간)만 TQQQ, 그 외 매수구간은 QLD
       const targetAsset = (z === nZones-1) ? 'tqqq' : 'qld';
       let action = null;
 
-      // ★ 매도 로직 수정: 쿨타임이 지났거나 OR 다른 매도 구간(z)에 진입했을 때는 쿨타임 무시
+      // ★ 매도: 마지막 매도 후 쿨다운(기본 30일)이 지나야만 재발동 (짧은 기간 내 구간 왕복/연속매도 방지)
       if (sell>0){
         const daysSinceLastSell = i - lastSellDay;
-        if (daysSinceLastSell > sellCooldownDays || z !== lastSellZone) {
+        if (daysSinceLastSell > sellCooldownDays) {
           const wQldBefore=wQld, wTqqqBefore=wTqqq;
           wQld = wQld*(1-sell/100); wTqqq = wTqqq*(1-sell/100);
-          if (wQld<wQldBefore-0.001 || wTqqq<wTqqqBefore-0.001) { 
-            action = 'sell'; 
-            lastSellDay = i; 
-            lastSellZone = z; // ★ 매도 성공 시 구간 갱신
-          }
+          if (wQld<wQldBefore-0.001 || wTqqq<wTqqqBefore-0.001) { action = 'sell'; lastSellDay = i; }
         }
       }
-      
-      // ★ 거치매수 및 분할매수 로직 (기존 유지)
       if (deposit>0){
         const cash = 100-wQld-wTqqq;
         const daysSince = i-(lastDepositDay[z]===undefined?-Infinity:lastDepositDay[z]);
@@ -3824,54 +3726,38 @@ const debouncedRender = debounce(render, 500);
   $(id).addEventListener('change', render);
   if ($(id).type !== 'checkbox') $(id).addEventListener('input', debouncedRender);
 });
-['startDate', 'endDate'].forEach(id => {
-  const el = $(id);
-
-  // 1. 값 변경 시: 최소/최대 범위 보정 없이 '시작일 > 종료일' 관계만 보정 후 즉시 차트/결과 갱신
-  el.addEventListener('change', () => {
-    if (!el.value) return;
-
-    const startVal = $('startDate').value;
-    const endVal = $('endDate').value;
-
-    // 시작일이 종료일보다 뒤로 가거나, 종료일이 시작일보다 앞으로 오는 경우만 보정
-    if (startVal && endVal && startVal > endVal) {
-      if (id === 'startDate') $('endDate').value = startVal;
-      else $('startDate').value = endVal;
-    }
-
-    clearDateSelectionActive(); // 프리셋 선택 해제
-    if (id === 'startDate') syncRollingStartDate($('startDate').value); // 롤링 시작일 연동
+['startDate','endDate'].forEach(id=>{
+  $(id).addEventListener('change', ()=>{
+    // 수동 입력으로 데이터 범위(2000-01-03 ~ 최신일) 밖의 날짜를 넣었을 때 자동으로 되돌림
+    const el = $(id);
+    if (el.value < PRICE.dates[0]) el.value = PRICE.dates[0];
+    if (el.value > PRICE.dates[PRICE.dates.length-1]) el.value = PRICE.dates[PRICE.dates.length-1];
+    clearDateSelectionActive(); // 수동으로 날짜를 바꾸면 특정 프리셋 선택 상태는 해제
+    if (id === 'startDate') syncRollingStartDate($('startDate').value); // ★ 롤링 시작일도 같이 연동
     render();
   });
-
-  // 2. 포커스 이탈 시(blur): 입력이 완전히 끝난 후 2000-01-03 데이터 범위 밖의 날짜만 최종 보정
-  el.addEventListener('blur', () => {
-    if (!el.value) return;
-
-    if (PRICE && PRICE.dates && PRICE.dates.length > 0) {
-      const minDate = PRICE.dates[0]; // 2000-01-03
-      const maxDate = PRICE.dates[PRICE.dates.length - 1];
-
-      let isAdjusted = false;
-      if (el.value < minDate) {
-        el.value = minDate;
-        isAdjusted = true;
-      } else if (el.value > maxDate) {
-        el.value = maxDate;
-        isAdjusted = true;
-      }
-
-      // 범위 밖 날짜가 들어와서 강제 조정된 경우에만 다시 렌더링
-      if (isAdjusted) {
-        clearDateSelectionActive(); // 프리셋 선택 해제
-        if (id === 'startDate') syncRollingStartDate($('startDate').value); // 롤링 시작일 연동
-        render();
-      }
-    }
-  });
 });
-    
+$('dcaCompareDaily').addEventListener('input', ()=>{ updateRebalSidebarDisplays(); debouncedRender(); });
+$('dcaCompareDaily').addEventListener('change', render);
+function formatInitAmountInput() {
+  const el = $('initAmount');
+  const digits = el.value.replace(/[^\d]/g, '');
+  el.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
+}
+$('initAmount').addEventListener('input', ()=>{
+  // 입력 중엔 숫자만 남기고(콤마 없이), 포커스 벗어날 때 콤마로 재포맷
+  $('initAmount').value = $('initAmount').value.replace(/[^\d]/g, '');
+  updateRebalSidebarDisplays();
+  debouncedRender();
+});
+$('initAmount').addEventListener('blur', formatInitAmountInput);
+formatInitAmountInput(); // 페이지 로드 시 초기값도 콤마 포맷 적용
+
+$('dcaCompareDailyQld').addEventListener('input', ()=>{ updateRebalSidebarDisplays(); debouncedRender(); });
+$('dcaCompareDailyQld').addEventListener('change', render);
+$('dcaCompareDailyTqqq').addEventListener('input', ()=>{ updateRebalSidebarDisplays(); debouncedRender(); });
+$('dcaCompareDailyTqqq').addEventListener('change', render);
+
 // ★ %/원 단위 전환 토글 (적립식 매수 관련 4개 필드 공통)
 function formatFieldForUnit(fieldId) {
   const el = $(fieldId);
@@ -4315,93 +4201,7 @@ setViewMode(window.innerWidth < 720 ? 'mobile' : 'pc');
       '로컬에서 index.html을 더블클릭해 여는 file:// 방식에서는 브라우저 CORS 정책 때문에 작동하지 않습니다.</p></div>';
   }
 })();
-// 1) 예산 입력 시 천 단위 콤마 자동 생성
-        const initAmountInput = document.getElementById('initAmount');
-        if (initAmountInput) {
-          initAmountInput.addEventListener('input', function(e) {
-            let value = this.value.replace(/[^0-9]/g, '');
-            this.value = value ? Number(value).toLocaleString() : '';
-            updateLumpDisplays();
-          });
-        }
+</script>
 
-        // 2) QLD/TQQQ 거치식 금액 자동 연동 함수
-        function updateLumpDisplays() {
-          const initInput = document.getElementById('initAmount');
-          if (!initInput) return;
-
-          const rawValue = initInput.value.replace(/,/g, '');
-          const amount = parseInt(rawValue, 10);
-
-          if (!isNaN(amount)) {
-            const formatted = '₩' + amount.toLocaleString();
-            ['lumpDisplay', 'lumpDisplayQld', 'lumpDisplayTqqq'].forEach(id => {
-              const el = document.getElementById(id);
-              if (el) el.innerText = formatted;
-            });
-          }
-        }
-
-        // 페이지 로드 시 initial 실행
-        document.addEventListener('DOMContentLoaded', updateLumpDisplays);
-// ==========================================
-// QLD / TQQQ 적립식 금액 반영 로직
-// ==========================================
-
-// 1) QLD / TQQQ 적립식 금액 변경 시 비율(%) 계산 및 안내문구 업데이트 함수
-function updateDcaRates() {
-  // 총 예산 가져오기 (콤마 제거)
-  const initInput = document.getElementById('initAmount');
-  const totalBudget = initInput ? parseInt(initInput.value.replace(/,/g, ''), 10) || 0 : 0;
-
-  if (totalBudget <= 0) return;
-
-  // QLD 적립금액 읽기
-  const qldInput = document.getElementById('qldDcaInput');
-  if (qldInput) {
-    const qldVal = parseInt(qldInput.value.replace(/,/g, ''), 10) || 0;
-    const qldRate = ((qldVal / totalBudget) * 100).toFixed(2); // 비율 계산 (%)
-    
-    // 안내 문구 텍스트 업데이트
-    const qldRateEl = document.getElementById('qldDcaRateText');
-    if (qldRateEl) qldRateEl.innerText = `${qldRate}%`;
-  }
-
-  // TQQQ 적립금액 읽기
-  const tqqqInput = document.getElementById('tqqqDcaInput');
-  if (tqqqInput) {
-    const tqqqVal = parseInt(tqqqInput.value.replace(/,/g, ''), 10) || 0;
-    const tqqqRate = ((tqqqVal / totalBudget) * 100).toFixed(2); // 비율 계산 (%)
-    
-    // 안내 문구 텍스트 업데이트
-    const tqqqRateEl = document.getElementById('tqqqDcaRateText');
-    if (tqqqRateEl) tqqqRateEl.innerText = `${tqqqRate}%`;
-  }
-}
-
-// 2) 입력창 콤마 포맷팅 및 이벤트 등록
-['qldDcaInput', 'tqqqDcaInput'].forEach(id => {
-  const inputEl = document.getElementById(id);
-  if (inputEl) {
-    // 키보드로 금액 입력 시 콤마 자동 생성
-    inputEl.addEventListener('input', function() {
-      let val = this.value.replace(/[^0-9]/g, '');
-      this.value = val ? Number(val).toLocaleString() : '';
-    });
-
-    // 엔터키 누를 때 반영
-    inputEl.addEventListener('keyup', function(e) {
-      if (e.key === 'Enter') {
-        updateDcaRates();
-        // 시뮬레이션 재계산 함수가 있다면 여기서 함께 호출 ex) runSimulation();
-      }
-    });
-  }
-});
-
-// 3) 적용 버튼 클릭 시 반영 (버튼 ID가 지정된 경우)
-document.getElementById('btnApplyQldDca')?.addEventListener('click', updateDcaRates);
-document.getElementById('btnApplyTqqqDca')?.addEventListener('click', updateDcaRates);
-    </script>
 </body>
 </html>
