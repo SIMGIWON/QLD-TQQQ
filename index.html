@@ -4307,7 +4307,36 @@ setViewMode(window.innerWidth < 720 ? 'mobile' : 'pc');
       '로컬에서 index.html을 더블클릭해 여는 file:// 방식에서는 브라우저 CORS 정책 때문에 작동하지 않습니다.</p></div>';
   }
 })();
-</script>
+// 1) 예산 입력 시 천 단위 콤마 자동 생성
+        const initAmountInput = document.getElementById('initAmount');
+        if (initAmountInput) {
+          initAmountInput.addEventListener('input', function(e) {
+            let value = this.value.replace(/[^0-9]/g, '');
+            this.value = value ? Number(value).toLocaleString() : '';
+            updateLumpDisplays();
+          });
+        }
 
+        // 2) QLD/TQQQ 거치식 금액 자동 연동 함수
+        function updateLumpDisplays() {
+          const initInput = document.getElementById('initAmount');
+          if (!initInput) return;
+
+          const rawValue = initInput.value.replace(/,/g, '');
+          const amount = parseInt(rawValue, 10);
+
+          if (!isNaN(amount)) {
+            const formatted = '₩' + amount.toLocaleString();
+            ['lumpDisplay', 'lumpDisplayQld', 'lumpDisplayTqqq'].forEach(id => {
+              const el = document.getElementById(id);
+              if (el) el.innerText = formatted;
+            });
+          }
+        }
+
+        // 페이지 로드 시 initial 실행
+        document.addEventListener('DOMContentLoaded', updateLumpDisplays);
+
+    </script>
 </body>
 </html>
