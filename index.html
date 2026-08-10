@@ -1146,14 +1146,6 @@ function classifyZoneIdx(dev, boundaries) {
   }
   return m;
 }
-    
-function classifyZoneIdx(dev, boundaries) {
-  const m = boundaries.length;
-  for (let i=0;i<m;i++){
-    if (dev >= boundaries[m-1-i]) return i;
-  }
-  return m;
-}
 
 function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCooldownDays, sellCooldownDays) {
   if (depositCooldownDays === undefined) depositCooldownDays = 30;
