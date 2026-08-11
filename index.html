@@ -1,3 +1,10 @@
+<!--
+====================================================================
+QQQ/QLD/TQQQ 200일 이격도 리밸런싱 백테스트 시뮬레이터
+버전: v2.1.0
+수정일: 2026-08-11
+====================================================================
+-->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -55,7 +62,7 @@ body.dark-mode {
 }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
-.app { display:grid; grid-template-columns:300px 1fr; grid-template-areas:"sideTop main" "sideBottom main"; align-items:start; min-height:calc(100vh - 60px); transform-origin: top left; }
+.app { display:grid; grid-template-columns:380px 1fr; grid-template-areas:"sideTop main" "sideBottom main"; align-items:start; min-height:calc(100vh - 60px); transform-origin: top left; }
 .top-toolbar {
   display:flex; flex-wrap:wrap; align-items:center; gap:14px;
   background:var(--panel); border-bottom:1px solid var(--border); padding:10px 16px;
@@ -131,12 +138,12 @@ body.mobile-mode .log-toggle { font-size:11px; padding:6px 2px; }
 body.mobile-mode .rebal-table { min-width:640px; }
 body.mobile-mode .top-toolbar { gap:10px; padding:8px 10px; }
 .sidebar-top, .sidebar-bottom {
-  width: 300px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--border);
-  padding: 18px 16px; overflow-y:visible;
+  width: 100%; flex-shrink:0; background:var(--panel); border-right:1px solid var(--border);
+  padding: 18px 16px; overflow-y:visible; box-sizing:border-box;
 }
 .sidebar-top { grid-area:sideTop; }
 .sidebar-bottom { grid-area:sideBottom; padding-top:0; }
-.main { grid-area:main; flex:1; padding: 18px 20px; min-width:0; }
+.main { grid-area:main; flex:1; padding: 18px 26px; min-width:0; }
 h2 { font-size:14px; font-weight:700; margin:0 0 12px 0; }
 .tabbar { display:grid; grid-template-columns: repeat(3, 1fr); background:var(--panel2); border-radius:8px; padding:3px; margin-bottom:16px; gap:4px; }
 .tabbar button {
@@ -192,6 +199,7 @@ h2 { font-size:14px; font-weight:700; margin:0 0 12px 0; }
 .rank-compact-line b { font-family:var(--mono); color:var(--text); font-weight:700; }
 .rank-compact-line .rc-label { font-weight:600; color:var(--text-faint); }
 .rank-compact-line .rc-won { font-family:var(--mono); }
+.rank-weight-line { margin-top:2px; padding-top:4px; border-top:1px dashed var(--border); opacity:0.85; }
 .rank-metrics-line { font-size:10.5px; color:var(--sub); line-height:1.6; display:flex; gap:7px; flex-wrap:nowrap; margin-bottom:2px; overflow-x:hidden; }
 .rank-metrics-line span { white-space:nowrap; }
 .rank-metrics-line b { font-family:var(--mono); color:var(--text); font-weight:700; }
@@ -219,6 +227,7 @@ body.dark-mode #rollingStaleBanner { color:#facc15; }
 .rolling-table-block { margin-bottom:14px; }
 .rolling-table-title { font-size:12px; font-weight:800; color:var(--text); margin-bottom:6px; }
 .rolling-table-desc { font-size:10px; font-weight:400; color:var(--text-faint); margin-left:8px; }
+.results-note { font-size:9.5px; font-weight:400; color:var(--text-faint); line-height:1.5; margin:0 0 4px 8px; }
 .rolling-table-scroll { overflow-x:auto; }
 .rolling-table { width:100%; border-collapse:collapse; font-size:10px; font-family:var(--mono); }
 .rolling-table th, .rolling-table td { padding:5px 4px; text-align:center; border:1px solid var(--border); white-space:nowrap; }
@@ -239,7 +248,7 @@ body.dark-mode #rollingStaleBanner { color:#facc15; }
   display:flex; align-items:center; justify-content:center; padding:20px;
 }
 .modal-box {
-  background:var(--panel); border-radius:14px; width:100%; max-width:980px; max-height:90vh;
+  background:var(--panel); border-radius:14px; width:100%; max-width:1040px; max-height:90vh;
   display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.3);
 }
 .modal-header {
@@ -307,6 +316,16 @@ body.dark-mode #rollingStaleBanner { color:#facc15; }
   font-family:var(--mono); font-size:12.5px; background:var(--panel); color:var(--text);
 }
 .rebal-table .dash { color:#cbd5e1; }
+.rebal-table th.zg-sell    { background:#fde8e8; color:#b91c1c; }
+.rebal-table th.zg-deposit { background:#e0edff; color:#1d4ed8; }
+.rebal-table th.zg-split   { background:#e3f7e9; color:#15803d; }
+body.dark-mode .rebal-table th.zg-sell    { background:#3a1c1c; color:#f87171; }
+body.dark-mode .rebal-table th.zg-deposit { background:#1c2b45; color:#60a5fa; }
+body.dark-mode .rebal-table th.zg-split   { background:#173425; color:#4ade80; }
+.rebal-table th.zg-group { font-size:11.5px; letter-spacing:0.3px; padding:6px; text-align:center; }
+.rebal-table th.zg-sell, .rebal-table th.zg-deposit, .rebal-table th.zg-split { text-align:center; }
+.rebal-table th .th-label { white-space:nowrap; }
+.rebal-table th .th-note { display:block; font-size:9px; font-weight:500; opacity:0.55; margin-top:2px; text-align:center; white-space:nowrap; }
 .example-box { background:var(--panel3); border:1px solid var(--border); border-radius:9px; padding:14px 16px; }
 .example-box .ex-title { font-size:12px; font-weight:700; color:var(--text-mid); margin-bottom:10px; }
 .example-item { font-size:12px; color:var(--text-mid); line-height:1.7; margin-bottom:8px; padding-left:10px; border-left:3px solid var(--blue); }
@@ -559,9 +578,9 @@ tr:last-child td { border-bottom:none; }
         <button class="detail-btn" id="openRebalDetailTqqq">⚙ TQQQ 세부설정</button>
       </div>
 
-      <div class="section-title" style="color:#ca8a04; margin-top:16px;">⑦ 하이브리드 (QLD주력+90%미만만 TQQQ)</div>
+      <div class="section-title" style="color:#ca8a04; margin-top:16px;">⑦ 하이브리드 (QLD주력+90~100%·90%미만 TQQQ)</div>
       <div style="font-size:10px;color:var(--sub);line-height:1.5;margin-bottom:8px;">
-        평소(100~120%/90~100%)엔 QLD로 매수하고, <b>90%미만(급락)에서만 TQQQ로 매수</b>해서 낙폭은 QLD 수준으로 억제하면서 수익은 더 확보하는 전략입니다.
+        평소(100~110%)엔 QLD로 매수하고, <b>90~100%(조정)~90%미만(급락) 구간에선 TQQQ로 매수</b>해서 저평가 구간의 수익 확보력을 높이는 전략입니다. 매도 시에는 <b>TQQQ를 먼저 소진</b>하고, 남는 매도분만큼 QLD를 축소해서 상승 국면에서 레버리지를 더 오래 유지합니다.
       </div>
       <div class="field">
         <button class="detail-btn" id="openRebalDetailHybrid">⚙ 하이브리드 세부설정</button>
@@ -598,12 +617,13 @@ tr:last-child td { border-bottom:none; }
 
     <div class="card" id="resultsCard">
       <div class="chart-title" style="margin-bottom:10px;">🏆 순위 (종합점수 기준, 현재 선택 기간)</div>
-      <div class="rolling-table-desc" style="margin:0 0 4px;">종합점수·CAGR·MDD·칼마·샤프는 <b>세전 기준</b>입니다 (계좌 종류마다 세율·공제가 달라서, 순수 전략 성과 비교는 세전으로 통일). 백테스트/롤링/Walk-Forward/부트스트랩도 전부 동일하게 세전 기준이에요.</div>
-      <div class="rolling-table-desc" style="margin:0 0 10px;">대신 <b>세후수익률·세후CAGR</b>은 정밀하게 계산됩니다 — 리밸런싱 전략(<span style="opacity:0.5;">●</span> 표시)은 매도할 때마다 그 해 250만원 공제 후 22% 과세하고 세금 낸 만큼 재투자자본을 줄여서 계산하고, 거치식·적립식은 종료 시점에 한 번에 매도한다고 가정해 과세합니다.</div>
+      <div class="results-note">• 종합점수·CAGR·MDD·칼마·샤프는 <b>세전 기준</b> (계좌마다 세율이 달라 전략 성과만 순수 비교 / 롤링·WF·부트스트랩도 동일)</div>
+      <div class="results-note">• 세후수익률은 정밀 계산 — 리밸런싱(<span style="opacity:0.5;">●</span>)은 매도 시마다 250만원 공제 후 22% 과세, 거치식·적립식은 종료 시 1회 과세</div>
+      <div class="results-note" style="margin-bottom:10px;">• 📊 주식·현금비중은 <b>기간 평균값</b> — 거치식은 항상 100%/0%, 리밸런싱은 구간별 매매로 현금을 일부 보유</div>
       <div class="table-scroll">
       <table id="resultsTable">
         <thead>
-          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>종합점수<br><span style="font-weight:400;opacity:0.7;">(세전)</span></th><th>최종자산 (세전)</th><th>총수익률</th><th>최종자산 (세후)</th><th>세후수익률</th><th>세후CAGR</th><th>CAGR<br><span style="font-weight:400;opacity:0.7;">(세전)</span></th><th>MDD<br><span style="font-weight:400;opacity:0.7;">(세전)</span></th><th>칼마비율<br><span style="font-weight:400;opacity:0.7;">(세전)</span></th><th>샤프지수<br><span style="font-weight:400;opacity:0.7;">(세전)</span></th></tr>
+          <tr><th>순위</th><th id="strategyHeader">레버리지</th><th>종합점수</th><th>최종자산</th><th>총수익률</th><th>최종자산 (세후)</th><th>수익률(세후)</th><th>CAGR</th><th>MDD</th><th>칼마비율</th><th>샤프지수</th><th>평균 주식비중</th><th>평균 현금비중</th></tr>
         </thead>
         <tbody id="resultsBody"></tbody>
       </table>
@@ -678,7 +698,7 @@ tr:last-child td { border-bottom:none; }
       <ul class="note-list">
         <li>데이터: QQQ 실제 종가(2000.1.3~) 기준. 2배/3배는 일일 리밸런싱 레버리지 가정 (실제 QLD/TQQQ 상장 이후 구간은 실제 종가로 보정)</li>
         <li><b>종합점수·CAGR·MDD·칼마비율·샤프지수는 세전 기준으로 통일</b>했습니다 (단일기간 결과표·롤링 백테스트·Walk-Forward·블록 부트스트랩 전부 동일) — 계좌 종류(일반/ISA/연금저축 등)마다 세율·공제가 달라서, 순수 전략 성과를 비교할 땐 세금이라는 외부 변수를 빼는 게 표준입니다. 세금으로 빠져나간 잔고를 MDD 같은 리스크 지표에 섞으면 "시장 하락 리스크"와 "세금 이벤트"가 뒤섞여버리는 문제도 있고요.</li>
-        <li><b>세후수익률·세후CAGR은 정밀 계산</b>합니다 — 리밸런싱(QLD/TQQQ/하이브리드, 표에 <span style="opacity:0.5;">●</span> 표시)은 실제 매도할 때마다 그 해 누적 실현손익 기준으로 250만원 공제 후 22%를 즉시 원천징수하고, 그만큼 재투자 자본이 줄어든 채로 계속 굴러가는 방식으로 계산합니다(평균단가법). 거치식/적립식은 중간에 매도가 없다고 보고, 종료시점에 한 번에 판다는 가정으로 250만원 공제 후 22%를 계산합니다.</li>
+        <li><b>수익률(세후)은 정밀 계산</b>합니다 — 리밸런싱(QLD/TQQQ/하이브리드, 표에 <span style="opacity:0.5;">●</span> 표시)은 실제 매도할 때마다 그 해 누적 실현손익 기준으로 250만원 공제 후 22%를 즉시 원천징수하고, 그만큼 재투자 자본이 줄어든 채로 계속 굴러가는 방식으로 계산합니다(평균단가법). 거치식/적립식은 중간에 매도가 없다고 보고, 종료시점에 한 번에 판다는 가정으로 250만원 공제 후 22%를 계산합니다.</li>
         <li>같은 해 안에서 나중에 손실이 나도 이미 원천징수한 세금을 돌려받는 건 반영 안 함(실제로는 다음해 확정신고에서 연간 순손익으로 정산되므로 실제 세금 부담은 이보다 살짝 낮을 수 있음) — 보수적으로 계산됨</li>
         <li>적립식 CAGR은 단순연환산 근사치 (자금흐름을 고려한 정밀 IRR 아님)</li>
         <li>수수료/세금 외 <b>슬리피지</b>(매수·매도 버튼을 누른 시점의 가격과 실제로 체결되는 가격 사이의 차이 — 거래량이 적거나 가격이 급하게 움직일 때 원하던 가격보다 불리하게 체결되는 것)는 미반영 · 과거 성과가 미래 수익을 보장하지 않음</li>
@@ -798,31 +818,37 @@ tr:last-child td { border-bottom:none; }
 
       <div class="section-title" style="margin-top:16px;">■ 거치매수 재발동 대기일 수 (전체 구간 공통)</div>
       <div class="field" style="max-width:220px;">
-        <input type="number" id="depositCooldownDays" value="360" step="1">
+        <input type="number" id="depositCooldownDays" value="180" step="1">
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
-        ※ 같은 구간을 짧은 기간에 진입/이탈 반복 시 거치매수가 진행되는 상황을 제약하는 목적으로, <b>마지막 거치매수 후 입력한 최소 일이 지나야만 재발동.</b> <b>※이전 구간 분할 미소진으로 인한 거치 매수는 제외.</b>
+        ※ 같은 구간을 짧은 기간에 진입/이탈 반복 시 거치매수가 과도하게 반복 발동되는 상황을 제약하는 목적으로, <b>해당 구간에서 마지막 거치매수 후 입력한 최소 일수가 지나야만 재발동</b> (쿨타임은 구간별로 독립 적용). <b>※이전 구간 분할매수 미소진으로 남은 현금을 이용한 거치매수는 이 쿨타임 예외.</b>
       </div>
 
       <div class="section-title">■ 주식매도 재발동 대기일 수 (전체 구간 공통)</div>
       <div class="field" style="max-width:220px;">
-        <input type="number" id="sellCooldownDays" value="360" step="1">
+        <input type="number" id="sellCooldownDays" value="180" step="1">
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
-         ※ 같은 구간을 짧은 기간에 진입/이탈 반복 시 주식매도가 진행되는 상황을 제약하는 목적으로, <b>마지막 매도 후 이 입력한 최소 일이 지나야만 재발동.</b>
+         ※ 같은 매도구간을 짧은 기간에 반복 재진입할 때 매도가 과도하게 반복 발동되는 상황을 제약하는 목적으로, <b>같은 구간에서는 마지막 매도 후 입력한 최소 일수가 지나야만 재발동.</b> 단, <b>다른 매도구간으로 전환되면 쿨타임과 무관하게 즉시 매도가 발동</b>됩니다.
       </div>
 
       <div class="table-scroll">
       <table class="rebal-table">
         <thead>
           <tr>
-            <th>No</th><th>구간</th>
-            <th>매도비중<br>(주식비중 %)</th>
-            <th>거치매수<br>(전체자산 %)</th>
-            <th>거치매수 발동<br>예수금 조건(%)</th>
-            <th>분할매수 예산<br>(전체자산 %)</th>
-            <th>일일분할매수<br>비율(%)</th>
-            <th>분할매수 중단기준<br>(현금보유율 %)</th>
+            <th rowspan="2">No</th><th rowspan="2">구간</th>
+            <th class="zg-group zg-sell">매도</th>
+            <th class="zg-group zg-deposit" colspan="3">거치매수</th>
+            <th class="zg-group zg-split" colspan="3">분할매수</th>
+          </tr>
+          <tr>
+            <th class="zg-sell"><span class="th-label">매도비중(%)</span><span class="th-note">※보유주식기준</span></th>
+            <th class="zg-deposit"><span class="th-label">거치비중(%)</span><span class="th-note">※전체자산기준</span></th>
+            <th class="zg-deposit"><span class="th-label">발동조건(%)</span><span class="th-note">※전체현금기준</span></th>
+            <th class="zg-deposit"><span class="th-label">주식비중상한(%)</span><span class="th-note">※전체주식기준</span></th>
+            <th class="zg-split"><span class="th-label">분할비중(%)</span><span class="th-note">※전체현금기준</span></th>
+            <th class="zg-split"><span class="th-label">일일매수비율(%)</span><span class="th-note">※분할비중기준</span></th>
+            <th class="zg-split"><span class="th-label">분할비중상한(%)</span><span class="th-note">※전체현금기준</span></th>
           </tr>
         </thead>
         <tbody id="rebalTableBody"></tbody>
@@ -832,8 +858,8 @@ tr:last-child td { border-bottom:none; }
         <button class="reset-btn" id="resetDefaultBtn">↺ 처음 기본값으로 초기화</button>
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:10px 0 16px 0;line-height:1.6;">
-        모든 칸을 자유롭게 입력할 수 있어요. 값을 0으로 두면 해당 규칙은 그 구간에서 작동하지 않습니다 (예: 매도비중 0 = 매도 안 함, 분할매수 예산 0 = 분할매수 안 함). "+ 구간 추가"는 지금 가장 넓은 구간을 반으로 나눕니다 — 나눈 뒤 경계값과 규칙을 원하는 대로 다시 조정하세요. <b>값을 바꾸면 아래 예시와 뒤의 차트·표가 실시간으로 같이 바뀝니다.</b>
-        <br><br>⚙️ <b>자동 동기화</b>: ① 어떤 구간의 "분할매수 예산(전체자산 %)"을 입력하면, 같은 구간의 "분할매수 중단기준(현금보유율%)"이 자동으로 (100-분할매수예산)으로 채워집니다 (이 구간 진입 전엔 0%에서 시작한다고 가정한 기본값이라, 이미 앞 구간에서 사둔 게 있는 구간은 필요시 직접 다시 조정하세요). ② 어떤 구간의 "분할매수 중단기준"이 바뀌면(위 ①로 자동 변경된 경우 포함), 바로 아래(더 저평가된) 구간의 "거치매수 발동 예수금 조건"이 자동으로 (중단기준-0.1)로 맞춰집니다 — 예수금이 중단기준 밑으로 못 내려가서 다음 구간 거치매수가 영원히 발동 안 되는 모순을 방지하기 위해서예요. 둘 다 자동채움일 뿐이라, 이후 언제든 직접 다시 수정하실 수 있습니다.
+        모든 칸을 자유롭게 입력할 수 있어요. 값을 0으로 두면 <b>"미적용"</b>으로 표시되고 해당 규칙은 그 구간에서 작동하지 않습니다 (예: 매도비중 미적용 = 매도 안 함, 분할비중 미적용 = 분할매수 안 함). 모든 칸은 서로 연동되지 않고 완전히 독립적으로 작동해요 — 한 칸을 바꿔도 다른 칸이 자동으로 바뀌지 않으니 직접 원하는 값을 입력하세요. "+ 구간 추가"는 지금 가장 넓은 구간을 반으로 나눕니다 — 나눈 뒤 경계값과 규칙을 원하는 대로 다시 조정하세요. <b>값을 바꾸면 아래 예시와 뒤의 차트·표가 실시간으로 같이 바뀝니다.</b>
+        <br><br>📌 참고로 "주식비중상한(%)"(거치매수 전용)과 "분할비중상한(%)"(분할매수 전용)은 서로 다른 별개의 캡이에요 — 거치매수와 분할매수가 같은 한도를 두고 경쟁하지 않도록 각자 독립적으로 관리됩니다.
       </div>
 
       <div class="example-box">
@@ -858,7 +884,7 @@ tr:last-child td { border-bottom:none; }
 
 const N = PRICE.dates.length;
 
-let mode = 'v2'; // 'lump' | 'dca' | 'rebal' | 'v2' — QLD_3종 탭 제거로 기본값을 v2로 변경
+let mode = 'v2'; // 'lump' | 'dca' | 'v2' (탭: 거치식/적립식/리밸런싱 7종)
 let selectedLev = 'all';
 let selectedFreq = 'monthly';
 let logScale = false;
@@ -870,24 +896,26 @@ const REBAL_DEFAULT_BOUNDARIES = [90, 100, 110, 120, 130];
 // 구간 규칙 (배열 index 0 = 맨 위(가장 과열) ... 마지막 = 맨 아래(가장 저평가))
 // depositCashGate: 거치매수는 예수금(현금비중)이 이 값(%) 이상일 때만 발동 (구간별로 다르게 설정 가능)
 // 아래 값은 하이브리드 전용 그리드서치(1,548개 조합, 최대 147구간 롤링)에서 찾은 최적 조합과 동일하게 통일
+// maxWeight: 이 구간의 거치매수가 밀어올릴 수 있는 최대 주식비중(%) — 거치매수 전용 상한(분할매수는 별도로 stop을 따름).
+//            현재 비중이 이 값 이상이면 구간을 왔다갔다 재진입해도 거치매수가 더 이상 실행되지 않음 (기본 100=무제한)
 const REBAL_DEFAULT_ZONES = [
-  { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 130%이상
-  { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130%
-  { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0 },     // 110~120%
-  { sell:0,   deposit:50,  split:60, rate:0,  stop:0, depositCashGate:50 },     // 100~110%
-  { sell:0,   deposit:10,  split:10,  rate:10,  stop:10, depositCashGate:30 },  // 90~100%
-  { sell:0,   deposit:20, split:10,  rate:10, stop:0,  depositCashGate:30 },  // 90%미만
+  { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 130%이상
+  { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 120~130%
+  { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0,  maxWeight:0 },     // 110~120%
+  { sell:0,   deposit:50,  split:0, rate:0,  stop:0, depositCashGate:50,  maxWeight:50 },     // 100~110%
+  { sell:0,   deposit:10,  split:10,  rate:10,  stop:10, depositCashGate:50,  maxWeight:60 },  // 90~100%
+  { sell:0,   deposit:20, split:10,  rate:10, stop:10,  depositCashGate:30,  maxWeight:90 },  // 90%미만
 ];
 // TQQQ 기본값도 동일하게 통일
 const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z));
-// 하이브리드 전용 기본값: 100~120%/90~100%는 QLD로 매수, 90%미만만 TQQQ로 매수 (검증된 최적 조합)
+// 하이브리드 전용 기본값: 100~110%는 QLD로 매수, 90~100%·90%미만은 TQQQ로 매수
 const REBAL_DEFAULT_ZONES_HYBRID = [
-  { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 130%이상
-  { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0 },     // 120~130%
-  { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0 },     // 110~120%
-  { sell:0,   deposit:50,  split:60, rate:0,  stop:0, depositCashGate:50 },     // 100~110% → QLD매수
-  { sell:0,   deposit:10,  split:10,  rate:10,  stop:10, depositCashGate:30 },  // 90~100% → QLD매수
-  { sell:0,   deposit:20, split:10,  rate:10, stop:0,  depositCashGate:30 },  // 90%미만 → TQQQ매수
+  { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 130%이상
+  { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 120~130%
+  { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0,  maxWeight:0 },     // 110~120%
+  { sell:0,   deposit:50,  split:0, rate:0,  stop:0, depositCashGate:50,  maxWeight:50 },     // 100~110% → QLD매수
+  { sell:0,   deposit:10,  split:10,  rate:10,  stop:10, depositCashGate:50,  maxWeight:60 },  // 90~100% → TQQQ매수
+  { sell:0,   deposit:20, split:10,  rate:10, stop:10,  depositCashGate:30,  maxWeight:90 },  // 90%미만 → TQQQ매수
 ];
 const REBAL_DEFAULT_DCA_COMPARE = 0.5;
 
@@ -899,7 +927,7 @@ let REBAL_DCA_COMPARE = REBAL_DEFAULT_DCA_COMPARE;
 let REBAL_BOUNDARIES_TQQQ = REBAL_DEFAULT_BOUNDARIES.slice();
 let REBAL_ZONES_TQQQ = REBAL_DEFAULT_ZONES_TQQQ.map(z=>Object.assign({},z));
 
-// 하이브리드(QLD주력+90%미만만TQQQ) 세부설정 상태
+// 하이브리드(QLD주력+90~100%·90%미만 TQQQ) 세부설정 상태
 let REBAL_BOUNDARIES_HYBRID = REBAL_DEFAULT_BOUNDARIES.slice();
 let REBAL_ZONES_HYBRID = REBAL_DEFAULT_ZONES_HYBRID.map(z=>Object.assign({},z));
 
@@ -1038,12 +1066,6 @@ function simulateDca(priceKey, iStart, iEnd, initAmount, contribAmount, freq, gr
 }
 
 // ---------- ① 리밸런싱비교(By견이): QQQ 200일 이격도 기반 QLD 리밸런싱 엔진 ----------
-function median(arr) {
-  const s = arr.slice().sort((a,b)=>a-b);
-  const n = s.length;
-  const mid = Math.floor(n/2);
-  return n % 2 ? s[mid] : (s[mid-1]+s[mid])/2;
-}
 
 let MA200_CACHE = null;
 function getMA200() {
@@ -1101,8 +1123,8 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
       if (curZone === null || z !== curZone) {
         isNewEpisode = true; curZone = z; bought[z] = 0;
       }
-      const cfg = zoneConfigs[z] || {sell:0,deposit:0,split:0,rate:0,stop:0,depositCashGate:0};
-      const { sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0 } = cfg;
+      const cfg = zoneConfigs[z] || {sell:0,deposit:0,split:0,rate:0,stop:0,depositCashGate:0,maxWeight:100};
+      const { sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0, maxWeight=100 } = cfg;
       let action = null;
 
       // ★ 매도 로직 수정: 쿨타임이 지났거나 OR 다른 매도 구간(z)에 진입했을 때는 쿨타임 무시
@@ -1119,19 +1141,24 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
         }
       }
       
-      // ★ 거치매수 로직 (기존 유지)
-      if (deposit > 0) {
+      // ★ 거치매수 로직: maxWeight(최대 주식비중)는 거치매수 전용 상한. 쿨타임과 무관하게 항상 체크됨.
+      //    분할매수는 자기 자신의 상한(분할매수 중단 조건=stop)을 따로 가지고 있어서(아래), 두 매수 경로가
+      //    같은 캡을 공유하며 "누가 먼저 여유분을 가져가는지" 다투는 우선순위 문제가 생기지 않음.
+      //    캡에 걸려 있는 동안은 lastDepositDay를 건드리지 않으므로 쿨타임 타이머는 그대로 흘러가고,
+      //    나중에 비중이 캡 아래로 내려오면(매도 등으로) 쿨타임이 이미 지나있어 바로 재개될 수 있음.
+      if (deposit > 0 && w1 < maxWeight) {
         const cash = 100 - w1;
         const daysSinceLastDeposit = i - lastDepositDay[z];
         if (cash >= depositCashGate && daysSinceLastDeposit > depositCooldownDays) {
           const w1Before = w1;
-          w1 = Math.min(w1 + deposit, 100);
+          w1 = Math.min(w1 + deposit, maxWeight); // ★ 100이 아니라 구간별 maxWeight까지만 채움
           if (w1 > w1Before + 0.001) { action = 'deposit'; lastDepositDay[z] = i; }
         }
       }
       if (split > 0 && rate > 0) {
         const dailyAdd = split * (rate/100);
         const remainBucket = split - bought[z];
+        // ★ 분할매수는 거치매수와 별개로 자기 상한(stop)만 따름 — maxWeight는 거치매수 전용
         const remainCash = stop > 0 ? (100 - stop) - w1 : (100 - w1);
         const add = Math.max(0, Math.min(dailyAdd, remainBucket, remainCash, 100 - w1));
         w1 += add; bought[z] += add;
@@ -1167,11 +1194,12 @@ function computeRebalComparison(iStartSel, iEnd, boundaries, zoneConfigs, dcaCom
       eq3[idx]=eq3[idx-1]*(1+(w3arr[idx-1]/100)*r);
     }
   }
-  return { eq1, eq2, eq3, investStart, afterTaxEq1: taxAdjustedRebalEquity(priceKey || 'p2', w1arr, investStart, iEnd, initAmount) };
+  return { eq1, eq2, eq3, investStart, afterTaxEq1: taxAdjustedRebalEquity(priceKey || 'p2', w1arr, investStart, iEnd, initAmount), w1arr, w2arr };
 }
 
-// ---------- 하이브리드(QLD주력+90%미만만TQQQ) 전용 엔진 ----------
-// zone index 4(90%미만)만 TQQQ로 매수, 나머지 매수구간(zone 2,3)은 QLD로 매수. 매도(zone 0,1)는 QLD+TQQQ 비례로 같이 축소.
+// ---------- 하이브리드(QLD주력+90~100%·90%미만 TQQQ) 전용 엔진 ----------
+// zone index 4,5(90~100%, 90%미만)는 TQQQ로 매수, 나머지 매수구간(zone 3, 100~110%)은 QLD로 매수.
+// 매도(zone 0,1)는 매도해야 할 총량만큼 TQQQ를 먼저 소진하고, 남으면 QLD를 축소(비례 축소 아님, TQQQ 우선순위).
 function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCooldownDays, sellCooldownDays) {
   if (sellCooldownDays === undefined) sellCooldownDays = 30;
   const p1 = PRICE.p1, ma = getMA200();
@@ -1196,17 +1224,26 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
     if (z!==-1){
       let isNewEpisode=false;
       if (curZone===null || z!==curZone){ isNewEpisode=true; curZone=z; bought[z]=0; }
-      const cfg = zoneConfigs[z] || {sell:0,deposit:0,split:0,rate:0,stop:0,depositCashGate:0};
-      const {sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0} = cfg;
-      const targetAsset = (z === nZones-1) ? 'tqqq' : 'qld';
+      const cfg = zoneConfigs[z] || {sell:0,deposit:0,split:0,rate:0,stop:0,depositCashGate:0,maxWeight:100};
+      const {sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0, maxWeight=100} = cfg;
+      const targetAsset = (z >= nZones-2) ? 'tqqq' : 'qld'; // 90~100%, 90%미만(마지막 2개 매수구간) → TQQQ / 그 외 매수구간 → QLD
       let action = null;
 
-      // ★ 매도 로직 수정: 쿨타임이 지났거나 OR 다른 매도 구간(z)에 진입했을 때는 쿨타임 무시
+      // ★ 매도 로직: 쿨타임이 지났거나 OR 다른 매도 구간(z)에 진입했을 때는 쿨타임 무시
+      // ★ TQQQ 우선 매도: 매도해야 할 총량(sell% × 현재 위험자산 비중) 만큼 TQQQ부터 먼저 소진하고,
+      //    TQQQ로 다 못 채우면 남은 만큼 QLD를 축소한다 (기존의 QLD+TQQQ 비례 축소 방식에서 변경)
       if (sell>0){
         const daysSinceLastSell = i - lastSellDay;
         if (daysSinceLastSell > sellCooldownDays || z !== lastSellZone) {
           const wQldBefore=wQld, wTqqqBefore=wTqqq;
-          wQld = wQld*(1-sell/100); wTqqq = wTqqq*(1-sell/100);
+          const sellAmt = (wQld+wTqqq)*(sell/100);
+          if (sellAmt > 0.001) {
+            const tqqqSell = Math.min(sellAmt, wTqqq);
+            wTqqq -= tqqqSell;
+            const remain = sellAmt - tqqqSell;
+            const qldSell = Math.min(remain, wQld);
+            wQld -= qldSell;
+          }
           if (wQld<wQldBefore-0.001 || wTqqq<wTqqqBefore-0.001) { 
             action = 'sell'; 
             lastSellDay = i; 
@@ -1215,12 +1252,13 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
         }
       }
       
-      // ★ 거치매수 및 분할매수 로직 (기존 유지)
-      if (deposit>0){
+      // ★ 거치매수(maxWeight 전용 상한) / 분할매수(stop 전용 상한) — 서로 다른 캡을 각자 독립적으로 따름
+      if (deposit>0 && (wQld+wTqqq) < maxWeight){
         const cash = 100-wQld-wTqqq;
         const daysSince = i-(lastDepositDay[z]===undefined?-Infinity:lastDepositDay[z]);
         if (cash>=depositCashGate && daysSince>depositCooldownDays){
-          const add = Math.min(deposit, cash);
+          const totalBefore = wQld+wTqqq;
+          const add = Math.min(deposit, cash, maxWeight-totalBefore); // ★ maxWeight까지만 채움
           if (add>0.001){
             if (targetAsset==='qld') wQld += add; else wTqqq += add;
             action = 'deposit-'+targetAsset;
@@ -1232,7 +1270,7 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
         const cash = 100-wQld-wTqqq;
         const dailyAdd = split*(rate/100);
         const remainBucket = split-bought[z];
-        const remainCash = stop>0 ? (100-stop)-(wQld+wTqqq) : cash;
+        const remainCash = stop>0 ? (100-stop)-(wQld+wTqqq) : cash; // ★ 분할매수 전용 상한(stop), maxWeight와 무관
         const add = Math.max(0, Math.min(dailyAdd, remainBucket, remainCash, cash));
         if (targetAsset==='qld') wQld += add; else wTqqq += add;
         bought[z]+=add;
@@ -1260,100 +1298,6 @@ function computeHybridComparison(iStartSel, iEnd, boundaries, zoneConfigs, initA
     eq1[idx] = eq1[idx-1]*(1+(wQldArr[i-1]/100)*rQld+(wTqqqArr[i-1]/100)*rTqqq);
   }
   return { eq1, investStart, wQldArr, wTqqqArr, afterTaxEq1: taxAdjustedHybridEquity(wQldArr, wTqqqArr, investStart, iEnd, initAmount) };
-}
-
-// ---------- V3: 코어(A)+전술(B) 2계좌 전략 엔진 ----------
-// A계좌: 100~120%구간에서만 매수, 목표비중(capA)까지 "전체 누적" 캡 (재진입해도 절대 안 넘음), 절대 매도 안 함
-// B계좌: 90~100%/90%미만에서 거치+분할 매수, 120~130%/130%이상에서 매도, + 매일 일정비율 시간기반 자동익절
-function computeTwoAccountWeights(iEnd, boundaries, cfgA, cfgB) {
-  const p1 = PRICE.p1;
-  const ma = getMA200();
-  const zones = new Array(iEnd+1);
-  for (let i=0;i<=iEnd;i++){
-    if (isNaN(ma[i])) { zones[i]=-1; continue; }
-    const dev = p1[i]/ma[i]*100;
-    zones[i] = classifyZoneIdx(dev, boundaries);
-  }
-  let curZone = null;
-  let wA = 0, wB = 0;
-  let boughtB4 = 0, boughtB5 = 0;
-  const wAarr = new Array(iEnd+1).fill(0);
-  const wBarr = new Array(iEnd+1).fill(0);
-
-  for (let i=0;i<=iEnd;i++){
-    const z = zones[i];
-    if (z !== -1) {
-      let isNewEpisode = false;
-      if (curZone === null || z !== curZone) {
-        isNewEpisode = true; curZone = z;
-        if (z===3) boughtB4 = 0;
-        if (z===4) boughtB5 = 0;
-      }
-
-      // A계좌 (index 2 = 100~120%): 전체 누적 캡
-      if (z === 2) {
-        const dailyAdd = cfgA.capA * (cfgA.rateA/100);
-        const remainToCap = cfgA.capA - wA;
-        const add = Math.max(0, Math.min(dailyAdd, remainToCap, 100-wA-wB));
-        wA += add;
-      }
-
-      // B계좌 (index 3 = 90~100%)
-      if (z === 3) {
-        if (isNewEpisode) wB = Math.min(wB + cfgB.deposit4, 100-wA);
-        const dailyAdd = cfgB.split4 * (cfgB.rate4/100);
-        const remainBucket = cfgB.split4 - boughtB4;
-        const add = Math.max(0, Math.min(dailyAdd, remainBucket, 100-wA-wB));
-        wB += add; boughtB4 += add;
-      } else if (z === 4) { // 90%미만
-        if (isNewEpisode) wB = Math.min(wB + cfgB.deposit5, 100-wA);
-        const dailyAdd = cfgB.split5 * (cfgB.rate5/100);
-        const remainBucket = cfgB.split5 - boughtB5;
-        const add = Math.max(0, Math.min(dailyAdd, remainBucket, 100-wA-wB));
-        wB += add; boughtB5 += add;
-      } else if (z === 1) { // 120~130%
-        wB = wB * (1 - cfgB.sell2/100);
-      } else if (z === 0) { // 130%이상
-        wB = wB * (1 - cfgB.sell1/100);
-      }
-
-      if (cfgB.timeSellRate > 0 && wB > 0) wB = wB * (1 - cfgB.timeSellRate/100);
-
-      wA = Math.min(Math.max(wA,0),100);
-      wB = Math.min(Math.max(wB,0),100-wA);
-    }
-    wAarr[i]=wA; wBarr[i]=wB;
-  }
-  return { zones, wAarr, wBarr };
-}
-
-function computeTwoAccountComparison(iStartSel, iEnd, boundaries, cfgA, cfgB, dcaDaily, initAmount, priceKey) {
-  const p = PRICE[priceKey || 'p2'];
-  const { zones, wAarr, wBarr } = computeTwoAccountWeights(iEnd, boundaries, cfgA, cfgB);
-  let firstTradable = 0;
-  while (firstTradable<=iEnd && zones[firstTradable]===-1) firstTradable++;
-  const investStart = Math.max(iStartSel, firstTradable);
-  if (investStart > iEnd) return null;
-
-  const n = iEnd-investStart+1;
-  const eq1=new Array(n), eq2=new Array(n), eq3=new Array(n);
-  const w2arr=new Array(n);
-  let w2=0;
-  for (let i=investStart;i<=iEnd;i++){
-    const idx=i-investStart;
-    w2 = Math.min(w2+dcaDaily,100);
-    w2arr[idx]=w2;
-    if (idx===0) {
-      eq1[0]=eq2[0]=eq3[0]=initAmount;
-    } else {
-      const r = p[i]/p[i-1]-1;
-      const wCombined = wAarr[i-1] + wBarr[i-1];
-      eq1[idx]=eq1[idx-1]*(1+(wCombined/100)*r);
-      eq2[idx]=eq2[idx-1]*(1+(w2arr[idx-1]/100)*r);
-      eq3[idx]=eq3[idx-1]*(1+r); // 거치식: 항상 100%
-    }
-  }
-  return { eq1, eq2, eq3, investStart, wAarr, wBarr };
 }
 
 function computeSingleScore(results) {
@@ -1511,6 +1455,14 @@ function fmtPct(x,d=2){ const s=x>=0?'+':''; return s+x.toFixed(d)+'%'; }
 // afterTaxEq가 있으면(리밸런싱류) 매도 시점마다 그 해 250만원 공제+22% 과세, 세금만큼
 // 재투자자본을 줄인 정밀 세후 곡선에서 afterTaxCagr/afterTaxFinal을 뽑고,
 // 없으면(거치식/적립식류) "종료시점에 매도" 가정으로 1회 과세.
+// 기간 내 평균 주식비중(%) 계산 — 리밸런싱 전략이 실제로 현금을 얼마나 들고 가는지 보여주기 위함
+function avgWeightPct(arr, from, to) {
+  if (!arr || to < from) return null;
+  let sum = 0, n = 0;
+  for (let i = from; i <= to; i++) { sum += arr[i]; n++; }
+  return n > 0 ? sum / n : null;
+}
+
 function buildStatsEntry(eq, afterTaxEqOrNull, dates, invested) {
   const pre = computeStats(eq, dates, invested);
   if (afterTaxEqOrNull) {
@@ -1535,20 +1487,7 @@ function computeResultsForRange(iStart, iEnd, initAmount) {
   const startDate = PRICE.dates[iStart], endDate = PRICE.dates[iEnd];
   let results = [];
 
-  if (mode === 'rebal') {
-    const { boundaries, zones } = getCurrentRebalConfig();
-    const dcaCompareDaily = getEffectivePercent('dcaCompareDaily', 0.4);
-    const dg = getDepositGateSettings();
-    const comp = computeRebalComparison(iStart, iEnd, boundaries, zones, dcaCompareDaily, initAmount, 'p2', dg.cooldown, dg.sellCooldown);
-    if (!comp) return null;
-    const cd = PRICE.dates.slice(comp.investStart, iEnd+1);
-    const defs = [
-      { name:'QLD이격도 리밸런싱', equity:comp.eq1, afterTaxEq:comp.afterTaxEq1 },
-      { name:`QLD 적립식(일 ${dcaCompareDaily}%)`, equity:comp.eq2, afterTaxEq:null },
-      { name:'QLD 거치식', equity:comp.eq3, afterTaxEq:null },
-    ];
-    results = defs.map(d => ({ meta:{name:d.name}, stats: buildStatsEntry(d.equity, d.afterTaxEq, cd, initAmount) }));
-  } else if (mode === 'v2') {
+  if (mode === 'v2') {
     const qldCfg = getCurrentRebalConfig('qld');
     const tqqqCfg = getCurrentRebalConfig('tqqq');
     const hybridCfg = getCurrentRebalConfig('hybrid');
@@ -1609,31 +1548,7 @@ function render() {
   let results = [];
   let chartDates;
 
-  if (mode === 'rebal') {
-    const { boundaries, zones } = getCurrentRebalConfig();
-    const dcaCompareDaily = getEffectivePercent('dcaCompareDaily', 0.4);
-    const dg = getDepositGateSettings();
-    const comp = computeRebalComparison(iStart, iEnd, boundaries, zones, dcaCompareDaily, initAmount, 'p2', dg.cooldown, dg.sellCooldown);
-    if (!comp) { $('periodNote').textContent='선택한 기간엔 QQQ 200일선이 아직 형성되지 않았습니다.'; return; }
-    chartDates = dates.slice(comp.investStart, iEnd+1);
-    const defs = [
-      { name:'① QLD이격도 리밸런싱', color:'#2563eb', equity:comp.eq1, afterTaxEq:comp.afterTaxEq1 },
-      { name:`② QLD 적립식(일 ${dcaCompareDaily}%)`, color:'#16a34a', equity:comp.eq2, afterTaxEq:null },
-      { name:'③ QLD 거치식', color:'#9333ea', equity:comp.eq3, afterTaxEq:null },
-    ];
-    results = defs.map(d => ({
-      meta: { name:d.name, color:d.color },
-      stats: buildStatsEntry(d.equity, d.afterTaxEq, chartDates, initAmount),
-      equity: d.equity,
-    }));
-    $('strategyHeader').textContent = '전략';
-    $('chartTitle').textContent = showDevChart ? 'QQQ 200일 이격도 + 매수/매도 시점 검증' : 'QLD 리밸런싱비교(By견이)';
-    $('devToggleBtn').style.display = 'inline-block';
-    $('devToggleBtnQld').style.display = 'none';
-    $('devToggleBtnTqqq').style.display = 'none';
-    $('devToggleBtnHybrid').style.display = 'none';
-    $('rebalDetailCsvBtn').style.display = 'inline-block';
-  } else if (mode === 'v2') {
+  if (mode === 'v2') {
     const qldCfg = getCurrentRebalConfig('qld');
     const tqqqCfg = getCurrentRebalConfig('tqqq');
     const hybridCfg = getCurrentRebalConfig('hybrid');
@@ -1648,19 +1563,29 @@ function render() {
 
     chartDates = dates.slice(compQld.investStart, iEnd+1);
     const chartDatesH = dates.slice(compHybrid.investStart, iEnd+1);
+    // ★ 리밸런싱 전략이 실제로 얼마나 현금을 들고 가는지 보여주기 위한 기간 평균 주식비중(%) 계산
+    const avgQldRebal = avgWeightPct(compQld.w1arr, compQld.investStart, iEnd);
+    const avgQldDca = avgWeightPct(compQld.w2arr, 0, compQld.w2arr.length-1);
+    const avgTqqqRebal = avgWeightPct(compTqqq.w1arr, compTqqq.investStart, iEnd);
+    const avgTqqqDca = avgWeightPct(compTqqq.w2arr, 0, compTqqq.w2arr.length-1);
+    const avgHybrid = avgWeightPct(
+      compHybrid.wQldArr.map((v,i)=>v+(compHybrid.wTqqqArr[i]||0)),
+      compHybrid.investStart, iEnd
+    );
     const defs = [
-      { name:'① QLD 이격도 리밸런싱', color:'#2563eb', equity:compQld.eq1, cd:chartDates, afterTaxEq:compQld.afterTaxEq1 },
-      { name:`② QLD 적립식(일 ${dcaQld}%)`, color:'#16a34a', equity:compQld.eq2, cd:chartDates, afterTaxEq:null },
-      { name:'③ QLD 거치식', color:'#9333ea', equity:compQld.eq3, cd:chartDates, afterTaxEq:null },
-      { name:'④ TQQQ 이격도 리밸런싱', color:'#dc2626', equity:compTqqq.eq1, cd:chartDates, afterTaxEq:compTqqq.afterTaxEq1 },
-      { name:`⑤ TQQQ 적립식(일 ${dcaTqqq}%)`, color:'#ea580c', equity:compTqqq.eq2, cd:chartDates, afterTaxEq:null },
-      { name:'⑥ TQQQ 거치식', color:'#0891b2', equity:compTqqq.eq3, cd:chartDates, afterTaxEq:null },
-      { name:'⑦ 하이브리드(QLD+TQQQ)', color:'#ca8a04', equity:compHybrid.eq1, cd:chartDatesH, afterTaxEq:compHybrid.afterTaxEq1 },
+      { name:'① QLD 이격도 리밸런싱', color:'#2563eb', equity:compQld.eq1, cd:chartDates, afterTaxEq:compQld.afterTaxEq1, avgStock:avgQldRebal },
+      { name:`② QLD 적립식(일 ${dcaQld}%)`, color:'#16a34a', equity:compQld.eq2, cd:chartDates, afterTaxEq:null, avgStock:avgQldDca },
+      { name:'③ QLD 거치식', color:'#9333ea', equity:compQld.eq3, cd:chartDates, afterTaxEq:null, avgStock:100 },
+      { name:'④ TQQQ 이격도 리밸런싱', color:'#dc2626', equity:compTqqq.eq1, cd:chartDates, afterTaxEq:compTqqq.afterTaxEq1, avgStock:avgTqqqRebal },
+      { name:`⑤ TQQQ 적립식(일 ${dcaTqqq}%)`, color:'#ea580c', equity:compTqqq.eq2, cd:chartDates, afterTaxEq:null, avgStock:avgTqqqDca },
+      { name:'⑥ TQQQ 거치식', color:'#0891b2', equity:compTqqq.eq3, cd:chartDates, afterTaxEq:null, avgStock:100 },
+      { name:'⑦ 하이브리드(QLD+TQQQ)', color:'#ca8a04', equity:compHybrid.eq1, cd:chartDatesH, afterTaxEq:compHybrid.afterTaxEq1, avgStock:avgHybrid },
     ];
     results = defs.map(d => ({
       meta: { name:d.name, color:d.color },
       stats: buildStatsEntry(d.equity, d.afterTaxEq, d.cd, initAmount),
       equity: d.equity,
+      avgStock: d.avgStock,
     }));
     $('strategyHeader').textContent = '전략';
     $('chartTitle').textContent = showDevChart
@@ -1715,12 +1640,13 @@ function render() {
       <td class="final-asset">${fmtWon(r.stats.finalVal)}</td>
       <td class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</td>
       <td class="final-asset">${fmtWon(r.stats.afterTaxFinal)}</td>
-      <td class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}</td>
-      <td class="${r.stats.afterTaxCagr>=0?'pos':'neg'}">${isFinite(r.stats.afterTaxCagr)?fmtPct(r.stats.afterTaxCagr):'-'}${r.stats.taxModeled?' <span title="매도 시점마다 정밀 과세 반영" style="opacity:0.5;font-size:10px;">●</span>':''}</td>
+      <td class="${r.stats.afterTaxReturn>=0?'pos':'neg'}">${fmtPct(r.stats.afterTaxReturn)}${r.stats.taxModeled?' <span title="매도 시점마다 정밀 과세 반영" style="opacity:0.5;font-size:10px;">●</span>':''}</td>
       <td style="font-weight:${r.stats.cagr===bestCagr?'700':'400'}">${fmtPct(r.stats.cagr)}</td>
       <td class="neg">${r.stats.mdd.toFixed(2)}%</td>
       <td>${r.stats.calmar.toFixed(2)}</td>
       <td>${isFinite(r.stats.sharpe)?r.stats.sharpe.toFixed(2):'-'}</td>
+      <td>${(r.avgStock!==undefined && r.avgStock!==null) ? `${r.avgStock.toFixed(1)}%` : '-'}</td>
+      <td>${(r.avgStock!==undefined && r.avgStock!==null) ? `${(100-r.avgStock).toFixed(1)}%` : '-'}</td>
     </tr>
   `).join('');
 
@@ -1747,14 +1673,17 @@ function render() {
           <div class="rank-compact-line">
             <span class="rc-label">총수익(세후)</span> <b class="${r.stats.afterTaxReturn>=0?'rank-pos':'rank-neg'}">${r.stats.afterTaxReturn>=0?'+':''}${r.stats.afterTaxReturn.toFixed(1)}%</b> <span class="rc-won">${fmtWon(r.stats.afterTaxFinal)}</span>${r.stats.taxModeled?' <span style="opacity:0.5;font-size:9.5px;" title="매도 시점마다 정밀 과세 반영">●</span>':''}
           </div>
+          ${(r.avgStock!==undefined && r.avgStock!==null) ? `<div class="rank-compact-line rank-weight-line">
+            <span>• 주식비중 <b>${r.avgStock.toFixed(1)}%</b></span>&nbsp;&nbsp;<span>• 현금비중 <b>${(100-r.avgStock).toFixed(1)}%</b></span>
+          </div>` : ''}
         </div>
       </div>
     </div>`;
   }).join('');
   $('resultsAiComment').innerHTML = buildResultsAiComment(results);
 
-  if ((mode==='rebal' || mode==='v2') && showDevChart) {
-    const target = mode==='v2' ? devChartTarget : 'qld';
+  if (mode==='v2' && showDevChart) {
+    const target = devChartTarget;
     const rc = getCurrentRebalConfig(target);
     drawDeviationChart(iStart, iEnd, rc.boundaries, rc.zones);
   } else {
@@ -1959,7 +1888,7 @@ $('tabV2').addEventListener('click', ()=> activateTab('tabV2', 'v2', ['v2Fields'
 
 // ---------- ③ 세부설정 팝업 (동적 구간 추가/삭제) ----------
 const ZONE_FIELD_TYPES = ['sell','deposit','depositCashGate','split','rate','stop'];
-const ZONE_FIELD_LABELS = { sell:'매도비중', deposit:'거치매수', depositCashGate:'거치매수 발동 예수금(%)', split:'분할매수예산', rate:'일일분할매수비율', stop:'중단기준(현금%)' };
+const ZONE_FIELD_LABELS = { sell:'매도비중(%)', deposit:'거치비중(%)', depositCashGate:'발동조건(%)', maxWeight:'주식비중상한(%)', split:'분할비중(%)', rate:'일일매수비율(%)', stop:'분할비중상한(%)' };
 
 function isModalOpen() {
   return $('rebalModalOverlay').style.display === 'flex';
@@ -2054,6 +1983,13 @@ function removeBoundaryAt(idx) {
   render();
 }
 
+// 세부설정 입력창에 숫자 뒤 % 표시를 붙여주는 헬퍼 (부동소수점 잔여오차 방지용 반올림 포함)
+// 값이 0이면 "미적용"으로 표시해서 그 규칙이 이 구간에서 꺼져있다는 걸 한눈에 알 수 있게 함
+function fmtPctInput(v) {
+  const n = Math.round((parseFloat(v)||0) * 100) / 100;
+  return n === 0 ? '미적용' : n + '%';
+}
+
 function renderRebalTable() {
   const B = EDIT_BOUNDARIES.slice().sort((a,b)=>a-b);
   const tbody = $('rebalTableBody');
@@ -2064,44 +2000,31 @@ function renderRebalTable() {
       <tr>
         <td>${i+1}${canRemove ? `<br><button class="zone-row-remove" data-idx="${i}" title="이 구간 삭제">✕</button>` : ''}</td>
         <td>${label}</td>
-        <td><input class="zi" data-idx="${i}" data-field="sell" value="${z.sell}"></td>
-        <td><input class="zi" data-idx="${i}" data-field="deposit" value="${z.deposit}"></td>
-        <td><input class="zi" data-idx="${i}" data-field="depositCashGate" value="${z.depositCashGate||0}"></td>
-        <td><input class="zi" data-idx="${i}" data-field="split" value="${z.split}"></td>
-        <td><input class="zi" data-idx="${i}" data-field="rate" value="${z.rate}" step="0.1"></td>
-        <td><input class="zi" data-idx="${i}" data-field="stop" value="${z.stop}"></td>
+        <td><input class="zi" data-idx="${i}" data-field="sell" value="${fmtPctInput(z.sell)}"></td>
+        <td><input class="zi" data-idx="${i}" data-field="deposit" value="${fmtPctInput(z.deposit)}"></td>
+        <td><input class="zi" data-idx="${i}" data-field="depositCashGate" value="${fmtPctInput(z.depositCashGate||0)}"></td>
+        <td><input class="zi" data-idx="${i}" data-field="maxWeight" value="${fmtPctInput(z.maxWeight===undefined?100:z.maxWeight)}"></td>
+        <td><input class="zi" data-idx="${i}" data-field="split" value="${fmtPctInput(z.split)}"></td>
+        <td><input class="zi" data-idx="${i}" data-field="rate" value="${fmtPctInput(z.rate)}" step="0.1"></td>
+        <td><input class="zi" data-idx="${i}" data-field="stop" value="${fmtPctInput(z.stop)}"></td>
       </tr>`;
   }).join('');
 
   tbody.querySelectorAll('.zi').forEach(inp=>{
+    // ★ 포커스 시 %를 떼서 숫자만 편집하기 쉽게, 블러(포커스 아웃) 시 다시 %를 붙여서 표시
+    inp.addEventListener('focus', (e)=>{
+      const n = parseFloat(e.target.value)||0;
+      e.target.value = n;
+      e.target.select();
+    });
+    inp.addEventListener('blur', (e)=>{
+      e.target.value = fmtPctInput(e.target.value);
+    });
     inp.addEventListener('input', (e)=>{
       const idx = parseInt(e.target.dataset.idx);
       const field = e.target.dataset.field;
       const val = parseFloat(e.target.value)||0;
       EDIT_ZONES[idx][field] = val;
-
-      // ★ 자동 동기화 ①: "분할매수 예산(split)"을 입력하면, 같은 구간의 "분할매수 중단기준(stop)"을
-      // 자동으로 (100-분할매수예산)으로 채움 — "이 구간 진입 전엔 0%에서 시작"하는 경우에 맞는 기본값.
-      // (앞 구간에서 이미 사둔 게 있는 구간은 이 관계가 안 맞을 수 있어 사용자가 직접 다시 조정 가능)
-      if (field === 'split' && val > 0) {
-        const newStop = Math.max(100 - val, 0);
-        EDIT_ZONES[idx].stop = newStop;
-        const stopInput = tbody.querySelector(`.zi[data-idx="${idx}"][data-field="stop"]`);
-        if (stopInput) stopInput.value = newStop;
-      }
-
-      // ★ 자동 동기화 ②: 이 구간의 "분할매수 중단기준(stop)"이 바뀌면,
-      // 바로 다음(한 단계 저평가) 구간의 "거치매수 발동 예수금 조건"을 자동으로 (stop-0.1)로 맞춰서
-      // "예수금이 그 밑으로 못 내려가서 거치매수가 영원히 발동 안 되는" 모순을 방지
-      if ((field === 'stop' || field === 'split') && idx+1 < EDIT_ZONES.length) {
-        const stopVal = EDIT_ZONES[idx].stop;
-        if (stopVal > 0) {
-          const newGate = Math.max(stopVal - 0.1, 0);
-          EDIT_ZONES[idx+1].depositCashGate = newGate;
-          const gateInput = tbody.querySelector(`.zi[data-idx="${idx+1}"][data-field="depositCashGate"]`);
-          if (gateInput) gateInput.value = newGate;
-        }
-      }
 
       updateExampleBox();
       drawZoneRefChart();
@@ -2163,7 +2086,8 @@ function updateExampleBox() {
     if (z.sell > 0) parts.push(`보유 주식의 <b>${z.sell}%</b>를 매도`);
     if (z.deposit > 0) {
       const gateText = z.depositCashGate > 0 ? `예수금이 <b>${z.depositCashGate}%</b> 이상 남아있을 때만` : `이 구간에 진입하면`;
-      parts.push(`${gateText} <b>${fmt(total*z.deposit/100)}</b>(전체 ${z.deposit}%) 거치매수 (재발동은 대기일수 지난 뒤에만)`);
+      const capText = (z.maxWeight!==undefined && z.maxWeight < 100) ? ` (주식비중이 <b>${z.maxWeight}%</b> 넘으면 쿨타임과 무관하게 거치매수는 더는 실행 안 함 — 분할매수는 별도 중단조건을 따름)` : '';
+      parts.push(`${gateText} <b>${fmt(total*z.deposit/100)}</b>(전체 ${z.deposit}%) 거치매수 (재발동은 대기일수 지난 뒤에만)${capText}`);
     }
     if (z.split > 0 && z.rate > 0) {
       const budget = total*z.split/100, daily = budget*z.rate/100;
@@ -2266,6 +2190,7 @@ function openRebalModalFor(target) {
   const targetLabel = target==='tqqq' ? 'TQQQ' : target==='hybrid' ? '하이브리드(QLD+TQQQ)' : 'QLD';
   $('rebalModalTitle').textContent = `③ ${targetLabel} — QQQ 200일 이격도 기준 리밸런싱 세부설정`;
   $('rebalModalOverlay').style.display='flex';
+  resetModalDragPosition(); // ★ 새로 열 때마다 드래그로 옮겼던 위치 초기화(가운데로)
 }
 $('openRebalDetail').addEventListener('click', ()=> openRebalModalFor('qld'));
 $('openRebalDetailQld').addEventListener('click', ()=> openRebalModalFor('qld'));
@@ -2710,7 +2635,7 @@ async function runRollingBacktest() {
 }
 
 function rollingModeLabel() {
-  return {rebal:'리밸런싱비교(QLD_3종)', v2:'리밸런싱비교(QLD/TQQQ_7종)', dca:'적립식(QQQ,QLD,TQQQ)', lump:'거치식(QQQ,QLD,TQQQ)'}[mode] || mode;
+  return {v2:'리밸런싱비교(리밸런싱 7종)', dca:'적립식(QQQ,QLD,TQQQ)', lump:'거치식(QQQ,QLD,TQQQ)'}[mode] || mode;
 }
 
 function median(arr) {
@@ -3046,8 +2971,8 @@ function markWfStale() {
   updateComboButtonState();
 }
 async function runWalkForward() {
-  if (mode !== 'rebal' && mode !== 'v2') {
-    alert('Walk-Forward는 리밸런싱 전략(QLD_3종 또는 QLD/TQQQ_7종 탭)에서만 사용할 수 있어요.');
+  if (mode !== 'v2') {
+    alert('Walk-Forward는 리밸런싱 전략(리밸런싱 7종 탭)에서만 사용할 수 있어요.');
     return;
   }
   const btn = $('wfRunBtn');
@@ -3276,8 +3201,8 @@ async function bbSimulateOne(dailyReturns, blockDays, targetDays, initAmount, ho
   return { cagr, mdd, calmar: cagr/Math.abs(mdd||1), sharpe };
 }
 async function runBlockBootstrap() {
-  if (mode !== 'rebal' && mode !== 'v2') {
-    alert('블록 부트스트랩은 리밸런싱 전략(QLD_3종 또는 QLD/TQQQ_7종 탭)에서만 사용할 수 있어요.');
+  if (mode !== 'v2') {
+    alert('블록 부트스트랩은 리밸런싱 전략(리밸런싱 7종 탭)에서만 사용할 수 있어요.');
     return;
   }
   const btn = $('bbRunBtn');
@@ -4035,7 +3960,7 @@ function addHybridDetailSheet(wb, boundaries, zoneConfigs, iStart, iEnd, initAmo
 
   ws.mergeCells(1,1,1,nCols);
   const titleCell = ws.getCell(1,1);
-  titleCell.value = `하이브리드(QLD주력+90%미만만TQQQ) 일자별 진행 (${startDate} ~ ${endDate}, 투자금 ${fmtWon(initAmount)})`;
+  titleCell.value = `하이브리드(QLD주력+90~100%·90%미만 TQQQ) 일자별 진행 (${startDate} ~ ${endDate}, 투자금 ${fmtWon(initAmount)})`;
   titleCell.font = { bold:true, size:14, color:{argb:'FFFFFFFF'} };
   titleCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFCA8A04'} };
   titleCell.alignment = { horizontal:'center', vertical:'middle' };
@@ -4043,7 +3968,7 @@ function addHybridDetailSheet(wb, boundaries, zoneConfigs, iStart, iEnd, initAmo
 
   ws.mergeCells(3,1,3,nCols);
   const noteCell = ws.getCell(3,1);
-  noteCell.value = '※ 마지막(가장 저평가) 구간만 TQQQ로 매수하고 나머지 매수구간은 QLD로 매수. 매도는 QLD+TQQQ 보유분을 비례로 같이 축소. 노랑=초기시작, 파랑=QLD매수, 보라=TQQQ매수, 분홍=매도.';
+  noteCell.value = '※ 마지막 2개(90~100%, 90%미만) 구간은 TQQQ로 매수하고 나머지 매수구간은 QLD로 매수. 매도는 TQQQ를 먼저 소진한 뒤 남는 만큼 QLD를 축소. 노랑=초기시작, 파랑=QLD매수, 보라=TQQQ매수, 분홍=매도.';
   noteCell.font = { italic:true, size:9, color:{argb:'FF6B7280'} };
   ws.getRow(3).height = 28;
 
@@ -4114,28 +4039,21 @@ function addHybridDetailSheet(wb, boundaries, zoneConfigs, iStart, iEnd, initAmo
 }
 
 $('rebalDetailCsvBtn').addEventListener('click', async ()=>{
-  if (mode !== 'rebal' && mode !== 'v2') return;
+  if (mode !== 'v2') return;
   const startDate=$('startDate').value, endDate=$('endDate').value;
   const dates=PRICE.dates;
   const iStart=bsearchGte(dates,startDate), iEnd=bsearchLte(dates,endDate);
   const initAmount=parseFloat($('initAmount').value.replace(/,/g,''))||0;
   const dg = getDepositGateSettings();
   const wb = new ExcelJS.Workbook();
-  let filename;
 
-  if (mode === 'rebal') {
-    const { boundaries, zones: zoneConfigs } = getCurrentRebalConfig();
-    addRebalDetailSheets(wb, 'QLD', 'p2', boundaries, zoneConfigs, iStart, iEnd, initAmount, dg, startDate, endDate);
-    filename = `QLD_리밸런싱_상세검증_${startDate}_${endDate}.xlsx`;
-  } else {
-    const qldCfg = getCurrentRebalConfig('qld');
-    const tqqqCfg = getCurrentRebalConfig('tqqq');
-    const hybridCfg = getCurrentRebalConfig('hybrid');
-    addRebalDetailSheets(wb, 'QLD', 'p2', qldCfg.boundaries, qldCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
-    addRebalDetailSheets(wb, 'TQQQ', 'p3', tqqqCfg.boundaries, tqqqCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
-    addHybridDetailSheet(wb, hybridCfg.boundaries, hybridCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
-    filename = `QLD_TQQQ_하이브리드_리밸런싱_상세검증_${startDate}_${endDate}.xlsx`;
-  }
+  const qldCfg = getCurrentRebalConfig('qld');
+  const tqqqCfg = getCurrentRebalConfig('tqqq');
+  const hybridCfg = getCurrentRebalConfig('hybrid');
+  addRebalDetailSheets(wb, 'QLD', 'p2', qldCfg.boundaries, qldCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
+  addRebalDetailSheets(wb, 'TQQQ', 'p3', tqqqCfg.boundaries, tqqqCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
+  addHybridDetailSheet(wb, hybridCfg.boundaries, hybridCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
+  const filename = `QLD_TQQQ_하이브리드_리밸런싱_상세검증_${startDate}_${endDate}.xlsx`;
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -4213,6 +4131,37 @@ $('modalZoomReset').addEventListener('click', () => {
   modalZoomLevel = 100;
   applyModalZoom();
 });
+
+// ---------- 세부설정 팝업 마우스 드래그로 이동 (QLD/TQQQ/하이브리드 3종 전부 동일 모달을 재사용하므로 한 번만 붙이면 셋 다 적용됨) ----------
+let modalDragX = 0, modalDragY = 0; // 누적 이동량(px)
+let modalDragging = false, modalDragStartX = 0, modalDragStartY = 0;
+
+function applyModalDragTransform() {
+  const box = document.querySelector('.modal-box');
+  if (box) box.style.transform = `translate(${modalDragX}px, ${modalDragY}px)`;
+}
+function resetModalDragPosition() {
+  modalDragX = 0; modalDragY = 0;
+  applyModalDragTransform();
+}
+const modalHeaderEl = document.querySelector('.modal-header');
+if (modalHeaderEl) {
+  modalHeaderEl.style.cursor = 'move';
+  modalHeaderEl.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button')) return; // 닫기/확대축소 버튼 클릭은 드래그로 안 잡음
+    modalDragging = true;
+    modalDragStartX = e.clientX - modalDragX;
+    modalDragStartY = e.clientY - modalDragY;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!modalDragging) return;
+    modalDragX = e.clientX - modalDragStartX;
+    modalDragY = e.clientY - modalDragStartY;
+    applyModalDragTransform();
+  });
+  document.addEventListener('mouseup', () => { modalDragging = false; });
+}
 
 // init
 $('startDate').value = PRICE.dates[0];
