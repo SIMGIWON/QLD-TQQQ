@@ -1,3 +1,29 @@
+<!--
+====================================================================
+QQQ/QLD/TQQQ 200일 이격도 리밸런싱 백테스트 시뮬레이터
+버전: v2.1.0
+수정일: 2026-08-11
+
+[이번 수정 항목]
+1. 구간별 설정 라벨 명칭 통일
+   - 매도비중(주식비중축소%) / 거치매수(전체자산 기준%) /
+     거치매수 발동 조건(현금보유기준%) / 분할매수(전체자산 기준%) /
+     일일분할매수 비율(%) / 분할매수 중단 조건(현금보유기준%)
+2. 하이브리드 전략 로직 변경
+   - 매수: 90~100%·90%미만 두 구간 모두 TQQQ로 매수 (기존: 90%미만만 TQQQ)
+   - 매도: TQQQ를 먼저 전액 소진한 뒤, 남는 매도량만큼 QLD를 축소
+     (기존: QLD+TQQQ를 동일 비율로 비례 축소)
+   - 관련 UI 설명문·코드 주석·엑셀 export 텍스트 전체 동기화
+3. 미사용 코드 정리
+   - 어디서도 호출되지 않던 V3 "코어+전술 2계좌" 엔진
+     (computeTwoAccountWeights, computeTwoAccountComparison) 삭제
+   - 중복 정의된 median() 함수 중 죽어있던 앞쪽 정의 삭제
+   - 도달 불가능한 mode==='rebal' 분기 전체 제거/단순화
+     (computeResultsForRange, render, runWalkForward, runBlockBootstrap,
+     엑셀 export 핸들러)
+4. 본 변경 이력/버전 헤더 추가
+====================================================================
+-->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -477,7 +503,7 @@ tr:last-child td { border-bottom:none; }
     <div class="section">
       <div class="field">
         <label>총 투자예산 (원)</label>
-        <input type="text" inputmode="numeric" id="initAmount" value="10,000,000">
+        <input type="text" inputmode="numeric" id="initAmount" value="100,000,000">
       </div>
       <div class="checkbox-row">
         <input type="checkbox" id="feeCheck" checked>
@@ -506,13 +532,14 @@ tr:last-child td { border-bottom:none; }
       <div class="field">
         <label>연간 적립금 증액률 (%)</label>
         <input type="number" id="growthRate" value="0" step="0.5">
+        <div class="sub-hint" id="growthRateHint"></div>
       </div>
     </div>
 
     <div class="section" id="rebalFields" style="display:none;">
       <div class="field">
         <label>① QLD 거치식 (시작일에 총액 한 번에 매수)</label>
-        <div class="readonly-box" id="lumpDisplay">₩10,000,000</div>
+        <div class="readonly-box" id="lumpDisplay">₩100,000,000</div>
       </div>
       <div class="field">
         <label>② QLD 일일 분할 매수</label>
@@ -534,7 +561,7 @@ tr:last-child td { border-bottom:none; }
       <div class="section-title" style="color:var(--blue);">QLD (2배)</div>
       <div class="field">
         <label>① QLD 거치식</label>
-        <div class="readonly-box" id="lumpDisplayQld">₩10,000,000</div>
+        <div class="readonly-box" id="lumpDisplayQld">₩100,000,000</div>
       </div>
       <div class="field">
         <label>② QLD 적립식 — 일일 매수</label>
@@ -554,7 +581,7 @@ tr:last-child td { border-bottom:none; }
       <div class="section-title" style="color:var(--purple); margin-top:16px;">TQQQ (3배)</div>
       <div class="field">
         <label>④ TQQQ 거치식</label>
-        <div class="readonly-box" id="lumpDisplayTqqq">₩10,000,000</div>
+        <div class="readonly-box" id="lumpDisplayTqqq">₩100,000,000</div>
       </div>
       <div class="field">
         <label>⑤ TQQQ 적립식 — 일일 매수</label>
@@ -893,22 +920,22 @@ const REBAL_DEFAULT_BOUNDARIES = [90, 100, 110, 120, 130];
 //            현재 비중이 이 값 이상이면 구간을 왔다갔다 재진입해도 거치매수가 더 이상 실행되지 않음 (기본 100=무제한)
 const REBAL_DEFAULT_ZONES = [
   { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 130%이상
-  { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 120~130%
+  { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 120~130%
   { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0,  maxWeight:0 },     // 110~120%
   { sell:0,   deposit:50,  split:0, rate:0,  stop:0, depositCashGate:50,  maxWeight:50 },     // 100~110%
   { sell:0,   deposit:10,  split:10,  rate:10,  stop:10, depositCashGate:50,  maxWeight:60 },  // 90~100%
-  { sell:0,   deposit:20, split:10,  rate:10, stop:10,  depositCashGate:30,  maxWeight:90 },  // 90%미만
+  { sell:0,   deposit:20, split:10,  rate:10, stop:0,  depositCashGate:30,  maxWeight:90 },  // 90%미만
 ];
 // TQQQ 기본값도 동일하게 통일
 const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z));
 // 하이브리드 전용 기본값: 100~110%는 QLD로 매수, 90~100%·90%미만은 TQQQ로 매수
 const REBAL_DEFAULT_ZONES_HYBRID = [
   { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 130%이상
-  { sell:80,  deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 120~130%
+  { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 120~130%
   { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0,  maxWeight:0 },     // 110~120%
   { sell:0,   deposit:50,  split:0, rate:0,  stop:0, depositCashGate:50,  maxWeight:50 },     // 100~110% → QLD매수
   { sell:0,   deposit:10,  split:10,  rate:10,  stop:10, depositCashGate:50,  maxWeight:60 },  // 90~100% → TQQQ매수
-  { sell:0,   deposit:20, split:10,  rate:10, stop:10,  depositCashGate:30,  maxWeight:90 },  // 90%미만 → TQQQ매수
+  { sell:0,   deposit:20, split:10,  rate:10, stop:0,  depositCashGate:30,  maxWeight:90 },  // 90%미만 → TQQQ매수
 ];
 const REBAL_DEFAULT_DCA_COMPARE = 0.5;
 
@@ -2063,8 +2090,8 @@ function resetToDefault() {
   EDIT_BOUNDARIES = REBAL_DEFAULT_BOUNDARIES.slice();
   const defaultsFor = modalTarget==='tqqq' ? REBAL_DEFAULT_ZONES_TQQQ : modalTarget==='hybrid' ? REBAL_DEFAULT_ZONES_HYBRID : REBAL_DEFAULT_ZONES;
   EDIT_ZONES = defaultsFor.map(z=>Object.assign({},z));
-  $('depositCooldownDays').value = 30;
-  $('sellCooldownDays').value = 30;
+  $('depositCooldownDays').value = 180;
+  $('sellCooldownDays').value = 180;
   renderBoundaryChips();
   renderRebalTable();
   updateExampleBox();
@@ -3785,8 +3812,23 @@ function updateRebalSidebarDisplays(){
       ? `→ 총예산의 ${contribPct.toFixed(2)}%`
       : `→ ${fmtWon(getEffectiveAmount('contribAmount'))}`;
   }
+
+  const growthHintEl = $('growthRateHint');
+  if (growthHintEl) {
+    const baseContrib = getEffectiveAmount('contribAmount');
+    const growthPct = parseFloat($('growthRate').value) || 0;
+    if (growthPct === 0 || baseContrib <= 0) {
+      growthHintEl.textContent = '';
+    } else {
+      const y1 = baseContrib;
+      const y2 = baseContrib * Math.pow(1+growthPct/100, 1);
+      const y3 = baseContrib * Math.pow(1+growthPct/100, 2);
+      growthHintEl.textContent = `→ 회당 적립금 예시: 1년차 ${fmtWon(y1)} → 2년차 ${fmtWon(y2)} → 3년차 ${fmtWon(y3)}`;
+    }
+  }
 }
 updateRebalSidebarDisplays();
+$('growthRate').addEventListener('input', updateRebalSidebarDisplays);
 $('logCheck').addEventListener('change', ()=>{ logScale=$('logCheck').checked; render(); });
 $('saveImgBtn').addEventListener('click', ()=>{
   const link=document.createElement('a');
