@@ -1711,7 +1711,7 @@ function drawChart(results, dates, hoverIdx) {
   const gridColor = isDark ? '#2d3548' : '#e5e7eb';
   const textColor = isDark ? '#94a3b8' : '#6b7280';
   const strongText = isDark ? '#e5e9f0' : '#111827';
-  const padL=90, padR=20, padT=16, padB=34;
+  const padL=20, padR=110, padT=16, padB=44;
   const plotW=W-padL-padR, plotH=H-padT-padB;
 
   let allVals=[];
@@ -1729,7 +1729,7 @@ function drawChart(results, dates, hoverIdx) {
   }
   function xToPix(i,n){ return padL+i/(n-1)*plotW; }
 
-  ctx.strokeStyle=gridColor; ctx.lineWidth=1; ctx.font='11px monospace'; ctx.fillStyle=textColor;
+  ctx.strokeStyle=gridColor; ctx.lineWidth=1; ctx.font='15px monospace'; ctx.fillStyle=textColor;
   for(let t=0;t<=5;t++){
     const frac=t/5;
     const v= logScale? Math.exp(Math.log(Math.max(minV,0.01))+frac*(Math.log(maxV)-Math.log(Math.max(minV,0.01)))) : minV+frac*(maxV-minV);
@@ -1739,11 +1739,12 @@ function drawChart(results, dates, hoverIdx) {
     if (v>=100000000) label=(v/100000000).toFixed(1)+'억';
     else if (v>=10000) label=(v/10000).toFixed(0)+'만';
     else label=v.toFixed(0);
-    ctx.fillText(label, 4, y+4);
+    ctx.textAlign='left'; ctx.fillText(label, W-padR+10, y+5);
   }
-  ctx.fillText(dates[0], padL, H-12);
-  ctx.textAlign='center'; ctx.fillText(dates[Math.floor((dates.length-1)/2)], padL+plotW/2, H-12);
-  ctx.textAlign='right'; ctx.fillText(dates[dates.length-1], W-padR, H-12); ctx.textAlign='left';
+  ctx.font='15px monospace';
+  ctx.textAlign='left'; ctx.fillText(dates[0], padL, H-14);
+  ctx.textAlign='center'; ctx.fillText(dates[Math.floor((dates.length-1)/2)], padL+plotW/2, H-14);
+  ctx.textAlign='right'; ctx.fillText(dates[dates.length-1], W-padR, H-14); ctx.textAlign='left';
 
   results.forEach(r=>{
     ctx.strokeStyle=r.meta.color; ctx.lineWidth=2.2; ctx.beginPath();
@@ -1797,7 +1798,7 @@ function fmtWonShort(v) {
   const canvas = $('chart');
   const tooltip = $('chartTooltip');
   const wrap = canvas.parentElement;
-  const padL=90, padR=20;
+  const padL=20, padR=110;
 
   function indexFromClientX(clientX) {
     const rect = canvas.getBoundingClientRect();
@@ -1847,15 +1848,17 @@ function fmtWonShort(v) {
   canvas.addEventListener('mouseleave', hideTooltip);
 
   // 터치(모바일) — 손가락 떼면(touchend/touchcancel) 반드시 사라지도록
+  // ★ 확대(zoom) 상태일 땐 좌우/상하로 스크롤(패닝)해야 하므로 기본 스크롤을 막지 않음.
+  //   100%(확대 안 한 상태)일 때만 스크럽 중 페이지 스크롤을 막아 툴팁 조작을 편하게 함.
   canvas.addEventListener('touchstart', (e)=>{
     if (!e.touches.length) return;
     showTooltipAt(e.touches[0].clientX, e.touches[0].clientY);
-    e.preventDefault(); // 차트 위에서 스크럽하는 동안 페이지 스크롤 방지
+    if (devChartZoomPct === 100) e.preventDefault();
   }, { passive:false });
   canvas.addEventListener('touchmove', (e)=>{
     if (!e.touches.length) return;
     showTooltipAt(e.touches[0].clientX, e.touches[0].clientY);
-    e.preventDefault();
+    if (devChartZoomPct === 100) e.preventDefault();
   }, { passive:false });
   canvas.addEventListener('touchend', hideTooltip);
   canvas.addEventListener('touchcancel', hideTooltip);
@@ -2263,7 +2266,7 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
   const priceLineColor = isDark ? '#f1f5f9' : '#111827';
   const maLineColor = isDark ? '#f1f5f9' : '#111827';
   const labelBg = isDark ? 'rgba(23,29,43,0.9)' : 'rgba(255,255,255,0.92)';
-  const padL = isMobile ? 70 : 90;
+  const padL = isMobile ? 22 : 26;
   const padR = isMobile ? 195 : 240;
   const padT = isMobile ? 48 : 50;
   const padB = 34;
@@ -2329,17 +2332,18 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
   fillBetween(lines[m-1], bottom, palette[m%palette.length]);
 
   // grid + y labels
-  ctx.strokeStyle=gridColor; ctx.lineWidth=1; ctx.font='11px monospace'; ctx.fillStyle=textColor;
+  ctx.strokeStyle=gridColor; ctx.lineWidth=1; ctx.font='15px monospace'; ctx.fillStyle=textColor;
   for(let t=0;t<=5;t++){
     const frac=t/5;
     const v=minV+frac*(maxV-minV);
     const y=padT+plotH-frac*plotH;
     ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
-    ctx.fillText(v.toFixed(0), 4, y+4);
+    ctx.textAlign='left'; ctx.fillText(v.toFixed(0), W-padR+10, y+5);
   }
-  ctx.fillText(dates[iStart], padL, H-12);
-  ctx.textAlign='center'; ctx.fillText(dates[iStart + Math.floor((iEnd-iStart)/2)], padL+plotW/2, H-12);
-  ctx.textAlign='right'; ctx.fillText(dates[iEnd], W-padR, H-12); ctx.textAlign='left';
+  ctx.font='15px monospace';
+  ctx.textAlign='left'; ctx.fillText(dates[iStart], padL, H-14);
+  ctx.textAlign='center'; ctx.fillText(dates[iStart + Math.floor((iEnd-iStart)/2)], padL+plotW/2, H-14);
+  ctx.textAlign='right'; ctx.fillText(dates[iEnd], W-padR, H-14); ctx.textAlign='left';
 
   // boundary lines (100%=200일선 자체는 굵은 검정 점선으로 확실히 구분)
   const lineColors = ['#dc2626','#ea580c','#ca8a04','#16a34a','#3b82f6','#9333ea','#0891b2'];
