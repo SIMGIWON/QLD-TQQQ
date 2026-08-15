@@ -1,3 +1,29 @@
+<!--
+====================================================================
+QQQ/QLD/TQQQ 200일 이격도 리밸런싱 백테스트 시뮬레이터
+버전: v2.1.0
+수정일: 2026-08-11
+
+[이번 수정 항목]
+1. 구간별 설정 라벨 명칭 통일
+   - 매도비중(주식비중축소%) / 거치매수(전체자산 기준%) /
+     거치매수 발동 조건(현금보유기준%) / 분할매수(전체자산 기준%) /
+     일일분할매수 비율(%) / 분할매수 중단 조건(현금보유기준%)
+2. 하이브리드 전략 로직 변경
+   - 매수: 90~100%·90%미만 두 구간 모두 TQQQ로 매수 (기존: 90%미만만 TQQQ)
+   - 매도: TQQQ를 먼저 전액 소진한 뒤, 남는 매도량만큼 QLD를 축소
+     (기존: QLD+TQQQ를 동일 비율로 비례 축소)
+   - 관련 UI 설명문·코드 주석·엑셀 export 텍스트 전체 동기화
+3. 미사용 코드 정리
+   - 어디서도 호출되지 않던 V3 "코어+전술 2계좌" 엔진
+     (computeTwoAccountWeights, computeTwoAccountComparison) 삭제
+   - 중복 정의된 median() 함수 중 죽어있던 앞쪽 정의 삭제
+   - 도달 불가능한 mode==='rebal' 분기 전체 제거/단순화
+     (computeResultsForRange, render, runWalkForward, runBlockBootstrap,
+     엑셀 export 핸들러)
+4. 본 변경 이력/버전 헤더 추가
+====================================================================
+-->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -360,12 +386,12 @@ canvas { width:100%; display:block; }
 .chart-tooltip .ct-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .chart-tooltip .ct-name { flex:1; opacity:0.85; }
 .chart-tooltip .ct-val { font-weight:700; font-family:'JetBrains Mono',monospace; margin-left:8px; }
-table { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; }
+table { width:auto; min-width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; }
 th { text-align:right; color:var(--sub); font-weight:600; font-size:10.5px; text-transform:uppercase;
-     padding:8px 10px; border-bottom:2px solid var(--border); }
+     padding:8px 10px; border-bottom:2px solid var(--border); white-space:nowrap; word-break:keep-all; }
 th:first-child, td:first-child { text-align:left; }
-td { text-align:right; padding:11px 10px; font-family:var(--mono); border-bottom:1px solid var(--border); }
-#resultsTable td:nth-child(2) { white-space:nowrap; font-family:var(--sans); }
+td { text-align:right; padding:11px 10px; font-family:var(--mono); border-bottom:1px solid var(--border); white-space:nowrap; word-break:keep-all; }
+#resultsTable td:nth-child(2) { font-family:var(--sans); }
 tr:last-child td { border-bottom:none; }
 .lev-badge { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
 .pos { color:var(--green); } .neg { color:var(--red); }
@@ -607,7 +633,7 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div class="period-note" id="periodNote"></div>
       <div class="chart-wrap" style="position:relative;">
-        <canvas id="chart" width="1760" height="600"></canvas>
+        <canvas id="chart" width="1760" height="950"></canvas>
         <div id="chartTooltip" class="chart-tooltip"></div>
       </div>
     </div>
@@ -4079,7 +4105,7 @@ $('rebalDetailCsvBtn').addEventListener('click', async ()=>{
 
 // ---------- PC 모드 / 모바일 모드 ----------
 let viewMode = 'pc';
-const CHART_SIZE = { pc: {w:1760,h:600}, mobile: {w:900,h:560} };
+const CHART_SIZE = { pc: {w:1760,h:950}, mobile: {w:900,h:560} };
 
 function setViewMode(m) {
   viewMode = m;
