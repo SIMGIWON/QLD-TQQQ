@@ -2377,11 +2377,12 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
     } else if (act === 'sell') {
       const delta = Math.abs((gi>0?w1arr[gi]-w1arr[gi-1]:w1arr[gi]));
       const size = 8 + Math.min(6, delta/100*22); // 크기만 소폭 변화, 위치(밑변)는 항상 동일
-      const baseY = y - GAP; // 밑변(가격선과 가장 가까운 변)은 항상 같은 위치
+      const baseY = y - GAP; // 마커 전체가 가격선에서 이 만큼 떨어진 위치에 뜸
       ctx.fillStyle = '#be185d';
       ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(x, baseY-size); ctx.lineTo(x-size*0.7, baseY); ctx.lineTo(x+size*0.7, baseY);
+      // ★ 매도는 역삼각형(▼) — 뾰족한 끝(꼭짓점)이 가격선 쪽(아래)을 향해야 함
+      ctx.moveTo(x, baseY); ctx.lineTo(x-size*0.7, baseY-size); ctx.lineTo(x+size*0.7, baseY-size);
       ctx.closePath(); ctx.fill(); ctx.stroke();
     } else if (act === 'split') {
       const delta = Math.abs((gi>0?w1arr[gi]-w1arr[gi-1]:w1arr[gi]));
