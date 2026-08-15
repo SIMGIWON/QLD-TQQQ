@@ -2331,16 +2331,8 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
   }
   fillBetween(lines[m-1], bottom, palette[m%palette.length]);
 
-  // grid + y labels
-  ctx.strokeStyle=gridColor; ctx.lineWidth=1; ctx.font='15px monospace'; ctx.fillStyle=textColor;
-  for(let t=0;t<=5;t++){
-    const frac=t/5;
-    const v=minV+frac*(maxV-minV);
-    const y=padT+plotH-frac*plotH;
-    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
-    ctx.textAlign='left'; ctx.fillText(v.toFixed(0), W-padR+10, y+5);
-  }
-  ctx.font='15px monospace';
+  // X축 날짜만 표시 (Y축 가격 눈금은 우측 구간(%) 라벨과 중복이라 생략)
+  ctx.font='15px monospace'; ctx.fillStyle=textColor;
   ctx.textAlign='left'; ctx.fillText(dates[iStart], padL, H-14);
   ctx.textAlign='center'; ctx.fillText(dates[iStart + Math.floor((iEnd-iStart)/2)], padL+plotW/2, H-14);
   ctx.textAlign='right'; ctx.fillText(dates[iEnd], W-padR, H-14); ctx.textAlign='left';
