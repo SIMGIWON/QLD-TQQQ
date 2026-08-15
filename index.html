@@ -1,29 +1,3 @@
-<!--
-====================================================================
-QQQ/QLD/TQQQ 200일 이격도 리밸런싱 백테스트 시뮬레이터
-버전: v2.1.0
-수정일: 2026-08-11
-
-[이번 수정 항목]
-1. 구간별 설정 라벨 명칭 통일
-   - 매도비중(주식비중축소%) / 거치매수(전체자산 기준%) /
-     거치매수 발동 조건(현금보유기준%) / 분할매수(전체자산 기준%) /
-     일일분할매수 비율(%) / 분할매수 중단 조건(현금보유기준%)
-2. 하이브리드 전략 로직 변경
-   - 매수: 90~100%·90%미만 두 구간 모두 TQQQ로 매수 (기존: 90%미만만 TQQQ)
-   - 매도: TQQQ를 먼저 전액 소진한 뒤, 남는 매도량만큼 QLD를 축소
-     (기존: QLD+TQQQ를 동일 비율로 비례 축소)
-   - 관련 UI 설명문·코드 주석·엑셀 export 텍스트 전체 동기화
-3. 미사용 코드 정리
-   - 어디서도 호출되지 않던 V3 "코어+전술 2계좌" 엔진
-     (computeTwoAccountWeights, computeTwoAccountComparison) 삭제
-   - 중복 정의된 median() 함수 중 죽어있던 앞쪽 정의 삭제
-   - 도달 불가능한 mode==='rebal' 분기 전체 제거/단순화
-     (computeResultsForRange, render, runWalkForward, runBlockBootstrap,
-     엑셀 export 핸들러)
-4. 본 변경 이력/버전 헤더 추가
-====================================================================
--->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -374,7 +348,10 @@ body.dark-mode .rebal-table th.zg-split   { background:#173425; color:#4ade80; }
 .mini-btn:hover { border-color:var(--blue); color:var(--blue); }
 .log-toggle { display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--sub); cursor:pointer; white-space:nowrap; }
 canvas { width:100%; display:block; }
-.chart-wrap { position:relative; }
+.chart-wrap { position:relative; overflow:auto; max-height:1050px; border-radius:8px; }
+.chart-zoom-group { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--border); border-radius:6px; padding:2px 4px; background:var(--panel); }
+.chart-zoom-btn { padding:4px 10px !important; font-weight:700; min-width:28px; }
+.chart-zoom-label { font-size:11px; color:var(--sub); min-width:38px; text-align:center; font-family:var(--mono); }
 .chart-tooltip {
   position:absolute; display:none; pointer-events:none; z-index:20;
   background:rgba(17,24,39,0.95); color:#f5f7fb; border:1px solid rgba(255,255,255,0.12);
@@ -627,12 +604,18 @@ tr:last-child td { border-bottom:none; }
           <button class="dev-toggle-btn" id="devToggleBtnTqqq" style="display:none;">TQQQ 200일 이격도</button>
           <button class="dev-toggle-btn" id="devToggleBtnHybrid" style="display:none;">하이브리드 200일 이격도</button>
           <span class="log-toggle" id="scaleToggle"><input type="checkbox" id="logCheck">로그 스케일</span>
+          <span class="chart-zoom-group">
+            <button class="mini-btn chart-zoom-btn" id="chartZoomOutBtn" title="차트 축소">－</button>
+            <span class="chart-zoom-label" id="chartZoomLabel">100%</span>
+            <button class="mini-btn chart-zoom-btn" id="chartZoomInBtn" title="차트 확대">＋</button>
+            <button class="mini-btn" id="chartZoomResetBtn" title="확대/축소 초기화">↺</button>
+          </span>
           <button class="mini-btn" id="saveImgBtn">이미지 저장</button>
           <button class="mini-btn" id="rebalDetailCsvBtn" style="display:none;">일자별 상세검증 엑셀 다운로드</button>
         </div>
       </div>
       <div class="period-note" id="periodNote"></div>
-      <div class="chart-wrap" style="position:relative;">
+      <div class="chart-wrap" id="chartWrap" style="position:relative;">
         <canvas id="chart" width="1760" height="950"></canvas>
         <div id="chartTooltip" class="chart-tooltip"></div>
       </div>
@@ -2282,7 +2265,7 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
   const labelBg = isDark ? 'rgba(23,29,43,0.9)' : 'rgba(255,255,255,0.92)';
   const padL = isMobile ? 70 : 90;
   const padR = isMobile ? 195 : 240;
-  const padT = isMobile ? 44 : 40;
+  const padT = isMobile ? 48 : 50;
   const padB = 34;
   const plotW=W-padL-padR, plotH=H-padT-padB;
 
@@ -2385,27 +2368,27 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
     const act = actionArr[gi];
     if (!act) continue;
     const x = xToPix(i), y = yToPix(price[i]);
-    const GAP = 9; // 가격선에서 마커까지 항상 일정한 간격 (겹치지는 않되 들쭉날쭉해 보이지 않도록)
+    const GAP = 14; // 가격선에서 마커까지 항상 일정한 간격 (겹치지는 않되 들쭉날쭉해 보이지 않도록)
     if (act === 'deposit') {
       ctx.fillStyle = 'rgba(37,99,235,0.95)';
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
-      drawStar(ctx, x, y-GAP-8, 8, 3.5);
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+      drawStar(ctx, x, y-GAP-13, 13, 5.5);
       ctx.fill(); ctx.stroke();
     } else if (act === 'sell') {
       const delta = Math.abs((gi>0?w1arr[gi]-w1arr[gi-1]:w1arr[gi]));
-      const size = 5 + Math.min(4, delta/100*15); // 크기만 소폭 변화, 위치(밑변)는 항상 동일
+      const size = 8 + Math.min(6, delta/100*22); // 크기만 소폭 변화, 위치(밑변)는 항상 동일
       const baseY = y - GAP; // 밑변(가격선과 가장 가까운 변)은 항상 같은 위치
       ctx.fillStyle = '#be185d';
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.2;
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.moveTo(x, baseY-size); ctx.lineTo(x-size*0.7, baseY); ctx.lineTo(x+size*0.7, baseY);
       ctx.closePath(); ctx.fill(); ctx.stroke();
     } else if (act === 'split') {
       const delta = Math.abs((gi>0?w1arr[gi]-w1arr[gi-1]:w1arr[gi]));
-      const size = 4 + Math.min(3, delta/100*15);
+      const size = 6 + Math.min(5, delta/100*22);
       const baseY = y - GAP;
       ctx.fillStyle = 'rgba(22,163,74,0.9)';
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1;
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(x, baseY-size); ctx.lineTo(x-size*0.6, baseY); ctx.lineTo(x+size*0.6, baseY);
       ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -2472,19 +2455,19 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
   }
 
   // legend (상단, 겹치지 않게 줄바꿈 가능하도록 넉넉히 배치)
-  const legendY = isMobile ? 16 : 18;
-  ctx.font = `${isMobile?12:12.5}px sans-serif`;
+  const legendY = isMobile ? 20 : 24;
+  ctx.font = `${isMobile?15:17}px sans-serif`;
   let lx = padL;
   function legendItem(drawIcon, label, gap) {
     drawIcon(lx);
     ctx.fillStyle = strongText;
-    ctx.fillText(label, lx+20, legendY+5);
-    lx += 20 + ctx.measureText(label).width + gap;
+    ctx.fillText(label, lx+30, legendY+6);
+    lx += 30 + ctx.measureText(label).width + gap;
   }
-  legendItem((x)=>{ ctx.strokeStyle=priceLineColor; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,legendY); ctx.lineTo(x+16,legendY); ctx.stroke(); }, 'QQQ 종가', 22);
-  legendItem((x)=>{ ctx.fillStyle='rgba(37,99,235,0.95)'; drawStar(ctx, x+9, legendY, 8, 4); ctx.fill(); }, '거치매수', 22);
-  legendItem((x)=>{ ctx.fillStyle='rgba(22,163,74,0.9)'; ctx.beginPath(); ctx.moveTo(x+9,legendY-7); ctx.lineTo(x+2,legendY+5); ctx.lineTo(x+16,legendY+5); ctx.closePath(); ctx.fill(); }, '분할매수', 22);
-  legendItem((x)=>{ ctx.fillStyle='#be185d'; ctx.beginPath(); ctx.moveTo(x+9,legendY+7); ctx.lineTo(x+2,legendY-5); ctx.lineTo(x+16,legendY-5); ctx.closePath(); ctx.fill(); }, '매도', 0);
+  legendItem((x)=>{ ctx.strokeStyle=priceLineColor; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(x,legendY); ctx.lineTo(x+24,legendY); ctx.stroke(); }, 'QQQ 종가', 30);
+  legendItem((x)=>{ ctx.fillStyle='rgba(37,99,235,0.95)'; drawStar(ctx, x+13, legendY, 12, 5.5); ctx.fill(); }, '거치매수', 30);
+  legendItem((x)=>{ ctx.fillStyle='rgba(22,163,74,0.9)'; ctx.beginPath(); ctx.moveTo(x+13,legendY-10); ctx.lineTo(x+3,legendY+7); ctx.lineTo(x+23,legendY+7); ctx.closePath(); ctx.fill(); }, '분할매수', 30);
+  legendItem((x)=>{ ctx.fillStyle='#be185d'; ctx.beginPath(); ctx.moveTo(x+13,legendY+10); ctx.lineTo(x+3,legendY-7); ctx.lineTo(x+23,legendY-7); ctx.closePath(); ctx.fill(); }, '매도', 0);
 }
 
 function drawStar(ctx, cx, cy, outerR, innerR) {
@@ -3833,6 +3816,39 @@ function updateRebalSidebarDisplays(){
 updateRebalSidebarDisplays();
 $('growthRate').addEventListener('input', updateRebalSidebarDisplays);
 $('logCheck').addEventListener('change', ()=>{ logScale=$('logCheck').checked; render(); });
+
+// ---------- 이격도 차트 확대/축소 (기본값 100% = 지금 보이는 크기 그대로) ----------
+let devChartZoomPct = 100;
+function applyDevChartZoom() {
+  const canvas = $('chart');
+  if (devChartZoomPct === 100) {
+    // 100%일 땐 기존 반응형 규칙(canvas{width:100%})을 그대로 사용 — "지금 보이는 크기"와 완전히 동일
+    canvas.style.width = '';
+    canvas.style.height = '';
+  } else {
+    canvas.style.width = ''; canvas.style.height = ''; // 먼저 초기화해서 원래(100%) 너비를 정확히 측정
+    const naturalW = canvas.getBoundingClientRect().width;
+    const w = naturalW * (devChartZoomPct/100);
+    const h = w * (canvas.height/canvas.width); // 캔버스 고유 비율 유지
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+  }
+  $('chartZoomLabel').textContent = devChartZoomPct + '%';
+}
+$('chartZoomInBtn').addEventListener('click', ()=>{
+  devChartZoomPct = Math.min(300, devChartZoomPct+20);
+  applyDevChartZoom();
+});
+$('chartZoomOutBtn').addEventListener('click', ()=>{
+  devChartZoomPct = Math.max(40, devChartZoomPct-20);
+  applyDevChartZoom();
+});
+$('chartZoomResetBtn').addEventListener('click', ()=>{
+  devChartZoomPct = 100;
+  applyDevChartZoom();
+});
+applyDevChartZoom();
+
 $('saveImgBtn').addEventListener('click', ()=>{
   const link=document.createElement('a');
   link.download='qqq_backtest_chart.png';
@@ -4117,7 +4133,8 @@ function setViewMode(m) {
   canvas.width = sz.w;
   canvas.height = sz.h;
   // 모바일에서는 화면 확대/축소(zoom)를 100%로 초기화 (레이아웃이 이미 최적화되어 있어 겹침 방지)
-  if (m==='mobile') { zoomLevel = 100; applyZoom(); }
+  if (m==='mobile') { zoomLevel = 100; applyZoom(); devChartZoomPct = 100; }
+  applyDevChartZoom();
   render();
 }
 $('pcModeBtn').addEventListener('click', ()=>setViewMode('pc'));
