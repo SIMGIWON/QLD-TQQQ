@@ -455,7 +455,7 @@ tr:last-child td { border-bottom:none; }
         <div class="opt-btn qp-btn" data-months="1">1개월</div>
         <div class="opt-btn qp-btn" data-months="3">3개월</div>
         <div class="opt-btn qp-btn" data-months="6">6개월</div>
-        <div class="opt-btn qp-btn" data-months="12">1년</div>
+        <div class="opt-btn qp-btn active" data-months="12">1년</div>
         <div class="opt-btn qp-btn" data-months="24">2년</div>
         <div class="opt-btn qp-btn" data-months="36">3년</div>
         <div class="opt-btn qp-btn" data-months="48">4년</div>
@@ -498,7 +498,7 @@ tr:last-child td { border-bottom:none; }
           <button class="unit-btn active" data-unit="amount">원</button>
           <button class="unit-btn" data-unit="percent">% (총예산 대비)</button>
         </div>
-        <input type="text" inputmode="numeric" id="contribAmount" value="100,000">
+        <input type="text" inputmode="numeric" id="contribAmount" value="500,000">
         <div class="sub-hint" id="contribAmountHint"></div>
       </div>
       <div class="field">
@@ -1049,6 +1049,7 @@ function simulateDca(priceKey, iStart, iEnd, initAmount, contribAmount, freq, gr
   const growth = growthRatePct/100;
   const n = iEnd-iStart+1;
   const equity = new Array(n).fill(0);
+  const investedArr = new Array(n).fill(0); // ★ 그날까지 실제로 투입한 원금 누적(평가금액X) — 평균 주식비중 계산용
   let shares = 0, invested = 0;
 
   // ★ 버그 수정: 예전엔 여기서 initAmount(총 투자예산) 전액을 첫날 거치식으로 한 번에 투입한 뒤,
@@ -1071,8 +1072,9 @@ function simulateDca(priceKey, iStart, iEnd, initAmount, contribAmount, freq, gr
       schedPtr++;
     }
     equity[i-iStart] = shares*prices[i];
+    investedArr[i-iStart] = invested;
   }
-  return { equity, invested };
+  return { equity, invested, investedArr };
 }
 
 // ---------- ① 리밸런싱비교(By견이): QQQ 200일 이격도 기반 QLD 리밸런싱 엔진 ----------
@@ -1611,16 +1613,20 @@ function render() {
     chartDates = dates.slice(iStart,iEnd+1);
     levs.forEach(lev => {
       const meta = LEV_META[lev];
-      let sim;
+      let sim, avgStock;
       if (mode==='lump') {
         sim = simulateLump(meta.key, iStart, iEnd, initAmount, feeOn);
+        avgStock = 100; // 거치식은 첫날 전액 투입 → 항상 100%/0%
       } else {
         const contribAmount = getEffectiveAmount('contribAmount');
         const growthRate = parseFloat($('growthRate').value)||0;
         sim = simulateDca(meta.key, iStart, iEnd, initAmount, contribAmount, selectedFreq, growthRate, startDate, endDate, feeOn);
+        // 적립식: 총예산(initAmount) 대비 그날그날 "실제 투입한 원금" 비율의 평균 — 아직 안 들어간 예산은 "현금"으로 대기 중인 셈
+        // (평가금액/예산으로 계산하면 수익이 나서 평가금액이 예산을 넘어설 때 100%를 초과해버리는 오류가 있었음 → 원금 기준으로 수정)
+        avgStock = initAmount > 0 ? avgWeightPct(sim.investedArr.map(v => v/initAmount*100), 0, sim.investedArr.length-1) : 100;
       }
       const stats = buildStatsEntry(sim.equity, null, chartDates, sim.invested);
-      results.push({ meta, stats, equity: sim.equity });
+      results.push({ meta, stats, equity: sim.equity, avgStock });
     });
     $('strategyHeader').textContent = '레버리지';
     $('chartTitle').textContent = `QQQ 투자 시뮬레이션 (${mode==='lump'?'거치식':'적립식'})`;
@@ -3673,33 +3679,34 @@ const debouncedRender = debounce(render, 500);
 ['startDate', 'endDate'].forEach(id => {
   const el = $(id);
 
-  // 1. 값 변경 시: 최소/최대 범위 보정 없이 '시작일 > 종료일' 관계만 보정 후 즉시 차트/결과 갱신
+  // 1. 값 변경 시(change): 시작일<->종료일 보정은 여기서 하지 않음 — 키보드로 날짜를 한 자리씩
+  //    입력하는 도중에도 change가 조기에 발생할 수 있어서, 그 순간의 미완성 값으로 반대쪽 날짜를
+  //    잘못 덮어써버리는 버그가 있었음. 그래서 즉시 갱신(렌더링)만 하고, 최종 보정은 blur에서 처리.
   el.addEventListener('change', () => {
     if (!el.value) return;
-
-    const startVal = $('startDate').value;
-    const endVal = $('endDate').value;
-
-    // 시작일이 종료일보다 뒤로 가거나, 종료일이 시작일보다 앞으로 오는 경우만 보정
-    if (startVal && endVal && startVal > endVal) {
-      if (id === 'startDate') $('endDate').value = startVal;
-      else $('startDate').value = endVal;
-    }
-
     clearDateSelectionActive(); // 프리셋 선택 해제
     if (id === 'startDate') syncRollingStartDate($('startDate').value); // 롤링 시작일 연동
     render();
   });
 
-  // 2. 포커스 이탈 시(blur): 입력이 완전히 끝난 후 2000-01-03 데이터 범위 밖의 날짜만 최종 보정
+  // 2. 포커스 이탈 시(blur): 입력이 완전히 끝난 후에만 '시작일>종료일' 관계 보정 + 데이터 범위 밖 날짜 보정
   el.addEventListener('blur', () => {
     if (!el.value) return;
+
+    let isAdjusted = false;
+
+    const startVal = $('startDate').value;
+    const endVal = $('endDate').value;
+    if (startVal && endVal && startVal > endVal) {
+      if (id === 'startDate') $('endDate').value = startVal;
+      else $('startDate').value = endVal;
+      isAdjusted = true;
+    }
 
     if (PRICE && PRICE.dates && PRICE.dates.length > 0) {
       const minDate = PRICE.dates[0]; // 2000-01-03
       const maxDate = PRICE.dates[PRICE.dates.length - 1];
 
-      let isAdjusted = false;
       if (el.value < minDate) {
         el.value = minDate;
         isAdjusted = true;
@@ -3707,13 +3714,13 @@ const debouncedRender = debounce(render, 500);
         el.value = maxDate;
         isAdjusted = true;
       }
+    }
 
-      // 범위 밖 날짜가 들어와서 강제 조정된 경우에만 다시 렌더링
-      if (isAdjusted) {
-        clearDateSelectionActive(); // 프리셋 선택 해제
-        if (id === 'startDate') syncRollingStartDate($('startDate').value); // 롤링 시작일 연동
-        render();
-      }
+    // 보정이 실제로 일어난 경우에만 다시 렌더링 (change에서 이미 한 번 그렸으므로 중복 방지)
+    if (isAdjusted) {
+      clearDateSelectionActive(); // 프리셋 선택 해제
+      if (id === 'startDate') syncRollingStartDate($('startDate').value); // 롤링 시작일 연동
+      render();
     }
   });
 });
@@ -4219,9 +4226,11 @@ if (modalHeaderEl) {
   document.addEventListener('mouseup', () => { modalDragging = false; });
 }
 
-// init
-$('startDate').value = PRICE.dates[0];
-$('endDate').value = PRICE.dates[PRICE.dates.length-1];
+// init — 시작일 기본값: 최신 데이터 기준 최근 1년 (데이터가 갱신되면 자동으로 같이 밀림)
+const __lastDate = PRICE.dates[PRICE.dates.length-1];
+const __defaultStart = addMonths(__lastDate, -12);
+$('startDate').value = __defaultStart < PRICE.dates[0] ? PRICE.dates[0] : __defaultStart;
+$('endDate').value = __lastDate;
 $('startDate').min = PRICE.dates[0]; $('startDate').max = PRICE.dates[PRICE.dates.length-1];
 $('endDate').min = PRICE.dates[0]; $('endDate').max = PRICE.dates[PRICE.dates.length-1];
 setViewMode(window.innerWidth < 720 ? 'mobile' : 'pc');
