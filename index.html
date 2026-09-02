@@ -2408,9 +2408,15 @@ function renderDevDashboard(boundaries, zoneConfigs, target) {
   const m = B.length;
   const counts = new Array(m+1).fill(0);
   let total = 0;
+  // ★ 수정: MA200 계산을 위해 원본 데이터는 1999-03-10부터 있지만, 실제 선택 가능한 최소 시작일은
+  //   2000-01-03(Google Finance 기준)이므로 집계 시작점을 여기에 맞춘다.
+  //   (기존엔 MA200이 처음 유효해지는 1999-12-21부터 집계돼서 대시보드 타이틀에 선택 불가능한 날짜가 표시됐음)
+  const minSelectableDate = '2000-01-03';
+  const minSelectableIdx = dates.indexOf(minSelectableDate);
   let firstValidIdx = -1;
   for (let i=0;i<p1.length;i++){
     if (isNaN(ma[i])) continue;
+    if (minSelectableIdx >= 0 && i < minSelectableIdx) continue;
     if (firstValidIdx===-1) firstValidIdx = i;
     const dev = p1[i]/ma[i]*100;
     counts[classifyZoneIdx(dev, B)]++;
@@ -2464,7 +2470,7 @@ function renderDevDashboard(boundaries, zoneConfigs, target) {
   wrap.innerHTML = `
     <div style="border:1px solid ${borderCol}; border-radius:10px; overflow:hidden;">
       <div style="background:${isDark?'#111827':'#1f2937'}; color:#fbbf24; padding:10px 14px; font-weight:700; font-size:${isMobile?'12px':'13px'};">
-        📌 QQQ 200일 이격도 통합 대시보드 (${dates[firstValidIdx]}~현재ing)
+        📌 QQQ 200일 이격도 통합 대시보드 (${dates[firstValidIdx]}~${dates[p1.length-1]} 기준)
       </div>
       <div style="display:flex; gap:16px; padding:8px 14px; background:${rowBg}; font-size:${isMobile?'11px':'12.5px'}; color:${textCol}; font-family:var(--mono); flex-wrap:wrap;">
         <span>기준: ${ma[ma.length-1].toFixed(1)}</span>
@@ -2801,8 +2807,8 @@ function buildSellLogTableHtml(sellLog) {
     const typeLabel = isMobile && s.type === '종료일 전량매도(가정)' ? '종료매도' : s.type;
     const dateLabel = isMobile ? s.date.slice(2) : s.date; // 2026-06-01 → 26-06-01
     h += `<tr>
-            <td style="padding:${padC}; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${dateLabel}</td>
-            <td style="padding:${padC}; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${typeLabel}</td>
+            <td style="padding:${padC}; text-align:left; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${dateLabel}</td>
+            <td style="padding:${padC}; text-align:left; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${typeLabel}</td>
             <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws};"><span style="color:var(--sub,#6b7280); font-weight:600;">QLD:</span> ${fmtAmt(s.sellQldAmt)}<br><span style="color:var(--sub,#6b7280); font-weight:600;">TQQQ:</span> ${fmtAmt(s.sellTqqqAmt)}</td>
             <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws}; color:${s.realizedGain>=0?'var(--green,#16a34a)':'var(--red,#dc2626)'};">${s.realizedGain>=0?'+':''}${fmtAmt(s.realizedGain)}</td>
             <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws};">${fmtAmt(s.taxPaid)}</td>
@@ -2810,7 +2816,7 @@ function buildSellLogTableHtml(sellLog) {
           </tr>`;
   });
   h += `<tr style="font-weight:700;">
-          <td colspan="3" style="padding:${padH}; white-space:${ws};">합계</td>
+          <td colspan="3" style="padding:${padH}; text-align:left; white-space:${ws};">합계</td>
           <td style="padding:${padH}; text-align:right; font-family:var(--mono); white-space:${ws};">${totalGain>=0?'+':''}${fmtAmt(totalGain)}</td>
           <td style="padding:${padH}; text-align:right; font-family:var(--mono); white-space:${ws};">${fmtAmt(totalTax)}</td>
           <td style="padding:${padH}; text-align:right; font-family:var(--mono); white-space:${ws};">${totalNet>=0?'+':''}${fmtAmt(totalNet)}</td>
