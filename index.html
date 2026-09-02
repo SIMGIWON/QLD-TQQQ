@@ -2445,7 +2445,7 @@ function renderDevDashboard(boundaries, zoneConfigs, target) {
     else if (cfg.deposit>0 && cfg.split>0) action = `${assetName} 거치${cfg.deposit}%+분할${cfg.split}%(일${cfg.rate||0}%)`;
     else if (cfg.deposit>0) action = `${assetName} 거치매수 ${cfg.deposit}%`;
     else if (cfg.split>0) action = `${assetName} 분할매수 ${cfg.split}%(일${cfg.rate||0}%)`;
-    else action = isMobile ? '관망' : '관망(매수X)';
+    else action = '관망(매수X)';
     const color = zi===0 ? lineColors[0] : (B[m-zi]===100 ? '#6b7280' : lineColors[zi%lineColors.length]);
     const pct = total>0 ? (counts[zi]/total*100) : 0;
     const isCur = zi===curZone;
@@ -2507,7 +2507,7 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
   const maLineColor = isDark ? '#f1f5f9' : '#111827';
   const labelBg = isDark ? 'rgba(23,29,43,0.9)' : 'rgba(255,255,255,0.92)';
   const padL = isMobile ? 22 : 26;
-  const padR = isMobile ? 195 : 240;
+  const padR = isMobile ? 235 : 240;
   const padT = isMobile ? 48 : 50;
   const padB = 34;
   const plotW=W-padL-padR, plotH=H-padT-padB;
@@ -2674,7 +2674,7 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
     ctx.lineTo(col2X, yBottom);
     ctx.stroke();
     ctx.fillStyle = midText;
-    ctx.font = `${fontSize}px sans-serif`;
+    ctx.font = `${isMobile?11:fontSize}px sans-serif`;
     ctx.fillText(label, col2X+cap+6, (yTop+yBottom)/2 + 4);
   }
   for (let zi=0; zi<=m; zi++){
@@ -2684,8 +2684,8 @@ function drawDeviationChart(iStart, iEnd, boundaries, zoneConfigs) {
     else { yTop = lineLabels[zi-1].y; yBottom = lineLabels[zi].y; }
     const cfg = zoneConfigs[zi] || {};
     let hint = '';
-    if (cfg.sell > 0) hint = ' (매도)';
-    else if ((cfg.deposit>0) || (cfg.split>0 && cfg.rate>0)) hint = ' (매수)';
+    if (cfg.sell > 0) hint = isMobile ? ' 매도' : ' (매도)';
+    else if ((cfg.deposit>0) || (cfg.split>0 && cfg.rate>0)) hint = isMobile ? ' 매수' : ' (매수)';
     const label = zoneLabel(zi, B) + hint;
     const color = zi===0 ? lineColors[0] : (B[m-zi]===100 ? '#6b7280' : lineColors[zi%lineColors.length]);
     drawZoneBracket(yTop, yBottom, label, color);
@@ -2775,14 +2775,17 @@ function buildSellLogTableHtml(sellLog) {
   const isMobile = document.body.classList.contains('mobile-mode');
   const fmtAmt = isMobile ? fmtWonShort : fmtWon;
   const fs = isMobile ? '10px' : '12px';
-  const padC = isMobile ? '4px 4px' : '5px 8px';
-  const padH = isMobile ? '5px 4px' : '6px 8px';
+  const padC = isMobile ? '4px 3px' : '5px 8px';
+  const padH = isMobile ? '5px 3px' : '6px 8px';
   const ws = isMobile ? 'normal' : 'nowrap';
   const thAmt = isMobile ? '매도액' : '매도액(QLD/TQQQ)';
   const thGain = isMobile ? '손익' : '실현손익';
   const thTax = isMobile ? '세액' : '납부세액';
   const thNet = isMobile ? '실수령' : '실수령(손익-세액)';
-  let h = `<div class="table-scroll"><table style="width:100%; border-collapse:collapse; font-size:${fs}; margin-top:6px; margin-bottom:8px; table-layout:${isMobile?'fixed':'auto'};">`;
+  // ★ table-layout:fixed일 때 컬럼폭이 안 맞아 "구분" 칸이 밀려보이던 문제 수정: 폭을 명시적으로 지정
+  const colWidths = isMobile ? ['13%','14%','27%','16%','14%','16%'] : null;
+  const colgroup = colWidths ? `<colgroup>${colWidths.map(w=>`<col style="width:${w};">`).join('')}</colgroup>` : '';
+  let h = `<div class="table-scroll"><table style="width:100%; border-collapse:collapse; font-size:${fs}; margin-top:6px; margin-bottom:8px; table-layout:${isMobile?'fixed':'auto'};">${colgroup}`;
   h += `<tr style="background:var(--panel2, #f3f4f6);">
           <th style="padding:${padH}; text-align:left; border-bottom:1px solid var(--border, #ddd); white-space:${ws};">날짜</th>
           <th style="padding:${padH}; text-align:left; border-bottom:1px solid var(--border, #ddd); white-space:${ws};">구분</th>
@@ -2796,10 +2799,11 @@ function buildSellLogTableHtml(sellLog) {
     const net = s.realizedGain - s.taxPaid;
     totalTax += s.taxPaid; totalGain += s.realizedGain; totalNet += net;
     const typeLabel = isMobile && s.type === '종료일 전량매도(가정)' ? '종료매도' : s.type;
+    const dateLabel = isMobile ? s.date.slice(2) : s.date; // 2026-06-01 → 26-06-01
     h += `<tr>
-            <td style="padding:${padC}; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${s.date}</td>
+            <td style="padding:${padC}; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${dateLabel}</td>
             <td style="padding:${padC}; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${typeLabel}</td>
-            <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws};"><span style="color:var(--sub,#6b7280); font-weight:600;">QLD</span> ${fmtAmt(s.sellQldAmt)} <span style="color:var(--sub,#6b7280); font-weight:600;">TQQQ</span> ${fmtAmt(s.sellTqqqAmt)}</td>
+            <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws};"><span style="color:var(--sub,#6b7280); font-weight:600;">QLD:</span> ${fmtAmt(s.sellQldAmt)}<br><span style="color:var(--sub,#6b7280); font-weight:600;">TQQQ:</span> ${fmtAmt(s.sellTqqqAmt)}</td>
             <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws}; color:${s.realizedGain>=0?'var(--green,#16a34a)':'var(--red,#dc2626)'};">${s.realizedGain>=0?'+':''}${fmtAmt(s.realizedGain)}</td>
             <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws};">${fmtAmt(s.taxPaid)}</td>
             <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws}; font-weight:600; color:${net>=0?'var(--green,#16a34a)':'var(--red,#dc2626)'};">${net>=0?'+':''}${fmtAmt(net)}</td>
