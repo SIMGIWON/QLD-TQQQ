@@ -347,7 +347,7 @@ body.dark-mode .rebal-table th.zg-split   { background:#173425; color:#4ade80; }
 .mini-btn { font-size:11.5px; border:1px solid var(--border); background:var(--panel); border-radius:6px; padding:5px 10px; cursor:pointer; color:var(--text-mid); white-space:nowrap; }
 .mini-btn:hover { border-color:var(--blue); color:var(--blue); }
 .log-toggle { display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--sub); cursor:pointer; white-space:nowrap; }
-canvas { width:100%; display:block; }
+canvas { width:100%; height:auto; display:block; max-width:100%; }
 .chart-wrap { position:relative; overflow:auto; max-height:1050px; border-radius:8px; }
 .chart-zoom-group { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--border); border-radius:6px; padding:2px 4px; background:var(--panel); }
 .chart-zoom-btn { padding:4px 10px !important; font-weight:700; min-width:28px; }
@@ -4501,6 +4501,7 @@ function setViewMode(m) {
   const canvas = $('chart');
   canvas.width = sz.w;
   canvas.height = sz.h;
+  canvas.style.aspectRatio = `${sz.w} / ${sz.h}`;
   // 모바일에서는 화면 확대/축소(zoom)를 100%로 초기화 (레이아웃이 이미 최적화되어 있어 겹침 방지)
   if (m==='mobile') { zoomLevel = 100; applyZoom(); devChartZoomPct = 100; }
   applyDevChartZoom();
