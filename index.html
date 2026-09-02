@@ -347,7 +347,7 @@ body.dark-mode .rebal-table th.zg-split   { background:#173425; color:#4ade80; }
 .mini-btn { font-size:11.5px; border:1px solid var(--border); background:var(--panel); border-radius:6px; padding:5px 10px; cursor:pointer; color:var(--text-mid); white-space:nowrap; }
 .mini-btn:hover { border-color:var(--blue); color:var(--blue); }
 .log-toggle { display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--sub); cursor:pointer; white-space:nowrap; }
-canvas { width:100%; height:auto; display:block; max-width:100%; }
+canvas { width:100%; height:auto; display:block; max-width:100%; touch-action:pan-y; }
 .chart-wrap { position:relative; overflow:auto; max-height:1050px; border-radius:8px; }
 .chart-zoom-group { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--border); border-radius:6px; padding:2px 4px; background:var(--panel); }
 .chart-zoom-btn { padding:4px 10px !important; font-weight:700; min-width:28px; }
@@ -1946,18 +1946,17 @@ function fmtWonShort(v) {
   canvas.addEventListener('mouseleave', hideTooltip);
 
   // 터치(모바일) — 손가락 떼면(touchend/touchcancel) 반드시 사라지도록
-  // ★ 확대(zoom) 상태일 땐 좌우/상하로 스크롤(패닝)해야 하므로 기본 스크롤을 막지 않음.
-  //   100%(확대 안 한 상태)일 때만 스크럽 중 페이지 스크롤을 막아 툴팁 조작을 편하게 함.
+  // ★ 수정: 이전엔 100%(확대 안 한 상태)일 때 터치 중 페이지 스크롤 자체를 막아버려서,
+  //   차트 영역을 손가락으로 스크롤하려고 하면 화면이 안 넘어가는 문제가 있었음.
+  //   이제 스크롤은 항상 정상 동작하게 두고, 툴팁만 터치 위치를 따라 표시함(스크롤 막지 않음).
   canvas.addEventListener('touchstart', (e)=>{
     if (!e.touches.length) return;
     showTooltipAt(e.touches[0].clientX, e.touches[0].clientY);
-    if (devChartZoomPct === 100) e.preventDefault();
-  }, { passive:false });
+  }, { passive:true });
   canvas.addEventListener('touchmove', (e)=>{
     if (!e.touches.length) return;
     showTooltipAt(e.touches[0].clientX, e.touches[0].clientY);
-    if (devChartZoomPct === 100) e.preventDefault();
-  }, { passive:false });
+  }, { passive:true });
   canvas.addEventListener('touchend', hideTooltip);
   canvas.addEventListener('touchcancel', hideTooltip);
 })();
