@@ -1359,13 +1359,17 @@ function taxAdjustedRebalEquity(priceKey, w1arr, investStart, iEnd, initAmount, 
     //   매도 신호(비중이 실제로 줄어드는 날)일 때만 그만큼 판다 — "정확히 이 %로 리밸런싱"하는 게 아니라서,
     //   보유자산이 그날 급등해서 목표 비중을 살짝 넘겨도 매수 국면 중엔 트림(매도)이 발생하지 않음.
     const deltaPct = w1arr[i] - w1arr[i-1];
+    const totalValNow = riskyVal + cashVal;
+    // ★ 버그 수정: %p 증분이 아니라 "목표 비중 금액 - 현재 보유 금액"의 실제 차액으로 매매.
+    //   증분(deltaPct) 방식은 리밸런싱 사이에 가격이 움직여 실제 보유 비중이 벌어지면
+    //   목표가 0%(전량매도)여도 일부가 안 팔리고 잔액으로 남는 문제가 있었음.
+    const targetRiskyVal = totalValNow * (w1arr[i]/100);
     if (deltaPct > 1e-9) {
-      const totalVal = riskyVal + cashVal;
-      const buyAmt = Math.min(totalVal * (deltaPct/100), cashVal);
+      const buyAmt = Math.min(Math.max(0, targetRiskyVal - riskyVal), cashVal);
       if (buyAmt > 1e-6) { riskyVal += buyAmt; cashVal -= buyAmt; costBasis += buyAmt; }
     } else if (deltaPct < -1e-9) {
-      const totalVal = riskyVal + cashVal;
-      const sellAmt = Math.min(totalVal * (-deltaPct/100), riskyVal);
+      const totalVal = totalValNow;
+      const sellAmt = (w1arr[i] <= 1e-9) ? riskyVal : Math.min(Math.max(0, riskyVal - targetRiskyVal), riskyVal);
       if (sellAmt > 1e-6) {
         const fraction = riskyVal>0 ? Math.min(1, sellAmt/riskyVal) : 0;
         const costRemoved = costBasis*fraction;
@@ -1419,12 +1423,16 @@ function taxAdjustedHybridEquity(wQldArr, wTqqqArr, investStart, iEnd, initAmoun
     //   매도 신호(비중이 실제로 줄어드는 날)일 때만 그만큼 판다 — 자산이 급등해서 그날 목표 비중을
     //   살짝 넘겨도 매수 국면 중엔 트림(매도)이 발생하지 않도록 함
     const totalVal = qldVal+tqqqVal+cashVal;
+    // ★ 버그 수정: %p 증분이 아니라 "목표 비중 금액 - 현재 보유 금액"의 실제 차액으로 매매.
+    //   증분(dQldPct/dTqqqPct) 방식은 리밸런싱 사이에 가격이 움직여 실제 보유 비중이 벌어지면
+    //   목표가 0%(전량매도)여도 일부가 안 팔리고 잔액으로 남는 문제가 있었음 (특히 변동성 큰 TQQQ에서 두드러짐).
     const dQldPct = wQldArr[i] - wQldArr[i-1];
+    const targetQldVal = totalVal * (wQldArr[i]/100);
     if (dQldPct > 1e-9) {
-      const buyAmt = Math.min(totalVal * (dQldPct/100), cashVal);
+      const buyAmt = Math.min(Math.max(0, targetQldVal - qldVal), cashVal);
       if (buyAmt > 1e-6) { qldVal += buyAmt; cashVal -= buyAmt; qldCost += buyAmt; }
     } else if (dQldPct < -1e-9) {
-      const sellAmt = Math.min(totalVal * (-dQldPct/100), qldVal);
+      const sellAmt = (wQldArr[i] <= 1e-9) ? qldVal : Math.min(Math.max(0, qldVal - targetQldVal), qldVal);
       if (sellAmt > 1e-6) {
         const frac = qldVal>0?Math.min(1,sellAmt/qldVal):0;
         const costRemoved = qldCost*frac;
@@ -1434,11 +1442,12 @@ function taxAdjustedHybridEquity(wQldArr, wTqqqArr, investStart, iEnd, initAmoun
       }
     }
     const dTqqqPct = wTqqqArr[i] - wTqqqArr[i-1];
+    const targetTqqqVal = totalVal * (wTqqqArr[i]/100);
     if (dTqqqPct > 1e-9) {
-      const buyAmt = Math.min(totalVal * (dTqqqPct/100), cashVal);
+      const buyAmt = Math.min(Math.max(0, targetTqqqVal - tqqqVal), cashVal);
       if (buyAmt > 1e-6) { tqqqVal += buyAmt; cashVal -= buyAmt; tqqqCost += buyAmt; }
     } else if (dTqqqPct < -1e-9) {
-      const sellAmt = Math.min(totalVal * (-dTqqqPct/100), tqqqVal);
+      const sellAmt = (wTqqqArr[i] <= 1e-9) ? tqqqVal : Math.min(Math.max(0, tqqqVal - targetTqqqVal), tqqqVal);
       if (sellAmt > 1e-6) {
         const frac = tqqqVal>0?Math.min(1,sellAmt/tqqqVal):0;
         const costRemoved = tqqqCost*frac;
@@ -2410,11 +2419,20 @@ function renderDevDashboard(boundaries, zoneConfigs, target) {
   const curDev = p1[p1.length-1] / ma[ma.length-1] * 100;
   const curZone = classifyZoneIdx(curDev, B);
   const isDark = document.body.classList.contains('dark-mode');
+  const isMobile = document.body.classList.contains('mobile-mode');
   const rowBg = isDark ? '#171d2b' : '#f9fafb';
   const borderCol = isDark ? '#2d3548' : '#e5e7eb';
   const textCol = isDark ? '#e5e7eb' : '#111827';
 
   const lineColors = ['#dc2626','#ea580c','#ca8a04','#16a34a','#3b82f6','#9333ea','#0891b2'];
+
+  const tblFs = isMobile ? '10.5px' : '12.5px';
+  const thFs = isMobile ? '9.5px' : '11px';
+  const padC = isMobile ? '5px 5px' : '8px 10px';
+  const padH = isMobile ? '5px 5px' : '7px 10px';
+  const ws = isMobile ? 'normal' : 'nowrap';
+  const thLabel = isMobile ? '구간/전략' : '구간 및 전략';
+  const thState = isMobile ? '상태' : '현재상태';
 
   let rows = '';
   const nZones = m + 1;
@@ -2423,55 +2441,55 @@ function renderDevDashboard(boundaries, zoneConfigs, target) {
     const cfg = zoneConfigs[zi] || {};
     const assetName = target==='hybrid' ? ((zi >= nZones-2) ? 'TQQQ' : 'QLD') : (target==='tqqq' ? 'TQQQ' : 'QLD');
     let action = '';
-    if (cfg.sell > 0) action = (target==='hybrid') ? `${cfg.sell}% 매도 (TQQQ 우선 소진)` : `${assetName} ${cfg.sell}% 매도`;
+    if (cfg.sell > 0) action = (target==='hybrid') ? (isMobile ? `${cfg.sell}% 매도` : `${cfg.sell}% 매도 (TQQQ 우선 소진)`) : `${assetName} ${cfg.sell}% 매도`;
     else if (cfg.deposit>0 && cfg.split>0) action = `${assetName} 거치${cfg.deposit}%+분할${cfg.split}%(일${cfg.rate||0}%)`;
     else if (cfg.deposit>0) action = `${assetName} 거치매수 ${cfg.deposit}%`;
     else if (cfg.split>0) action = `${assetName} 분할매수 ${cfg.split}%(일${cfg.rate||0}%)`;
-    else action = '관망(매수X)';
+    else action = isMobile ? '관망' : '관망(매수X)';
     const color = zi===0 ? lineColors[0] : (B[m-zi]===100 ? '#6b7280' : lineColors[zi%lineColors.length]);
     const pct = total>0 ? (counts[zi]/total*100) : 0;
     const isCur = zi===curZone;
     rows += `<tr style="${isCur?`outline:2px solid ${color}; outline-offset:-2px;`:''}">
-      <td style="padding:8px 10px; border-bottom:1px solid ${borderCol}; text-align:left;">
+      <td style="padding:${padC}; border-bottom:1px solid ${borderCol}; text-align:left; white-space:${ws};">
         <span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:${color}; margin-right:6px;"></span>
         <b>${label}</b> → ${action}
       </td>
-      <td style="padding:8px 10px; border-bottom:1px solid ${borderCol}; text-align:center;">${isCur ? `<span style="background:${color}; color:#fff; padding:2px 8px; border-radius:10px; font-weight:700;">${curDev.toFixed(1)}%</span>` : ''}</td>
-      <td style="padding:8px 10px; border-bottom:1px solid ${borderCol}; text-align:right; font-family:var(--mono);">${counts[zi].toLocaleString()}일</td>
-      <td style="padding:8px 10px; border-bottom:1px solid ${borderCol}; text-align:right; font-family:var(--mono);">${pct.toFixed(1)}%</td>
+      <td style="padding:${padC}; border-bottom:1px solid ${borderCol}; text-align:center; white-space:${ws};">${isCur ? `<span style="background:${color}; color:#fff; padding:2px 8px; border-radius:10px; font-weight:700;">${curDev.toFixed(1)}%</span>` : ''}</td>
+      <td style="padding:${padC}; border-bottom:1px solid ${borderCol}; text-align:right; font-family:var(--mono); white-space:${ws};">${counts[zi].toLocaleString()}일</td>
+      <td style="padding:${padC}; border-bottom:1px solid ${borderCol}; text-align:right; font-family:var(--mono); white-space:${ws};">${pct.toFixed(1)}%</td>
     </tr>`;
   }
 
   wrap.style.display = 'block';
   wrap.innerHTML = `
     <div style="border:1px solid ${borderCol}; border-radius:10px; overflow:hidden;">
-      <div style="background:${isDark?'#111827':'#1f2937'}; color:#fbbf24; padding:10px 14px; font-weight:700; font-size:13px;">
+      <div style="background:${isDark?'#111827':'#1f2937'}; color:#fbbf24; padding:10px 14px; font-weight:700; font-size:${isMobile?'12px':'13px'};">
         📌 QQQ 200일 이격도 통합 대시보드 (${dates[firstValidIdx]}~현재ing)
       </div>
-      <div style="display:flex; gap:16px; padding:8px 14px; background:${rowBg}; font-size:12.5px; color:${textCol}; font-family:var(--mono);">
+      <div style="display:flex; gap:16px; padding:8px 14px; background:${rowBg}; font-size:${isMobile?'11px':'12.5px'}; color:${textCol}; font-family:var(--mono); flex-wrap:wrap;">
         <span>기준: ${ma[ma.length-1].toFixed(1)}</span>
         <span style="color:#22c55e; font-weight:700;">현재: ${p1[p1.length-1].toFixed(1)}</span>
         <span>추적: ${total.toLocaleString()}일</span>
       </div>
-      <table style="width:100%; border-collapse:collapse; font-size:12.5px; color:${textCol};">
+      <div class="table-scroll"><table style="width:100%; border-collapse:collapse; font-size:${tblFs}; color:${textCol};">
         <thead>
           <tr style="background:${isDark?'#20293b':'#e5e7eb'};">
-            <th style="padding:7px 10px; text-align:left; font-size:11px; color:${isDark?'#94a3b8':'#4b5563'};">구간 및 전략</th>
-            <th style="padding:7px 10px; text-align:center; font-size:11px; color:${isDark?'#94a3b8':'#4b5563'};">현재상태</th>
-            <th style="padding:7px 10px; text-align:right; font-size:11px; color:${isDark?'#94a3b8':'#4b5563'};">일수</th>
-            <th style="padding:7px 10px; text-align:right; font-size:11px; color:${isDark?'#94a3b8':'#4b5563'};">비율</th>
+            <th style="padding:${padH}; text-align:left; font-size:${thFs}; color:${isDark?'#94a3b8':'#4b5563'}; white-space:${ws};">${thLabel}</th>
+            <th style="padding:${padH}; text-align:center; font-size:${thFs}; color:${isDark?'#94a3b8':'#4b5563'}; white-space:${ws};">${thState}</th>
+            <th style="padding:${padH}; text-align:right; font-size:${thFs}; color:${isDark?'#94a3b8':'#4b5563'}; white-space:${ws};">일수</th>
+            <th style="padding:${padH}; text-align:right; font-size:${thFs}; color:${isDark?'#94a3b8':'#4b5563'}; white-space:${ws};">비율</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
         <tfoot>
           <tr style="background:${isDark?'#0b0f19':'#111827'};">
-            <td style="padding:8px 10px; color:#fbbf24; font-weight:700;">합계</td>
+            <td style="padding:${padH}; color:#fbbf24; font-weight:700; white-space:${ws};">합계</td>
             <td></td>
-            <td style="padding:8px 10px; text-align:right; color:#fbbf24; font-family:var(--mono);">${total.toLocaleString()}일</td>
-            <td style="padding:8px 10px; text-align:right; color:#fbbf24; font-family:var(--mono);">100.0%</td>
+            <td style="padding:${padH}; text-align:right; color:#fbbf24; font-family:var(--mono); white-space:${ws};">${total.toLocaleString()}일</td>
+            <td style="padding:${padH}; text-align:right; color:#fbbf24; font-family:var(--mono); white-space:${ws};">100.0%</td>
           </tr>
         </tfoot>
-      </table>
+      </table></div>
     </div>`;
 }
 
@@ -2754,35 +2772,46 @@ $('runBtn').addEventListener('click', ()=>{
 // ★ 추가: 매도(과세) 발생 내역 표 — 하이브리드 단독분석 AI코멘트, 그리고 다른 탭의 결과카드 양쪽에서 재사용
 function buildSellLogTableHtml(sellLog) {
   if (!sellLog || sellLog.length === 0) return '';
-  let h = `<table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; margin-bottom:8px;">`;
+  const isMobile = document.body.classList.contains('mobile-mode');
+  const fmtAmt = isMobile ? fmtWonShort : fmtWon;
+  const fs = isMobile ? '10px' : '12px';
+  const padC = isMobile ? '4px 4px' : '5px 8px';
+  const padH = isMobile ? '5px 4px' : '6px 8px';
+  const ws = isMobile ? 'normal' : 'nowrap';
+  const thAmt = isMobile ? '매도액' : '매도액(QLD/TQQQ)';
+  const thGain = isMobile ? '손익' : '실현손익';
+  const thTax = isMobile ? '세액' : '납부세액';
+  const thNet = isMobile ? '실수령' : '실수령(손익-세액)';
+  let h = `<div class="table-scroll"><table style="width:100%; border-collapse:collapse; font-size:${fs}; margin-top:6px; margin-bottom:8px; table-layout:${isMobile?'fixed':'auto'};">`;
   h += `<tr style="background:var(--panel2, #f3f4f6);">
-          <th style="padding:6px 8px; text-align:left; border-bottom:1px solid var(--border, #ddd);">날짜</th>
-          <th style="padding:6px 8px; text-align:left; border-bottom:1px solid var(--border, #ddd);">구분</th>
-          <th style="padding:6px 8px; text-align:right; border-bottom:1px solid var(--border, #ddd);">매도액(QLD/TQQQ)</th>
-          <th style="padding:6px 8px; text-align:right; border-bottom:1px solid var(--border, #ddd);">실현손익</th>
-          <th style="padding:6px 8px; text-align:right; border-bottom:1px solid var(--border, #ddd);">납부세액</th>
-          <th style="padding:6px 8px; text-align:right; border-bottom:1px solid var(--border, #ddd);">실수령(손익-세액)</th>
+          <th style="padding:${padH}; text-align:left; border-bottom:1px solid var(--border, #ddd); white-space:${ws};">날짜</th>
+          <th style="padding:${padH}; text-align:left; border-bottom:1px solid var(--border, #ddd); white-space:${ws};">구분</th>
+          <th style="padding:${padH}; text-align:right; border-bottom:1px solid var(--border, #ddd); white-space:${ws};">${thAmt}</th>
+          <th style="padding:${padH}; text-align:right; border-bottom:1px solid var(--border, #ddd); white-space:${ws};">${thGain}</th>
+          <th style="padding:${padH}; text-align:right; border-bottom:1px solid var(--border, #ddd); white-space:${ws};">${thTax}</th>
+          <th style="padding:${padH}; text-align:right; border-bottom:1px solid var(--border, #ddd); white-space:${ws};">${thNet}</th>
         </tr>`;
   let totalTax = 0, totalGain = 0, totalNet = 0;
   sellLog.forEach(s => {
     const net = s.realizedGain - s.taxPaid;
     totalTax += s.taxPaid; totalGain += s.realizedGain; totalNet += net;
+    const typeLabel = isMobile && s.type === '종료일 전량매도(가정)' ? '종료매도' : s.type;
     h += `<tr>
-            <td style="padding:5px 8px; border-bottom:1px solid var(--border, #eee);">${s.date}</td>
-            <td style="padding:5px 8px; border-bottom:1px solid var(--border, #eee);">${s.type}</td>
-            <td style="padding:5px 8px; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono);">${fmtWon(s.sellQldAmt)} / ${fmtWon(s.sellTqqqAmt)}</td>
-            <td style="padding:5px 8px; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); color:${s.realizedGain>=0?'var(--green,#16a34a)':'var(--red,#dc2626)'};">${s.realizedGain>=0?'+':''}${fmtWon(s.realizedGain)}</td>
-            <td style="padding:5px 8px; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono);">${fmtWon(s.taxPaid)}</td>
-            <td style="padding:5px 8px; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); font-weight:600; color:${net>=0?'var(--green,#16a34a)':'var(--red,#dc2626)'};">${net>=0?'+':''}${fmtWon(net)}</td>
+            <td style="padding:${padC}; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${s.date}</td>
+            <td style="padding:${padC}; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${typeLabel}</td>
+            <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws};"><span style="color:var(--sub,#6b7280); font-weight:600;">QLD</span> ${fmtAmt(s.sellQldAmt)} <span style="color:var(--sub,#6b7280); font-weight:600;">TQQQ</span> ${fmtAmt(s.sellTqqqAmt)}</td>
+            <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws}; color:${s.realizedGain>=0?'var(--green,#16a34a)':'var(--red,#dc2626)'};">${s.realizedGain>=0?'+':''}${fmtAmt(s.realizedGain)}</td>
+            <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws};">${fmtAmt(s.taxPaid)}</td>
+            <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws}; font-weight:600; color:${net>=0?'var(--green,#16a34a)':'var(--red,#dc2626)'};">${net>=0?'+':''}${fmtAmt(net)}</td>
           </tr>`;
   });
   h += `<tr style="font-weight:700;">
-          <td colspan="3" style="padding:6px 8px;">합계</td>
-          <td style="padding:6px 8px; text-align:right; font-family:var(--mono);">${totalGain>=0?'+':''}${fmtWon(totalGain)}</td>
-          <td style="padding:6px 8px; text-align:right; font-family:var(--mono);">${fmtWon(totalTax)}</td>
-          <td style="padding:6px 8px; text-align:right; font-family:var(--mono);">${totalNet>=0?'+':''}${fmtWon(totalNet)}</td>
+          <td colspan="3" style="padding:${padH}; white-space:${ws};">합계</td>
+          <td style="padding:${padH}; text-align:right; font-family:var(--mono); white-space:${ws};">${totalGain>=0?'+':''}${fmtAmt(totalGain)}</td>
+          <td style="padding:${padH}; text-align:right; font-family:var(--mono); white-space:${ws};">${fmtAmt(totalTax)}</td>
+          <td style="padding:${padH}; text-align:right; font-family:var(--mono); white-space:${ws};">${totalNet>=0?'+':''}${fmtAmt(totalNet)}</td>
         </tr>`;
-  h += `</table>`;
+  h += `</table></div>`;
   return h;
 }
 
@@ -4473,13 +4502,20 @@ $('rebalDetailCsvBtn').addEventListener('click', async ()=>{
   const dg = getDepositGateSettings();
   const wb = new ExcelJS.Workbook();
 
-  const qldCfg = getCurrentRebalConfig('qld');
-  const tqqqCfg = getCurrentRebalConfig('tqqq');
   const hybridCfg = getCurrentRebalConfig('hybrid');
-  addRebalDetailSheets(wb, 'QLD', 'p2', qldCfg.boundaries, qldCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
-  addRebalDetailSheets(wb, 'TQQQ', 'p3', tqqqCfg.boundaries, tqqqCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
+  // ★ 수정: 하이브리드 집중분석 탭(hybridFocusMode)에서는 하이브리드 시트만 담는다.
+  //   QLD/TQQQ 단독 시트는 "리밸런싱 7종" 비교 탭에서만 의미가 있고, 하이브리드 탭에서는
+  //   서로 다른 전략이 섞여 보여 혼란을 주므로 제외한다.
+  if (!hybridFocusMode) {
+    const qldCfg = getCurrentRebalConfig('qld');
+    const tqqqCfg = getCurrentRebalConfig('tqqq');
+    addRebalDetailSheets(wb, 'QLD', 'p2', qldCfg.boundaries, qldCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
+    addRebalDetailSheets(wb, 'TQQQ', 'p3', tqqqCfg.boundaries, tqqqCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
+  }
   addHybridDetailSheet(wb, hybridCfg.boundaries, hybridCfg.zones, iStart, iEnd, initAmount, dg, startDate, endDate);
-  const filename = `QLD_TQQQ_하이브리드_리밸런싱_상세검증_${startDate}_${endDate}.xlsx`;
+  const filename = hybridFocusMode
+    ? `하이브리드_리밸런싱_상세검증_${startDate}_${endDate}.xlsx`
+    : `QLD_TQQQ_하이브리드_리밸런싱_상세검증_${startDate}_${endDate}.xlsx`;
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
