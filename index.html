@@ -2781,6 +2781,7 @@ function buildSellLogTableHtml(sellLog) {
   const isMobile = document.body.classList.contains('mobile-mode');
   const fmtAmt = isMobile ? fmtWonShort : fmtWon;
   const fs = isMobile ? '10px' : '12px';
+  const fsDate = isMobile ? '8.5px' : '12px'; // 날짜만 더 작게 (하이픈 겹침 방지)
   const padC = isMobile ? '4px 3px' : '5px 8px';
   const padH = isMobile ? '5px 3px' : '6px 8px';
   const ws = isMobile ? 'normal' : 'nowrap';
@@ -2809,7 +2810,7 @@ function buildSellLogTableHtml(sellLog) {
     const typeLabel = isMobile && s.type === '종료일 전량매도(가정)' ? '종료매도' : s.type;
     const dateLabel = isMobile ? s.date.slice(2) : s.date; // 2026-06-01 → 26-06-01
     h += `<tr>
-            <td style="padding:${padC}; text-align:left; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${dateLabel}</td>
+            <td style="padding:${padC}; text-align:left; border-bottom:1px solid var(--border, #eee); font-size:${fsDate}; white-space:nowrap;">${dateLabel}</td>
             <td style="padding:${padC}; text-align:left; border-bottom:1px solid var(--border, #eee); white-space:${ws};">${typeLabel}</td>
             <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws};"><span style="color:var(--sub,#6b7280); font-weight:600;">QLD:</span> ${fmtAmt(s.sellQldAmt)}<br><span style="color:var(--sub,#6b7280); font-weight:600;">TQQQ:</span> ${fmtAmt(s.sellTqqqAmt)}</td>
             <td style="padding:${padC}; text-align:right; border-bottom:1px solid var(--border, #eee); font-family:var(--mono); white-space:${ws}; color:${s.realizedGain>=0?'var(--green,#16a34a)':'var(--red,#dc2626)'};">${s.realizedGain>=0?'+':''}${fmtAmt(s.realizedGain)}</td>
