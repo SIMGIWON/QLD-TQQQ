@@ -347,7 +347,7 @@ body.dark-mode .rebal-table th.zg-split   { background:#173425; color:#4ade80; }
 .mini-btn { font-size:11.5px; border:1px solid var(--border); background:var(--panel); border-radius:6px; padding:5px 10px; cursor:pointer; color:var(--text-mid); white-space:nowrap; }
 .mini-btn:hover { border-color:var(--blue); color:var(--blue); }
 .log-toggle { display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--sub); cursor:pointer; white-space:nowrap; }
-canvas { width:100%; height:auto; display:block; max-width:100%; touch-action:pan-y; }
+canvas { width:100%; height:auto; display:block; max-width:100%; touch-action:pan-y pinch-zoom; }
 .chart-wrap { position:relative; overflow:auto; max-height:1050px; border-radius:8px; }
 .chart-zoom-group { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--border); border-radius:6px; padding:2px 4px; background:var(--panel); }
 .chart-zoom-btn { padding:4px 10px !important; font-weight:700; min-width:28px; }
@@ -2477,7 +2477,7 @@ function renderDevDashboard(boundaries, zoneConfigs, target) {
         <span style="color:#22c55e; font-weight:700;">현재: ${p1[p1.length-1].toFixed(1)}</span>
         <span>추적: ${total.toLocaleString()}일</span>
       </div>
-      <div class="table-scroll"><table style="width:100%; border-collapse:collapse; font-size:${tblFs}; color:${textCol};">
+      <div class="table-scroll"><table style="width:100%; border-collapse:collapse; font-size:${tblFs}; color:${textCol}; word-break:${isMobile?'break-all':'normal'};">
         <thead>
           <tr style="background:${isDark?'#20293b':'#e5e7eb'};">
             <th style="padding:${padH}; text-align:left; font-size:${thFs}; color:${isDark?'#94a3b8':'#4b5563'}; white-space:${ws};">${thLabel}</th>
@@ -2789,9 +2789,11 @@ function buildSellLogTableHtml(sellLog) {
   const thTax = isMobile ? '세액' : '납부세액';
   const thNet = isMobile ? '실수령' : '실수령(손익-세액)';
   // ★ table-layout:fixed일 때 컬럼폭이 안 맞아 "구분" 칸이 밀려보이던 문제 수정: 폭을 명시적으로 지정
-  const colWidths = isMobile ? ['13%','14%','27%','16%','14%','16%'] : null;
+  const colWidths = isMobile ? ['15%','13%','25%','16%','14%','17%'] : null;
   const colgroup = colWidths ? `<colgroup>${colWidths.map(w=>`<col style="width:${w};">`).join('')}</colgroup>` : '';
-  let h = `<div class="table-scroll"><table style="width:100%; border-collapse:collapse; font-size:${fs}; margin-top:6px; margin-bottom:8px; table-layout:${isMobile?'fixed':'auto'};">${colgroup}`;
+  // ★ 추가 수정: "26-06-01"처럼 하이픈 포함 날짜가 좁은 칸에서 안 끊기고 옆 칸(구분) 글씨와 겹쳐 보이던 문제.
+  //   word-break은 상속 속성이라 table에 걸어두면 모든 셀에 적용돼 하이픈/글자 단위로 강제 줄바꿈된다.
+  let h = `<div class="table-scroll"><table style="width:100%; border-collapse:collapse; font-size:${fs}; margin-top:6px; margin-bottom:8px; table-layout:${isMobile?'fixed':'auto'}; word-break:${isMobile?'break-all':'normal'};">${colgroup}`;
   h += `<tr style="background:var(--panel2, #f3f4f6);">
           <th style="padding:${padH}; text-align:left; border-bottom:1px solid var(--border, #ddd); white-space:${ws};">날짜</th>
           <th style="padding:${padH}; text-align:left; border-bottom:1px solid var(--border, #ddd); white-space:${ws};">구분</th>
