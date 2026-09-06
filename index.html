@@ -287,6 +287,22 @@ body.dark-mode #rollingStaleBanner { color:#facc15; }
 .dev-toggle-btn { font-size:11.5px; border:1px solid var(--border); background:var(--panel); border-radius:6px; padding:5px 10px; cursor:pointer; color:var(--text-mid); white-space:nowrap; }
 .dev-toggle-btn.active { background:var(--blue); border-color:var(--blue); color:var(--on-accent); }
 
+/* 리밸런싱 7종 아코디언 */
+.rebal7-heading { font-size:13px; font-weight:800; color:var(--text); margin-bottom:2px; }
+.rebal7-sub { font-size:11px; color:var(--sub); margin-bottom:10px; line-height:1.5; }
+.rebal7-item { border:1px solid var(--border); border-radius:9px; margin-bottom:8px; overflow:hidden; background:var(--panel); }
+.rebal7-toggle {
+  width:100%; display:flex; align-items:center; gap:8px; background:none; border:none; cursor:pointer;
+  padding:11px 12px; font-family:var(--sans); text-align:left; color:var(--text);
+}
+.rebal7-toggle:hover { background:var(--bg); }
+.rebal7-num { font-size:13px; font-weight:800; flex-shrink:0; }
+.rebal7-title { font-size:12.5px; font-weight:700; flex:1; }
+.rebal7-chevron { font-size:11px; color:var(--sub); transition:transform .15s ease; flex-shrink:0; }
+.rebal7-toggle.open .rebal7-chevron { transform:rotate(180deg); }
+.rebal7-body { padding:0 12px 12px 12px; border-top:1px solid var(--border); }
+.rebal7-desc { font-size:11px; color:var(--sub); margin:10px 0 8px; line-height:1.5; }
+
 /* modal */
 .modal-overlay {
   position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:2000;
@@ -590,58 +606,122 @@ tr:last-child td { border-bottom:none; }
     </div>
 
     <div class="section" id="v2Fields">
-      <div id="v2QldSection">
-      <div class="section-title" style="color:var(--blue);">QLD (2배)</div>
-      <div class="field">
-        <label>① QLD 거치식</label>
-        <div class="readonly-box" id="lumpDisplayQld">₩100,000,000</div>
-      </div>
-      <div class="field">
-        <label>② QLD 적립식 — 일일 매수</label>
-        <div class="unit-toggle-row" data-target="dcaCompareDailyQld">
-          <button class="unit-btn active" data-unit="percent">%</button>
-          <button class="unit-btn" data-unit="amount">원 (하루)</button>
+      <div class="rebal7-heading" id="rebal7Heading">⚖️ 리밸런싱7종 세부설정</div>
+      <div class="rebal7-sub" id="rebal7Sub">7개 전략의 순서·이름은 아래와 같고, 항목을 눌러 설명과 세부설정을 볼 수 있어요.</div>
+
+      <div class="rebal7-item qld-group">
+        <button type="button" class="rebal7-toggle" data-target="rebal7Body1">
+          <span class="rebal7-num" style="color:var(--blue);">①</span>
+          <span class="rebal7-title">QLD 거치식</span>
+          <span class="rebal7-chevron">▾</span>
+        </button>
+        <div class="rebal7-body" id="rebal7Body1" style="display:none;">
+          <div class="rebal7-desc">☞ 설명 : QLD를 시작일날 한방에 거치 매수</div>
+          <div class="field">
+            <div class="readonly-box" id="lumpDisplayQld">₩100,000,000</div>
+          </div>
         </div>
-        <input type="text" inputmode="decimal" id="dcaCompareDailyQld" value="0.5">
-        <div class="sub-hint" id="dcaCompareDailyQldWon">→ 하루 ₩500,000씩 매수</div>
-        <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
-      </div>
-      <div class="field">
-        <label>③ QLD 200일 이격도 리밸런싱</label>
-        <button class="detail-btn" id="openRebalDetailQld">⚙ QLD 세부설정</button>
-      </div>
       </div>
 
-      <div id="v2TqqqSection">
-      <div class="section-title" style="color:var(--purple); margin-top:16px;">TQQQ (3배)</div>
-      <div class="field">
-        <label>④ TQQQ 거치식</label>
-        <div class="readonly-box" id="lumpDisplayTqqq">₩100,000,000</div>
-      </div>
-      <div class="field">
-        <label>⑤ TQQQ 적립식 — 일일 매수</label>
-        <div class="unit-toggle-row" data-target="dcaCompareDailyTqqq">
-          <button class="unit-btn active" data-unit="percent">%</button>
-          <button class="unit-btn" data-unit="amount">원 (하루)</button>
+      <div class="rebal7-item qld-group">
+        <button type="button" class="rebal7-toggle" data-target="rebal7Body2">
+          <span class="rebal7-num" style="color:var(--blue);">②</span>
+          <span class="rebal7-title">QLD 적립식</span>
+          <span class="rebal7-chevron">▾</span>
+        </button>
+        <div class="rebal7-body" id="rebal7Body2" style="display:none;">
+          <div class="rebal7-desc">☞ 설명 : QLD를 일 0.5% 분할 매수</div>
+          <div class="field">
+            <label>일일 매수</label>
+            <div class="unit-toggle-row" data-target="dcaCompareDailyQld">
+              <button class="unit-btn active" data-unit="percent">%</button>
+              <button class="unit-btn" data-unit="amount">원 (하루)</button>
+            </div>
+            <input type="text" inputmode="decimal" id="dcaCompareDailyQld" value="0.5">
+            <div class="sub-hint" id="dcaCompareDailyQldWon">→ 하루 ₩500,000씩 매수</div>
+            <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
+          </div>
         </div>
-        <input type="text" inputmode="decimal" id="dcaCompareDailyTqqq" value="0.5">
-        <div class="sub-hint" id="dcaCompareDailyTqqqWon">→ 하루 ₩500,000씩 매수</div>
-        <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
-      </div>
-      <div class="field">
-        <label>⑥ TQQQ 200일 이격도 리밸런싱</label>
-        <button class="detail-btn" id="openRebalDetailTqqq">⚙ TQQQ 세부설정</button>
-      </div>
       </div>
 
-      <div id="v2HybridSection">
-      <div class="section-title" id="hybridSectionTitle" style="color:#ca8a04; margin-top:16px;">⑦ 하이브리드 ( 100~110%:QLD + 100%이하:TQQQ )</div>
-      <div style="font-size:10px;color:var(--sub);line-height:1.5;margin-bottom:8px;">
-        <b>100~110%구간 : QLD</b> / <b>100%이하(90~100%·90%미만) : TQQQ</b>로 매수합니다. 매도 시에는 TQQQ를 먼저 소진하고, 남는 매도분만큼 QLD를 축소해서 상승 국면에서 레버리지를 더 오래 유지합니다.
+      <div class="rebal7-item tqqq-group">
+        <button type="button" class="rebal7-toggle" data-target="rebal7Body3">
+          <span class="rebal7-num" style="color:var(--purple);">③</span>
+          <span class="rebal7-title">TQQQ 거치식</span>
+          <span class="rebal7-chevron">▾</span>
+        </button>
+        <div class="rebal7-body" id="rebal7Body3" style="display:none;">
+          <div class="rebal7-desc">☞ 설명 : TQQQ를 시작일날 한방에 거치 매수</div>
+          <div class="field">
+            <div class="readonly-box" id="lumpDisplayTqqq">₩100,000,000</div>
+          </div>
+        </div>
       </div>
-      <div class="field">
-        <button class="detail-btn" id="openRebalDetailHybrid">⚙ 하이브리드 세부설정</button>
+
+      <div class="rebal7-item tqqq-group">
+        <button type="button" class="rebal7-toggle" data-target="rebal7Body4">
+          <span class="rebal7-num" style="color:var(--purple);">④</span>
+          <span class="rebal7-title">TQQQ 적립식</span>
+          <span class="rebal7-chevron">▾</span>
+        </button>
+        <div class="rebal7-body" id="rebal7Body4" style="display:none;">
+          <div class="rebal7-desc">☞ 설명 : TQQQ를 일 0.5% 분할 매수</div>
+          <div class="field">
+            <label>일일 매수</label>
+            <div class="unit-toggle-row" data-target="dcaCompareDailyTqqq">
+              <button class="unit-btn active" data-unit="percent">%</button>
+              <button class="unit-btn" data-unit="amount">원 (하루)</button>
+            </div>
+            <input type="text" inputmode="decimal" id="dcaCompareDailyTqqq" value="0.5">
+            <div class="sub-hint" id="dcaCompareDailyTqqqWon">→ 하루 ₩500,000씩 매수</div>
+            <div class="sub-hint" style="color:var(--text-faint);">※ 총 투자예산(원) 소진 시 분할 매수 중단</div>
+          </div>
+        </div>
       </div>
+
+      <div class="rebal7-item qld-group">
+        <button type="button" class="rebal7-toggle" data-target="rebal7Body5">
+          <span class="rebal7-num" style="color:var(--blue);">⑤</span>
+          <span class="rebal7-title">QLD 리밸런싱 (QLD 200일 이격도)</span>
+          <span class="rebal7-chevron">▾</span>
+        </button>
+        <div class="rebal7-body" id="rebal7Body5" style="display:none;">
+          <div class="rebal7-desc">☞ 설명 : QLD로 200일 이격도 기준 매수/매도</div>
+          <div class="field">
+            <button class="detail-btn" id="openRebalDetailQld">⚙ QLD 세부설정</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rebal7-item tqqq-group">
+        <button type="button" class="rebal7-toggle" data-target="rebal7Body6">
+          <span class="rebal7-num" style="color:var(--purple);">⑥</span>
+          <span class="rebal7-title">TQQQ 리밸런싱 (TQQQ 200일 이격도)</span>
+          <span class="rebal7-chevron">▾</span>
+        </button>
+        <div class="rebal7-body" id="rebal7Body6" style="display:none;">
+          <div class="rebal7-desc">☞ 설명 : TQQQ로 200일 이격도 기준 매수/매도</div>
+          <div class="field">
+            <button class="detail-btn" id="openRebalDetailTqqq">⚙ TQQQ 세부설정</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rebal7-item" id="v2HybridSection">
+        <button type="button" class="rebal7-toggle" id="rebal7ToggleHybrid" data-target="rebal7Body7">
+          <span class="rebal7-num" id="rebal7NumHybrid" style="color:#ca8a04;">⑦</span>
+          <span class="rebal7-title" id="hybridSectionTitle">하이브리드 리밸런싱 (QLD+TQQQ 200일 이격도)</span>
+          <span class="rebal7-chevron" id="rebal7ChevronHybrid">▾</span>
+        </button>
+        <div class="rebal7-body" id="rebal7Body7" style="display:none;">
+          <div class="rebal7-desc">☞ 설명 : QLD+TQQQ로 200일 이격도 기준 매수/매도</div>
+          <div style="font-size:10px;color:var(--sub);line-height:1.5;margin-bottom:8px;">
+            <b>100~110%구간 : QLD</b> / <b>100%이하(90~100%·90%미만) : TQQQ</b>로 매수합니다. 매도 시에는 TQQQ를 먼저 소진하고, 남는 매도분만큼 QLD를 축소해서 상승 국면에서 레버리지를 더 오래 유지합니다.
+          </div>
+          <div class="field">
+            <button class="detail-btn" id="openRebalDetailHybrid">⚙ 하이브리드 세부설정</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2064,11 +2144,26 @@ function activateTab(activeId, activeMode, sectionsShown, isHybridFocus) {
     $(secId).style.display = sectionsShown.includes(secId) ? 'block' : 'none';
   });
   // ★ 하이브리드 집중분석 탭에서는 QLD/TQQQ 개별 설정은 숨기고 총 투자예산 + 하이브리드 세부설정만 보이게
-  const qldSec = $('v2QldSection'), tqqqSec = $('v2TqqqSection');
-  if (qldSec) qldSec.style.display = hybridFocusMode ? 'none' : 'block';
-  if (tqqqSec) tqqqSec.style.display = hybridFocusMode ? 'none' : 'block';
+  // ★ 수정: 리밸런싱 7종 UI를 아코디언으로 재구성하면서 QLD/TQQQ 항목들이 더 이상 하나의
+  //   컨테이너(v2QldSection/v2TqqqSection)에 묶여있지 않고 순서가 섞여 배치되므로, class 기반으로 토글한다.
+  document.querySelectorAll('.qld-group').forEach(el => { el.style.display = hybridFocusMode ? 'none' : ''; });
+  document.querySelectorAll('.tqqq-group').forEach(el => { el.style.display = hybridFocusMode ? 'none' : ''; });
   const hybridTitle = $('hybridSectionTitle');
-  if (hybridTitle) hybridTitle.textContent = hybridFocusMode ? '하이브리드 ( 100~110%:QLD + 100%이하:TQQQ )' : '⑦ 하이브리드 ( 100~110%:QLD + 100%이하:TQQQ )';
+  if (hybridTitle) hybridTitle.textContent = '하이브리드 리밸런싱 (QLD+TQQQ 200일 이격도)';
+  // ★ 하이브리드 집중분석(단독) 탭에서는 "리밸런싱 7종 비교"라는 맥락 자체가 없으므로,
+  //   ⑦번 표시·헤더 제목·접기 기능을 전부 없애고 설명+설정을 늘 펼쳐서 보여준다.
+  const rebal7Heading = $('rebal7Heading'), rebal7Sub = $('rebal7Sub');
+  const rebal7NumHybrid = $('rebal7NumHybrid'), rebal7ChevronHybrid = $('rebal7ChevronHybrid');
+  const rebal7ToggleHybrid = $('rebal7ToggleHybrid'), rebal7Body7 = $('rebal7Body7');
+  if (rebal7Heading) rebal7Heading.style.display = hybridFocusMode ? 'none' : 'block';
+  if (rebal7Sub) rebal7Sub.style.display = hybridFocusMode ? 'none' : 'block';
+  if (rebal7NumHybrid) rebal7NumHybrid.style.display = hybridFocusMode ? 'none' : 'inline';
+  if (rebal7ChevronHybrid) rebal7ChevronHybrid.style.display = hybridFocusMode ? 'none' : 'inline';
+  if (rebal7ToggleHybrid) {
+    rebal7ToggleHybrid.style.cursor = hybridFocusMode ? 'default' : 'pointer';
+    rebal7ToggleHybrid.style.pointerEvents = hybridFocusMode ? 'none' : 'auto';
+  }
+  if (rebal7Body7 && hybridFocusMode) rebal7Body7.style.display = 'block';
   const backtestInfo = $('backtestMethodsInfoCard');
   if (backtestInfo) backtestInfo.style.display = hybridFocusMode ? 'none' : 'block';
   const sidebarValidation = $('sidebarBottomValidation');
@@ -4226,6 +4321,17 @@ function setupUnitToggle(fieldId) {
   });
 }
 ['dcaCompareDaily','dcaCompareDailyQld','dcaCompareDailyTqqq','contribAmount'].forEach(setupUnitToggle);
+
+// ★ 추가: 리밸런싱 7종 UI 아코디언 - 헤더 클릭 시 설명+세부설정 펼침/접기
+document.querySelectorAll('.rebal7-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const body = document.getElementById(btn.dataset.target);
+    if (!body) return;
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    btn.classList.toggle('open', !isOpen);
+  });
+});
 
 // contribAmount 전용 입력 처리 (기본 단위=원, 콤마 포맷 필요)
 $('contribAmount').addEventListener('input', ()=>{
