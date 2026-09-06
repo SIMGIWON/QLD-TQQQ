@@ -2,26 +2,7 @@
 ====================================================================
 QQQ/QLD/TQQQ 200일 이격도 리밸런싱 백테스트 시뮬레이터
 버전: v2.1.0
-수정일: 2026-09-06 22:00
-
-[이번 수정 항목]
-1. 구간별 설정 라벨 명칭 통일
-   - 매도비중(주식비중축소%) / 거치매수(전체자산 기준%) /
-     거치매수 발동 조건(현금보유기준%) / 분할매수(전체자산 기준%) /
-     일일분할매수 비율(%) / 분할매수 중단 조건(현금보유기준%)
-2. 하이브리드 전략 로직 변경
-   - 매수: 90~100%·90%미만 두 구간 모두 TQQQ로 매수 (기존: 90%미만만 TQQQ)
-   - 매도: TQQQ를 먼저 전액 소진한 뒤, 남는 매도량만큼 QLD를 축소
-     (기존: QLD+TQQQ를 동일 비율로 비례 축소)
-   - 관련 UI 설명문·코드 주석·엑셀 export 텍스트 전체 동기화
-3. 미사용 코드 정리
-   - 어디서도 호출되지 않던 V3 "코어+전술 2계좌" 엔진
-     (computeTwoAccountWeights, computeTwoAccountComparison) 삭제
-   - 중복 정의된 median() 함수 중 죽어있던 앞쪽 정의 삭제
-   - 도달 불가능한 mode==='rebal' 분기 전체 제거/단순화
-     (computeResultsForRange, render, runWalkForward, runBlockBootstrap,
-     엑셀 export 핸들러)
-4. 본 변경 이력/버전 헤더 추가
+수정일: 2026-09-07
 ====================================================================
 -->
 <!DOCTYPE html>
@@ -1805,13 +1786,13 @@ function render() {
     const finalQldDca = compQld.w2arr[compQld.w2arr.length-1];
     const finalTqqqDca = compTqqq.w2arr[compTqqq.w2arr.length-1];
     const defs = [
-      { name:'① QLD 이격도 리밸런싱', color:'#2563eb', equity:compQld.eq1, cd:chartDates, afterTaxEq:compQld.afterTaxEq1, avgStock:avgQldRebal, finalQld:finalQldRebal, finalTqqq:0, sellLog:(compQld.sellLog||[]).map(s=>({date:s.date,type:s.type,sellQldAmt:s.sellAmt,sellTqqqAmt:0,realizedGain:s.realizedGain,taxPaid:s.taxPaid})) },
+      { name:'① QLD 거치식', color:'#9333ea', equity:compQld.eq3, cd:chartDates, afterTaxEq:null, avgStock:100, finalQld:100, finalTqqq:0, sellLog:singleEventSellLog(compQld.eq3, lastDateQld, initAmount, 'sellQldAmt') },
       { name:`② QLD 적립식(일 ${dcaQld}%)`, color:'#16a34a', equity:compQld.eq2, cd:chartDates, afterTaxEq:null, avgStock:avgQldDca, finalQld:finalQldDca, finalTqqq:0, sellLog:singleEventSellLog(compQld.eq2, lastDateQld, initAmount, 'sellQldAmt') },
-      { name:'③ QLD 거치식', color:'#9333ea', equity:compQld.eq3, cd:chartDates, afterTaxEq:null, avgStock:100, finalQld:100, finalTqqq:0, sellLog:singleEventSellLog(compQld.eq3, lastDateQld, initAmount, 'sellQldAmt') },
-      { name:'④ TQQQ 이격도 리밸런싱', color:'#dc2626', equity:compTqqq.eq1, cd:chartDates, afterTaxEq:compTqqq.afterTaxEq1, avgStock:avgTqqqRebal, finalQld:0, finalTqqq:finalTqqqRebal, sellLog:(compTqqq.sellLog||[]).map(s=>({date:s.date,type:s.type,sellQldAmt:0,sellTqqqAmt:s.sellAmt,realizedGain:s.realizedGain,taxPaid:s.taxPaid})) },
-      { name:`⑤ TQQQ 적립식(일 ${dcaTqqq}%)`, color:'#ea580c', equity:compTqqq.eq2, cd:chartDates, afterTaxEq:null, avgStock:avgTqqqDca, finalQld:0, finalTqqq:finalTqqqDca, sellLog:singleEventSellLog(compTqqq.eq2, lastDateTqqq, initAmount, 'sellTqqqAmt') },
-      { name:'⑥ TQQQ 거치식', color:'#0891b2', equity:compTqqq.eq3, cd:chartDates, afterTaxEq:null, avgStock:100, finalQld:0, finalTqqq:100, sellLog:singleEventSellLog(compTqqq.eq3, lastDateTqqq, initAmount, 'sellTqqqAmt') },
-      { name: hybridFocusMode ? '하이브리드(QLD+TQQQ)' : '⑦ 하이브리드(QLD+TQQQ)', color:'#ca8a04', equity:compHybrid.eq1, cd:chartDatesH, afterTaxEq:compHybrid.afterTaxEq1, avgStock:avgHybrid, finalQld:finalHybridQld, finalTqqq:finalHybridTqqq, sellLog:compHybrid.sellLog },
+      { name:'③ TQQQ 거치식', color:'#0891b2', equity:compTqqq.eq3, cd:chartDates, afterTaxEq:null, avgStock:100, finalQld:0, finalTqqq:100, sellLog:singleEventSellLog(compTqqq.eq3, lastDateTqqq, initAmount, 'sellTqqqAmt') },
+      { name:`④ TQQQ 적립식(일 ${dcaTqqq}%)`, color:'#ea580c', equity:compTqqq.eq2, cd:chartDates, afterTaxEq:null, avgStock:avgTqqqDca, finalQld:0, finalTqqq:finalTqqqDca, sellLog:singleEventSellLog(compTqqq.eq2, lastDateTqqq, initAmount, 'sellTqqqAmt') },
+      { name:'⑤ QLD 리밸런싱 (QLD 200일 이격도)', color:'#2563eb', equity:compQld.eq1, cd:chartDates, afterTaxEq:compQld.afterTaxEq1, avgStock:avgQldRebal, finalQld:finalQldRebal, finalTqqq:0, sellLog:(compQld.sellLog||[]).map(s=>({date:s.date,type:s.type,sellQldAmt:s.sellAmt,sellTqqqAmt:0,realizedGain:s.realizedGain,taxPaid:s.taxPaid})) },
+      { name:'⑥ TQQQ 리밸런싱 (TQQQ 200일 이격도)', color:'#dc2626', equity:compTqqq.eq1, cd:chartDates, afterTaxEq:compTqqq.afterTaxEq1, avgStock:avgTqqqRebal, finalQld:0, finalTqqq:finalTqqqRebal, sellLog:(compTqqq.sellLog||[]).map(s=>({date:s.date,type:s.type,sellQldAmt:0,sellTqqqAmt:s.sellAmt,realizedGain:s.realizedGain,taxPaid:s.taxPaid})) },
+      { name: hybridFocusMode ? '하이브리드(QLD+TQQQ)' : '⑦ 하이브리드 리밸런싱 (QLD+TQQQ 200일 이격도)', color:'#ca8a04', equity:compHybrid.eq1, cd:chartDatesH, afterTaxEq:compHybrid.afterTaxEq1, avgStock:avgHybrid, finalQld:finalHybridQld, finalTqqq:finalHybridTqqq, sellLog:compHybrid.sellLog },
     ];
     results = defs.map(d => ({
       meta: { name:d.name, color:d.color },
@@ -1874,10 +1855,12 @@ function render() {
 
   const tbody = $('resultsBody');
   const bestCagr = Math.max(...results.map(r=>r.stats.cagr));
+  // ★ 추가: 자주 비교하는 핵심 2종(QLD 적립식 / 하이브리드)은 이름을 진한 파란 글씨로 강조
+  const isHighlightName = (name) => name && (name.includes('QLD 적립식') || name.includes('하이브리드'));
   tbody.innerHTML = results.map((r,idx) => `
     <tr>
       <td class="rank-td">${hybridFocusMode ? '' : `${idx+1}${idx===0?' 🏆':''}`}</td>
-      <td><span class="lev-badge" style="background:${r.meta.color}"></span>${r.meta.name}</td>
+      <td><span class="lev-badge" style="background:${r.meta.color}"></span><span style="${isHighlightName(r.meta.name)?'font-weight:800;color:#2563eb;':''}">${r.meta.name}</span></td>
       <td class="best-col">${hybridFocusMode ? '-' : `${r.stats.score.toFixed(1)}점`}</td>
       <td class="final-asset">${fmtWon(r.stats.finalVal)}</td>
       <td class="${r.stats.totalReturn>=0?'pos':'neg'}">${fmtPct(r.stats.totalReturn)}</td>
@@ -1901,7 +1884,7 @@ function render() {
         ${hybridFocusMode ? '' : `<div class="rank-num">${rank}</div>`}
         <div class="rank-body">
           <div class="rank-name-line">
-            <span class="rank-name">${r.meta.name}</span>
+            <span class="rank-name" style="${isHighlightName(r.meta.name)?'font-weight:800;color:#2563eb;':''}">${r.meta.name}</span>
             ${hybridFocusMode ? '' : `<span class="rank-score-badge">종합 ${r.stats.score.toFixed(1)}점</span>`}
           </div>
           <div class="rank-metrics-line">
@@ -3583,7 +3566,7 @@ async function runWalkForward() {
   WF_GRID_SPLIT3.forEach(s3=>WF_GRID_DEP5.forEach(d5=>grid.push({split3:s3, deposit5:d5})));
 
   const strategyNames = [];
-  assetConfigs.forEach(c=>{ strategyNames.push(`${c.assetLabel} 리밸런싱`, `${c.assetLabel} 적립식`, `${c.assetLabel} 거치식`); });
+  assetConfigs.forEach(c=>{ strategyNames.push(`${c.assetLabel} 거치식`, `${c.assetLabel} 적립식`, `${c.assetLabel} 리밸런싱`); });
   if (useHybrid) strategyNames.push('하이브리드(QLD+TQQQ)');
   const perStrategyResults = {}; strategyNames.forEach(nm=>perStrategyResults[nm]=[]);
 
@@ -3796,9 +3779,9 @@ async function runBlockBootstrap() {
   const returnsByStrategy = {};
   assetConfigs.forEach(cfg=>{
     const r = getBbReturnsForAsset(cfg);
-    returnsByStrategy[`${cfg.assetLabel} 리밸런싱`] = r.rebal;
-    returnsByStrategy[`${cfg.assetLabel} 적립식`] = r.dca;
     returnsByStrategy[`${cfg.assetLabel} 거치식`] = r.lump;
+    returnsByStrategy[`${cfg.assetLabel} 적립식`] = r.dca;
+    returnsByStrategy[`${cfg.assetLabel} 리밸런싱`] = r.rebal;
   });
   if (useHybrid) returnsByStrategy['하이브리드(QLD+TQQQ)'] = getBbReturnsForHybrid();
   const strategyNames = Object.keys(returnsByStrategy);
