@@ -28,6 +28,30 @@ QQQ/QLD/TQQQ 200일 이격도 리밸런싱 백테스트 시뮬레이터
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<script data-goatcounter="https://simgiwon.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script>
+(function() {
+  // ★ 방문자수 배지: GoatCounter 공개 카운터(TOTAL) API에서 총 방문자수를 가져와 화면에 표시
+  //   사전 조건: GoatCounter 대시보드 → Settings → "Allow adding visitor counts on your website" 활성화 필요
+  function loadVisitorCount() {
+    fetch("https://simgiwon.goatcounter.com/counter/TOTAL.json")
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var el = document.getElementById("visitorCountNum");
+        if (el && data && data.count) el.textContent = data.count;
+      })
+      .catch(function() {
+        var badge = document.getElementById("visitorCountBadge");
+        if (badge) badge.style.display = "none"; // 실패 시 조용히 숨김
+      });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", loadVisitorCount);
+  } else {
+    loadVisitorCount();
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -426,6 +450,7 @@ tr:last-child td { border-bottom:none; }
 </style>
 </head>
 <body>
+<div id="visitorCountBadge" style="text-align:right; font-size:11px; color:var(--sub,#6b7280); padding:4px 16px 0 16px;">👀 방문자수: <span id="visitorCountNum">-</span>명</div>
 <div class="top-toolbar">
   <div class="toolbar-group">
     <span class="view-ctrl-label">화면</span>
@@ -857,7 +882,7 @@ tr:last-child td { border-bottom:none; }
 
       <div class="section-title" style="margin-top:16px;">■ 거치매수 재발동 대기일 수 (전체 구간 공통)</div>
       <div class="field" style="max-width:220px;">
-        <input type="number" id="depositCooldownDays" value="180" step="1">
+        <input type="number" id="depositCooldownDays" value="90" step="1">
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
         ※ 같은 구간을 짧은 기간에 진입/이탈 반복 시 거치매수가 과도하게 반복 발동되는 상황을 제약하는 목적으로, <b>해당 구간에서 마지막 거치매수 후 입력한 최소 일수가 지나야만 재발동</b> (쿨타임은 구간별로 독립 적용). <b>※이전 구간 분할매수 미소진으로 남은 현금을 이용한 거치매수는 이 쿨타임 예외.</b>
@@ -865,7 +890,7 @@ tr:last-child td { border-bottom:none; }
 
       <div class="section-title">■ 주식매도 재발동 대기일 수 (전체 구간 공통)</div>
       <div class="field" style="max-width:220px;">
-        <input type="number" id="sellCooldownDays" value="180" step="1">
+        <input type="number" id="sellCooldownDays" value="90" step="1">
       </div>
       <div style="font-size:10.5px;color:var(--sub);margin:-6px 0 16px 0;line-height:1.6;">
          ※ 같은 매도구간을 짧은 기간에 반복 재진입할 때 매도가 과도하게 반복 발동되는 상황을 제약하는 목적으로, <b>같은 구간에서는 마지막 매도 후 입력한 최소 일수가 지나야만 재발동.</b> 단, <b>다른 매도구간으로 전환되면 쿨타임과 무관하게 즉시 매도가 발동</b>됩니다.
@@ -887,7 +912,7 @@ tr:last-child td { border-bottom:none; }
             <th class="zg-deposit"><span class="th-label">주식비중상한(%)</span><span class="th-note">※전체주식기준</span></th>
             <th class="zg-split"><span class="th-label">분할비중(%)</span><span class="th-note">※전체현금기준</span></th>
             <th class="zg-split"><span class="th-label">일일매수비율(%)</span><span class="th-note">※분할비중기준</span></th>
-            <th class="zg-split"><span class="th-label">분할비중상한(%)</span><span class="th-note">※전체현금기준</span></th>
+            <th class="zg-split"><span class="th-label">분할비중상한(%)</span><span class="th-note">※전체주식기준</span></th>
           </tr>
         </thead>
         <tbody id="rebalTableBody"></tbody>
@@ -942,8 +967,10 @@ const REBAL_DEFAULT_ZONES = [
   { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 120~130%
   { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0,  maxWeight:0 },     // 110~120%
   { sell:0,   deposit:40,  split:0, rate:0,  stop:0, depositCashGate:60,  maxWeight:40 },     // 100~110%
-  { sell:0,   deposit:0,  split:10,  rate:5,  stop:10, depositCashGate:0,  maxWeight:0 },  // 90~100%
-  { sell:0,   deposit:30, split:20,  rate:5, stop:0,  depositCashGate:50,  maxWeight:80 },  // 90%미만
+  { sell:0,   deposit:0,  split:10,  rate:5,  stop:50, depositCashGate:0,  maxWeight:0 },  // 90~100%
+  // ★ exhaustCash:true — 가장 저평가 구간이라 "분할비중(20%)"을 다 채운 뒤에도 멈추지 않고,
+  //   같은 구간에 머무는 동안은 하루 비율(rate)만큼 계속 사서 남은 현금을 끝까지 소진한다.
+  { sell:0,   deposit:30, split:20,  rate:5, stop:0,  depositCashGate:50,  maxWeight:80, exhaustCash:true },  // 90%미만
 ];
 // TQQQ 기본값도 동일하게 통일
 const REBAL_DEFAULT_ZONES_TQQQ = REBAL_DEFAULT_ZONES.map(z=>Object.assign({},z));
@@ -953,8 +980,8 @@ const REBAL_DEFAULT_ZONES_HYBRID = [
   { sell:100, deposit:0,  split:0,  rate:0,  stop:0,  depositCashGate:0,  maxWeight:0 },     // 120~130%
   { sell:0,   deposit:0,  split:0, rate:0,  stop:0, depositCashGate:0,  maxWeight:0 },     // 110~120%
   { sell:0,   deposit:40,  split:0, rate:0,  stop:0, depositCashGate:60,  maxWeight:40 },     // 100~110% → QLD매수
-  { sell:0,   deposit:0,  split:10,  rate:5,  stop:10, depositCashGate:0,  maxWeight:0 },  // 90~100% → TQQQ매수
-  { sell:0,   deposit:30, split:20,  rate:5, stop:0,  depositCashGate:50,  maxWeight:80 },  // 90%미만 → TQQQ매수
+  { sell:0,   deposit:0,  split:10,  rate:5,  stop:50, depositCashGate:0,  maxWeight:0 },  // 90~100% → TQQQ매수
+  { sell:0,   deposit:30, split:20,  rate:5, stop:0,  depositCashGate:50,  maxWeight:80, exhaustCash:true },  // 90%미만 → TQQQ매수
 ];
 const REBAL_DEFAULT_DCA_COMPARE = 0.5;
 
@@ -1169,7 +1196,7 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
         isNewEpisode = true; curZone = z; bought[z] = 0;
       }
       const cfg = zoneConfigs[z] || {sell:0,deposit:0,split:0,rate:0,stop:0,depositCashGate:0,maxWeight:100};
-      const { sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0, maxWeight=100 } = cfg;
+      const { sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0, maxWeight=100, exhaustCash=false } = cfg;
       let action = null;
 
       // ★ 매도 로직 수정: 쿨타임이 지났거나 OR 다른 매도 구간(z)에 진입했을 때는 쿨타임 무시
@@ -1202,7 +1229,9 @@ function computeRebalWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositCo
       }
       if (split > 0 && rate > 0) {
         const dailyAdd = split * (rate/100);
-        const remainBucket = split - bought[z];
+        // ★ exhaustCash: 이 구간은 분할비중(split) 총량을 다 채워도 멈추지 않고,
+        //   같은 구간 안에 있는 한 하루 비율만큼 계속 사서 남은 현금을 끝까지 소진한다.
+        const remainBucket = exhaustCash ? Infinity : (split - bought[z]);
         // ★ 분할매수는 거치매수와 별개로 자기 상한(stop)만 따름 — maxWeight는 거치매수 전용
         const remainCash = stop > 0 ? (100 - stop) - w1 : (100 - w1);
         const add = Math.max(0, Math.min(dailyAdd, remainBucket, remainCash, 100 - w1));
@@ -1271,7 +1300,7 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
       let isNewEpisode=false;
       if (curZone===null || z!==curZone){ isNewEpisode=true; curZone=z; bought[z]=0; }
       const cfg = zoneConfigs[z] || {sell:0,deposit:0,split:0,rate:0,stop:0,depositCashGate:0,maxWeight:100};
-      const {sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0, maxWeight=100} = cfg;
+      const {sell=0, deposit=0, split=0, rate=0, stop=0, depositCashGate=0, maxWeight=100, exhaustCash=false} = cfg;
       const targetAsset = (z >= nZones-2) ? 'tqqq' : 'qld'; // 90~100%, 90%미만(마지막 2개 매수구간) → TQQQ / 그 외 매수구간 → QLD
       let action = null;
 
@@ -1315,7 +1344,9 @@ function computeHybridWeights(iStartSel, iEnd, boundaries, zoneConfigs, depositC
       if (split>0 && rate>0){
         const cash = 100-wQld-wTqqq;
         const dailyAdd = split*(rate/100);
-        const remainBucket = split-bought[z];
+        // ★ exhaustCash: 이 구간은 분할비중(split) 총량을 다 채워도 멈추지 않고,
+        //   같은 구간 안에 있는 한 하루 비율만큼 계속 사서 남은 현금을 끝까지 소진한다.
+        const remainBucket = exhaustCash ? Infinity : (split-bought[z]);
         const remainCash = stop>0 ? (100-stop)-(wQld+wTqqq) : cash; // ★ 분할매수 전용 상한(stop), maxWeight와 무관
         const add = Math.max(0, Math.min(dailyAdd, remainBucket, remainCash, cash));
         if (targetAsset==='qld') wQld += add; else wTqqq += add;
@@ -2250,8 +2281,8 @@ function resetToDefault() {
   EDIT_BOUNDARIES = REBAL_DEFAULT_BOUNDARIES.slice();
   const defaultsFor = modalTarget==='tqqq' ? REBAL_DEFAULT_ZONES_TQQQ : modalTarget==='hybrid' ? REBAL_DEFAULT_ZONES_HYBRID : REBAL_DEFAULT_ZONES;
   EDIT_ZONES = defaultsFor.map(z=>Object.assign({},z));
-  $('depositCooldownDays').value = 180;
-  $('sellCooldownDays').value = 180;
+  $('depositCooldownDays').value = 90;
+  $('sellCooldownDays').value = 90;
   renderBoundaryChips();
   renderRebalTable();
   updateExampleBox();
